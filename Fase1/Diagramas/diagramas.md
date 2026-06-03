@@ -10,7 +10,7 @@
 ![alt text](<ER_PRACTICA1_SA - DB Usuario.png>)
 
 ### DB Peliculas
-
+![alt text](<ER_PRACTICA1_SA - DB Películas-1.png>)
 
 ### DB Reservas
 
