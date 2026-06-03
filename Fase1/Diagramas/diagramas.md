@@ -16,3 +16,4 @@
 ![alt text](<ER_PRACTICA1_SA - DB Reservas-1.png>)
 
 ### DB Pagos
+![alt text](<ER_PRACTICA1_SA - DB Pagos-1.png>)
