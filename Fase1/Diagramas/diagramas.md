@@ -13,6 +13,6 @@
 ![alt text](<ER_PRACTICA1_SA - DB Películas-1.png>)
 
 ### DB Reservas
-
+![alt text](<ER_PRACTICA1_SA - DB Reservas-1.png>)
 
 ### DB Pagos
