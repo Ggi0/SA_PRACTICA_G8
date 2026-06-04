@@ -1,10 +1,4 @@
 
-<<<<<<< Updated upstream
-# /CasosDeUso
-## /diagramas de casos de uso de alto nivel
-## /primera descomposición
-## /expandidos
-=======
 # Casos de uso
 ## Diagrama de casos de uso de alto nivel
 ![Altonivel](imgs/Altonivel.png)
@@ -423,4 +417,3 @@ Sus expandidos serían:
 | Reglas de negocio | - La cancelación de un bloqueo temporal no tiene costo para el usuario.<br>- Solo se pueden cancelar reservas que aún están en estado de bloqueo temporal (no compras confirmadas).<br>- Los asientos liberados deben quedar disponibles de inmediato para otros usuarios. |
 | Flujo de excepción | **FE1: Error al liberar los asientos bloqueados**<br>FE1.1 El usuario confirma la cancelación pero el sistema no puede liberar los asientos en la base de datos.<br>FE1.2 El sistema notifica: "Error al cancelar la reserva. Inténtelo de nuevo".<br>FE1.3 El sistema mantiene los asientos bloqueados y permite reintentar la cancelación.<br>FE1.4 Si el error persiste, el sistema libera los asientos automáticamente al expirar el temporizador.<br><br>**FE2: Fallo en la notificación de cancelación al usuario**<br>FE2.1 Los asientos se liberan correctamente pero el sistema no puede confirmar la cancelación al usuario.<br>FE2.2 El usuario recibe un mensaje ambiguo pero al regresar a la cartelera puede verificar que la reserva fue cancelada.<br>FE2.3 El sistema registra la falla de notificación para revisión técnica. |
 | Reglas de calidad | - La liberación de los asientos debe procesarse en menos de 2 segundos.<br>- El mapa de asientos debe actualizarse en tiempo real para todos los usuarios conectados.<br>- La confirmación de cancelación debe presentarse en una ventana modal clara. |
->>>>>>> Stashed changes
