@@ -1,10 +1,14 @@
 
-# /CasosDeUso
-## /diagramas de casos de uso de alto nivel
-## /primera descomposición
-## Casos de Uso Expandidos
+# Casos de uso
+## Diagrama de casos de uso de alto nivel
+![Altonivel](imgs/Altonivel.png)
+
+## Primera descomposición
+![Primeradescomposicion](imgs/Primeradescomposicion.png)
+
 
 ---
+## Casos de Uso Expandidos
 
 ## CDU001: Autenticación y Gestión de Usuarios
 
