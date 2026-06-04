@@ -1,10 +1,10 @@
 
-# /Diagramas
-## /D arquitectura genertal
-## /D de componentes
-## /D de actividades
-## /D de secuencia
-## /D de entidad - relacion
+# Diagramas
+## D arquitectura genertal
+## D de componentes
+## D de actividades
+## D de secuencia
+## Diagrama de Entidad - Relacion
 
 ### DB Usuarios
 ![alt text](<ER_PRACTICA1_SA - DB Usuario.png>)

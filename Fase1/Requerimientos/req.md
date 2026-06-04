@@ -1,7 +1,7 @@
 
 
-# /Requerimientos
-## /Requerimientos Funcionales (RF)
+# Requerimientos
+## Requerimientos Funcionales (RF)
 
 ## Requerimientos Funcionales
 
@@ -42,7 +42,7 @@
 
 
 
-## /Requerimientos NO Funcionales (RNF)
+## Requerimientos NO Funcionales (RNF)
 
 ## Requerimientos No Funcionales
 
