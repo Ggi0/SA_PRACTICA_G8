@@ -31,13 +31,6 @@ Detalla el comportamiento dinámico del sistema a través de un diagrama de acti
 
 ---
 
-## Vista de Componentes (Desarrollo)
-
-Describe la organización del código en módulos y sus dependencias. El sistema se estructura en capas: la **Capa UI** (`filmstars-ui.bundle`), el **Punto de Entrada Único** (`api-gateway.js`), los **Servicios Core SOA** (`seat-core-service.js`, `payment-service.js`) y los **Workers e Infraestructura Lógica** (`rabbit-connector.js`, `amqplib.js`, `res-worker.js`, `pg-driver.js`). Las interfaces `IPublicAPI`, `ISeatRouter` e `IMessageBroker` definen los contratos de comunicación entre componentes.
-
-> Ver diagrama interactivo: [Abrir en LucidChart](https://lucid.app/lucidchart/5836d2ec-eedc-47bd-a0e7-093e861777d6/edit?viewport_loc=-3402%2C-814%2C7277%2C3025%2C0_0&invitationId=inv_81894290-c92d-457b-8370-695886be36b1)
-
----
 
 ## Vista de Despliegue
 
