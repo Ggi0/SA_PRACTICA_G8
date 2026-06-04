@@ -155,3 +155,7 @@ La publicación de este evento permite que otros componentes del sistema puedan 
 Por ejemplo, en futuras versiones podrían incorporarse mecanismos de notificación en tiempo real mediante WebSockets, auditoría de eventos o sistemas de monitoreo que reaccionen automáticamente a este tipo de mensajes.
 
 Esta solución sigue el principio de arquitectura orientada a eventos y favorece la extensibilidad del sistema.
+
+
+# archivo crudo:
+[Pizarrón en LucidChart](https://lucid.app/lucidchart/0341407f-3b08-4f73-8287-b3ce5f045f7b/edit?viewport_loc=8234%2C-212%2C3634%2C1790%2C0_0&invitationId=inv_e0d154ab-d1a0-4b92-9dc3-a4259897cd75)

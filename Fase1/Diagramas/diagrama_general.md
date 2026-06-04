@@ -186,3 +186,6 @@ La arquitectura propuesta combina comunicación síncrona y asíncrona para apro
 La comunicación síncrona permite ofrecer respuestas rápidas para consultas de cartelera y disponibilidad, mientras que la comunicación asíncrona garantiza que los procesos críticos de reservas y pagos puedan ejecutarse de manera segura, tolerante a fallos y escalable.
 
 Esta estrategia híbrida permite satisfacer los requisitos funcionales y no funcionales establecidos para la plataforma de venta de boletos, manteniendo una arquitectura SOA desacoplada, escalable y preparada para futuras ampliaciones.
+
+# archivo crudo:
+[Pizarrón en LucidChart](https://lucid.app/lucidchart/0341407f-3b08-4f73-8287-b3ce5f045f7b/edit?viewport_loc=8234%2C-212%2C3634%2C1790%2C0_0&invitationId=inv_e0d154ab-d1a0-4b92-9dc3-a4259897cd75)

@@ -76,7 +76,7 @@ La adopción de esta estructura promueve una clara separación de responsabilida
 
 Cada servicio expone una interfaz formal que representa su contrato público dentro de la arquitectura.
 
-Las interfaces IUserAPI, IMovieAPI, IReservationAPI e IPaymentAPI definen los servicios disponibles para otros componentes del sistema sin exponer detalles internos de implementación.
+Las interfaces IUserAPI, IMovieAPI, I_reserevaAPI e I_pagoAPI definen los servicios disponibles para otros componentes del sistema sin exponer detalles internos de implementación.
 
 La utilización de interfaces permite que los consumidores dependan de contratos estables en lugar de implementaciones concretas, reduciendo el acoplamiento y facilitando la evolución futura de cada servicio.
 
@@ -152,3 +152,7 @@ La combinación de ambos enfoques permite equilibrar simplicidad operativa y rob
 El Diagrama de Componentes refleja una arquitectura SOA desacoplada, organizada por dominios de negocio y preparada para operar en entornos de alta concurrencia. La incorporación de un API Gateway, interfaces de servicio, persistencia independiente y comunicación basada en eventos permite construir una solución escalable, mantenible y alineada con los requisitos del proyecto.
 
 La estructura propuesta favorece la separación de responsabilidades, la evolución independiente de cada servicio y la resiliencia del sistema frente a fallos, constituyendo una base sólida para la implementación de la plataforma de venta de boletos en línea.
+
+
+# archivo crudo:
+[Pizarrón en LucidChart](https://lucid.app/lucidchart/0341407f-3b08-4f73-8287-b3ce5f045f7b/edit?viewport_loc=8234%2C-212%2C3634%2C1790%2C0_0&invitationId=inv_e0d154ab-d1a0-4b92-9dc3-a4259897cd75)
