@@ -2,8 +2,10 @@
 
 integrantes:
 
-202100229	Giovanni Saul Concohá Cax
-202200214	PABLO ALEJANDRO MARROQUIN CUTZ
-201602619	MARÍA DE LOS ANGELES PAZ DE LEÓN
-202180003	ANGEL ISAIAS MENDOZA MARTINEZ
-202001814	NAOMI RASHEL YOS CUJCUJ
+| **Carné**   | **Nombre completo**                         |
+|-------------|---------------------------------------------|
+| 202100229   | Giovanni Saul Concohá Cax                   |
+| 202200214   | Pablo Alejandro Marroquín Cutz              |
+| 201602619   | María de los Ángeles Paz de León            |
+| 202180003   | Ángel Isaías Mendoza Martínez               |
+| 202001814   | Naomi Rashel Yos Cujcuj                     |
