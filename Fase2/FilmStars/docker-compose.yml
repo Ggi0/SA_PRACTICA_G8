@@ -51,7 +51,8 @@ services:
       - "5435:5432"
     volumes:
       - db_reservations_data:/var/lib/postgresql/data
-      - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/reservations/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     networks:
       - filmstars-network
     healthcheck:
