@@ -30,7 +30,8 @@ services:
       - "5434:5432"
     volumes:
       - db_movies_data:/var/lib/postgresql/data
-      - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/movies/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     networks:
       - filmstars-network
     healthcheck:
