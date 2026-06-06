@@ -9,7 +9,6 @@ import {
   Inject,
   Param,
   Patch,
-  Post,
   Put,
   Query,
   Req,
@@ -22,7 +21,6 @@ import { USER_SERVICE } from '../common/tokens';
 import { JwtAuthGuard, RequestWithUser } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { IUserService } from './user.service';
@@ -47,13 +45,6 @@ export class UsersController {
       rol: rol === 'admin' || rol === 'customer' ? rol : undefined,
       search,
     });
-  }
-
-  @Post()
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  create(@Body() dto: CreateClientDto) {
-    return this.users.create(dto, dto.rol === 'admin' ? 'admin' : 'customer');
   }
 
   @Get(':id')

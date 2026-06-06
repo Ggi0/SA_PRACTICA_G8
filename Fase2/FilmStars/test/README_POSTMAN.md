@@ -11,13 +11,17 @@ Coleccion:
 - Login de administrador.
 - Guardado automatico del JWT.
 - Perfil autenticado.
-- Crear cliente.
+- Registro publico de cliente.
+- Login del cliente registrado.
+- Validacion de que cliente puede ver su perfil.
+- Validacion de que cliente NO puede listar clientes.
+- Validacion de que admin NO puede crear clientes desde gestion (`404`).
 - Listar clientes.
 - Consultar cliente por ID.
 - Actualizar cliente.
 - Desactivar cliente.
 - Probar alias `/api/users`.
-- Eliminar logicamente cliente.
+- Eliminar logicamente el cliente registrado publicamente.
 
 ## Requisito previo
 
@@ -41,4 +45,4 @@ docker compose up --build -d
 3. Mantener el orden de las requests.
 4. Click en `Run FilmStars - Angel - Usuarios y API Gateway`.
 
-La coleccion genera automaticamente un correo unico para el cliente de prueba usando timestamp y guarda las variables `token` y `clientId` durante la ejecucion.
+La coleccion genera automaticamente un correo unico para el cliente registrado publicamente usando timestamp y guarda las variables `token`, `clientToken`, `selfRegisteredClientId` y `clientId` durante la ejecucion.

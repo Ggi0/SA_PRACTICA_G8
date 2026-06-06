@@ -76,7 +76,6 @@ Todas las rutas pasan por el API Gateway en el puerto `8080`.
 | POST | `/api/auth/login` | No | Login y retorno de JWT |
 | GET | `/api/clientes/me` | Si | Perfil del usuario autenticado |
 | GET | `/api/clientes` | Si, admin | Listar clientes |
-| POST | `/api/clientes` | Si, admin | Crear cliente |
 | GET | `/api/clientes/:id` | Si | Consultar cliente por ID |
 | PUT | `/api/clientes/:id` | Si | Actualizar cliente |
 | PATCH | `/api/clientes/:id/status` | Si, admin | Activar/desactivar cliente |

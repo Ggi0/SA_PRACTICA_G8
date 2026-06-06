@@ -39,7 +39,19 @@
       "value": ""
     },
     {
+      "key": "clientToken",
+      "value": ""
+    },
+    {
+      "key": "selfRegisteredClientId",
+      "value": ""
+    },
+    {
       "key": "uniqueEmail",
+      "value": ""
+    },
+    {
+      "key": "selfRegisterEmail",
       "value": ""
     }
   ],
@@ -157,7 +169,149 @@
       ]
     },
     {
-      "name": "05 - Crear cliente",
+      "name": "05 - Registro publico de cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cliente Registro Publico\",\n  \"email\": \"{{selfRegisterEmail}}\",\n  \"password\": \"cliente12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('selfRegisterEmail')) {",
+              "  pm.collectionVariables.set('selfRegisterEmail', `self.register.${Date.now()}@filmstars.com`);",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Registro publico responde 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.test('Devuelve token de cliente', () => pm.expect(json.access_token).to.be.a('string').and.not.empty);",
+              "pm.test('Rol del usuario registrado es customer', () => pm.expect(json.user.rol).to.eql('customer'));",
+              "pm.collectionVariables.set('clientToken', json.access_token);",
+              "pm.collectionVariables.set('selfRegisteredClientId', json.user.id);",
+              "pm.collectionVariables.set('clientId', json.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Login del cliente auto-registrado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{selfRegisterEmail}}\",\n  \"password\": \"cliente12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login cliente responde 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Login devuelve token de cliente', () => pm.expect(json.access_token).to.be.a('string').and.not.empty);",
+              "pm.test('Login mantiene rol customer', () => pm.expect(json.user.rol).to.eql('customer'));",
+              "pm.collectionVariables.set('clientToken', json.access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Cliente puede ver su perfil",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Perfil cliente responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Perfil corresponde al cliente registrado', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('selfRegisterEmail')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Cliente NO puede listar clientes (403)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Cliente sin rol admin recibe 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Admin NO puede crear clientes desde gestion (404)",
       "request": {
         "method": "POST",
         "header": [
@@ -172,7 +326,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Cliente Postman\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"password\": \"cliente12345\",\n  \"telefono\": \"5555-1111\",\n  \"dpi\": \"1234567890101\",\n  \"direccion\": \"Ciudad de Guatemala\"\n}"
+          "raw": "{\n  \"nombre\": \"Intento Admin\",\n  \"email\": \"admin.no.crea.{{$timestamp}}@filmstars.com\",\n  \"password\": \"cliente12345\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/clientes",
@@ -186,18 +340,14 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Crear cliente responde 201', () => pm.response.to.have.status(201));",
-              "const json = pm.response.json();",
-              "pm.test('Cliente tiene id', () => pm.expect(json.id).to.be.a('string').and.not.empty);",
-              "pm.test('Cliente creado como customer', () => pm.expect(json.rol).to.eql('customer'));",
-              "pm.collectionVariables.set('clientId', json.id);"
+              "pm.test('POST /api/clientes ya no existe para admin', () => pm.response.to.have.status(404));"
             ]
           }
         }
       ]
     },
     {
-      "name": "06 - Listar clientes",
+      "name": "10 - Admin lista clientes",
       "request": {
         "method": "GET",
         "header": [
@@ -226,7 +376,7 @@
       ]
     },
     {
-      "name": "07 - Consultar cliente por ID",
+      "name": "11 - Admin consulta cliente por ID",
       "request": {
         "method": "GET",
         "header": [
@@ -255,7 +405,7 @@
       ]
     },
     {
-      "name": "08 - Actualizar cliente",
+      "name": "12 - Admin actualiza cliente",
       "request": {
         "method": "PUT",
         "header": [
@@ -292,7 +442,7 @@
       ]
     },
     {
-      "name": "09 - Desactivar cliente",
+      "name": "13 - Admin desactiva cliente",
       "request": {
         "method": "PATCH",
         "header": [
@@ -329,7 +479,7 @@
       ]
     },
     {
-      "name": "10 - Alias /api/users funciona",
+      "name": "14 - Alias /api/users funciona",
       "request": {
         "method": "GET",
         "header": [
@@ -358,7 +508,7 @@
       ]
     },
     {
-      "name": "11 - Eliminar logicamente cliente",
+      "name": "15 - Admin elimina logicamente cliente",
       "request": {
         "method": "DELETE",
         "header": [
