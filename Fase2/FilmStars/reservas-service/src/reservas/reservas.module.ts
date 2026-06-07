@@ -10,6 +10,12 @@ import { ReservaRepository } from './repositories/reserva.repository';
 import { EstadoAsientoFuncionRepository } from './repositories/estado-asiento-funcion.repository';
 import { MensajeriaRepository } from './repositories/mensajeria.repository';
 
+
+import { ReservasService } from './services/reservas.service';
+import { DisponibilidadService } from './services/disponibilidad.service';
+import { ExpiracionService } from './services/expiracion.service';
+
+
 /**
  * Módulo principal del dominio de reservas
  */
@@ -26,11 +32,17 @@ import { MensajeriaRepository } from './repositories/mensajeria.repository';
     ReservaRepository,
     EstadoAsientoFuncionRepository,
     MensajeriaRepository,
+    ReservasService,
+    DisponibilidadService,
+    ExpiracionService,
   ],
   exports: [
     ReservaRepository,
     EstadoAsientoFuncionRepository,
     MensajeriaRepository,
+    ReservasService,
+    DisponibilidadService,
+    ExpiracionService,
   ],
 })
 export class ReservasModule {}

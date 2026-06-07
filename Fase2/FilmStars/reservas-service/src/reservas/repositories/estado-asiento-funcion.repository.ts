@@ -6,7 +6,11 @@ import { EstadoAsientoFuncionEntity } from '../entities/estado-asiento-funcion.e
 import { AsientoEstado } from '../../common/enums/asiento-estado.enum';
 
 /**
- * Manejo del estado de los asientos (clave para concurrencia)
+ * Repositorio encargado exclusivamente de acceso a datos
+ * de la tabla estado_asiento_funcion.
+ *
+ * SRP:
+ * Solo gestiona persistencia y consultas de asientos.
  */
 @Injectable()
 export class EstadoAsientoFuncionRepository {
@@ -15,13 +19,17 @@ export class EstadoAsientoFuncionRepository {
     private readonly repo: Repository<EstadoAsientoFuncionEntity>,
   ) {}
 
-  async findByFuncionId(funcionId: string) {
+  async findByFuncionId(funcionId: string): Promise<EstadoAsientoFuncionEntity[]> {
     return this.repo.find({
       where: { funcionIdRef: funcionId },
+      order: {
+        fila: 'ASC',
+        numero: 'ASC',
+      },
     });
   }
 
-  async findDisponiblesByIds(ids: string[]) {
+  async findDisponiblesByIds(ids: string[]): Promise<EstadoAsientoFuncionEntity[]> {
     return this.repo.find({
       where: {
         id: In(ids),
@@ -30,7 +38,17 @@ export class EstadoAsientoFuncionRepository {
     });
   }
 
-  async bloquearAsientos(ids: string[], reservaId: string, expiraEn: Date) {
+  async findByReservaId(reservaId: string): Promise<EstadoAsientoFuncionEntity[]> {
+    return this.repo.find({
+      where: { reservaId },
+      order: {
+        fila: 'ASC',
+        numero: 'ASC',
+      },
+    });
+  }
+
+  async bloquearAsientos(ids: string[], reservaId: string, expiraEn: Date): Promise<void> {
     await this.repo.update(
       { id: In(ids) },
       {
@@ -41,43 +59,53 @@ export class EstadoAsientoFuncionRepository {
     );
   }
 
-  async ocuparAsientos(ids: string[]) {
+  async ocuparAsientos(ids: string[]): Promise<void> {
     await this.repo.update(
       { id: In(ids) },
       {
         estado: AsientoEstado.OCUPADO,
-      },
-    );
-  }
-
-  async liberarAsientosPorReserva(reservaId: string) {
-    await this.repo.update(
-      { reservaId },
-      {
-        estado: AsientoEstado.DISPONIBLE,
-        reservaId: undefined,
         bloqueadoHasta: undefined,
       },
     );
   }
 
+  async liberarAsientosPorReserva(reservaId: string): Promise<void> {
+    await this.repo.update(
+      { reservaId },
+      {
+        estado: AsientoEstado.DISPONIBLE,
+        reservaId:  undefined,
+        bloqueadoHasta: undefined
+      },
+    );
+  }
+
   async countDisponibilidad(funcionId: string) {
-    const baseQuery = this.repo
-      .createQueryBuilder('a')
-      .where('a.funcion_id_ref = :funcionId', { funcionId });
+    const disponibles = await this.repo.count({
+      where: {
+        funcionIdRef: funcionId,
+        estado: AsientoEstado.DISPONIBLE,
+      },
+    });
 
-    const disponibles = await baseQuery
-      .andWhere('a.estado = :estado', { estado: AsientoEstado.DISPONIBLE })
-      .getCount();
+    const bloqueados = await this.repo.count({
+      where: {
+        funcionIdRef: funcionId,
+        estado: AsientoEstado.BLOQUEADO,
+      },
+    });
 
-    const bloqueados = await baseQuery
-      .andWhere('a.estado = :estado', { estado: AsientoEstado.BLOQUEADO })
-      .getCount();
+    const ocupados = await this.repo.count({
+      where: {
+        funcionIdRef: funcionId,
+        estado: AsientoEstado.OCUPADO,
+      },
+    });
 
-    const ocupados = await baseQuery
-      .andWhere('a.estado = :estado', { estado: AsientoEstado.OCUPADO })
-      .getCount();
-
-    return { disponibles, bloqueados, ocupados };
+    return {
+      disponibles,
+      bloqueados,
+      ocupados,
+    };
   }
 }
