@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Ticket, MapPin, ChevronRight } from 'lucide-react'
+import { Ticket, MapPin } from 'lucide-react'
 import { MovieGrid } from '@/components/movies/MoviesGrid'
 import { Button } from '@/components/ui/button'
 import { useMovies, useCities, useCinemas } from '@/hooks/useMovieData'
