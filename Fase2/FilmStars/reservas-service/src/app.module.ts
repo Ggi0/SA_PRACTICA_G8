@@ -1,10 +1,26 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+
+import { databaseConfig } from './config/database.config';
+
+/**
+ * Módulo principal de la aplicación
+ */
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    /**
+     * Carga variables de entorno automáticamente desde .env
+     */
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
+    /**
+     * Conexión a PostgreSQL usando TypeORM
+     */
+    TypeOrmModule.forRoot(databaseConfig),
+  ],
 })
 export class AppModule {}
