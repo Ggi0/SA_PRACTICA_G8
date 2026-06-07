@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Film, LogOut, User, ChevronDown, Settings } from 'lucide-react'
+import { CartIcon } from '@/components/shared/CartIcon'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +35,10 @@ export function Navbar() {
         {/* Acciones */}
         <nav className="flex items-center gap-3">
           {isAuthenticated ? (
+            <>
+          <CartIcon />
             <DropdownMenu>
+             
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-3 text-white hover:bg-white/10 hover:text-white">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full text-white"
@@ -76,6 +80,7 @@ export function Navbar() {
                   </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+             </>
           ) : (
             <>
               <Button variant="ghost" asChild className="text-white hover:bg-white/10 hover:text-white">

@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/toaster'
 import { processPayment } from '@/services/api/paymentsService'
 import { confirmReservation } from '@/services/api/reservationService'
 import { getTicket } from '@/services/api/paymentsService'
+import { useCartStore } from '@/context/cartStore'
 import { useCheckoutStore } from '@/context/checkoutStore'
 
 interface PaymentFormProps {
@@ -14,7 +15,8 @@ interface PaymentFormProps {
 }
 
 export function PaymentForm({ totalAmount }: PaymentFormProps) {
-  const { reservationId, setTicket } = useCheckoutStore()
+  const { items, clearCart } = useCartStore()
+  const { setTicket } = useCheckoutStore()
   const [isProcessing, setIsProcessing] = useState(false)
 
   const [fields, setFields] = useState({
@@ -45,14 +47,18 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
   }
 
   const handleSubmit = async () => {
-    if (!validate() || !reservationId) return
+    if (!validate() || items.length === 0) return
 
     setIsProcessing(true)
     try {
-      await confirmReservation(reservationId, totalAmount)
+      // Confirma todas las reservaciones del carrito → publica a RabbitMQ
+      await Promise.all(
+        items.map((item) => confirmReservation(item.id, item.totalAmount))
+      )
 
+      // Procesa el pago total
       const result = await processPayment({
-        reservationId,
+        reservationId: items.map((i) => i.id).join(','),
         cardNumber: fields.cardNumber,
         cardHolder: fields.cardHolder,
         expiryMonth: fields.expiryMonth,
@@ -61,15 +67,27 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
       })
 
       if (result.status === 'REJECTED') {
-        toast({ variant: 'destructive', title: 'Pago rechazado', description: 'Verifica los datos de tu tarjeta.' })
+        toast({
+          variant: 'destructive',
+          title: 'Pago rechazado',
+          description: 'Verifica los datos de tu tarjeta.',
+        })
         return
       }
 
-      const ticket = await getTicket(reservationId)
+      // Obtiene el boleto del primer item (en el futuro será uno por reservación)
+      const ticket = await getTicket(items[0].id)
+
+      // Limpia el carrito y navega a confirmación
+      clearCart()
       setTicket(ticket)
 
     } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Ocurrió un problema al procesar el pago.' })
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Ocurrió un problema al procesar el pago.',
+      })
     } finally {
       setIsProcessing(false)
     }
