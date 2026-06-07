@@ -16,6 +16,10 @@ import { DisponibilidadService } from './services/disponibilidad.service';
 import { ExpiracionService } from './services/expiracion.service';
 
 
+import { ReservasController } from './controllers/reservas.controller';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+
+
 /**
  * Módulo principal del dominio de reservas
  */
@@ -28,6 +32,7 @@ import { ExpiracionService } from './services/expiracion.service';
       MensajeriaEntity,
     ]),
   ],
+  controllers: [ReservasController],
   providers: [
     ReservaRepository,
     EstadoAsientoFuncionRepository,
@@ -35,6 +40,7 @@ import { ExpiracionService } from './services/expiracion.service';
     ReservasService,
     DisponibilidadService,
     ExpiracionService,
+    JwtAuthGuard,
   ],
   exports: [
     ReservaRepository,
