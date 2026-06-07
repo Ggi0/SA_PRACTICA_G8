@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, ShoppingCart } from 'lucide-react'
 import { SeatMap } from '@/components/seats/SeatMap'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/components/ui/toaster'
-import { useShowtime } from '@/hooks/useMovieData'
+import { useShowtime, useMovie } from '@/hooks/useMovieData'
 import { useCheckoutStore } from '@/context/checkoutStore'
+import { useCartStore } from '@/context/cartStore'
 import { useAuth } from '@/context/AuthContext'
 import { blockSeats } from '@/services/api/reservationService'
 
@@ -29,23 +30,44 @@ export function SeatsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: showtime } = useShowtime(showtimeId)
-  const { selectedSeats, setReservationId } = useCheckoutStore()
+  const { selectedSeats, selectedMovie, toggleSeat } = useCheckoutStore()
+  const { addItem } = useCartStore()
   const [isBlocking, setIsBlocking] = useState(false)
+
+  // Obtiene la película del store para agregarla al carrito
+  const movieId = showtime?.movieId
+  const { data: movie } = useMovie(movieId)
 
   const totalAmount = selectedSeats.length * (showtime?.price ?? 0)
 
-  const handleProceed = async () => {
-    if (!showtimeId || !user || selectedSeats.length === 0) return
+  const handleAddToCart = async () => {
+    if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
 
     setIsBlocking(true)
     try {
+      // Bloquea los asientos en el backend — inicia el countdown de 10 min
       const { reservationId } = await blockSeats(
         showtimeId,
         selectedSeats.map((s) => s.id),
         user.id
       )
-      setReservationId(reservationId)
-      navigate('/checkout')
+
+      // Agrega al carrito con toda la info necesaria para el checkout
+      addItem({
+        reservationId,
+        movie,
+        showtime,
+        seats: selectedSeats,
+        totalAmount,
+      })
+
+      toast({
+        title: '¡Agregado al carrito!',
+        description: `${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''} reservado${selectedSeats.length !== 1 ? 's' : ''}. Tienes 10 min para pagar.`,
+      })
+
+      navigate('/')
+
     } catch (err: unknown) {
       const isConflict = (err as { status?: number })?.status === 409
       toast({
@@ -59,7 +81,8 @@ export function SeatsPage() {
       setIsBlocking(false)
     }
   }
- return (
+
+  return (
     <div className="container mx-auto px-4 py-6">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6 -ml-2">
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -110,19 +133,19 @@ export function SeatsPage() {
             )}
 
             <Button
-              className="mt-5 w-full"
+              className="mt-5 w-full gap-2"
               disabled={selectedSeats.length === 0 || isBlocking}
-              onClick={handleProceed}
+              onClick={handleAddToCart}
             >
               {isBlocking ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Reservando...</>
+                <><Loader2 className="h-4 w-4 animate-spin" />Reservando...</>
               ) : (
-                `Continuar (${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''})`
+                <><ShoppingCart className="h-4 w-4" />Agregar al carrito</>
               )}
             </Button>
 
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              Tienes 10 min para completar el pago.
+              Los asientos se bloquean 10 min al agregar al carrito.
             </p>
           </div>
         </div>

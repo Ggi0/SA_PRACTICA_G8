@@ -51,7 +51,7 @@ export async function register(payload: RegisterRequest): Promise<AuthResponse> 
   }
 }
 
-// ─── Decodificar token (solo para UI, la verificación real es en el backend) ──
+// ─── Decodificar token ────────────────────────────────────────────────────────
 export function decodeToken(token: string): User | null {
   try {
     const payloadBase64 = token.split('.')[1]
