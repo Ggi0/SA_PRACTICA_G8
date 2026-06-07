@@ -10,6 +10,7 @@ services:
       - "5433:5432"
     volumes:
       - db_users_data:/var/lib/postgresql/data
+      - ./database/sql/users/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - filmstars-network
     healthcheck:
@@ -17,6 +18,81 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  db-movies:
+    image: postgres:15-alpine
+    container_name: filmstars-db-movies
+    environment:
+      POSTGRES_DB: filmstars_movies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_movies_data:/var/lib/postgresql/data
+      - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/movies/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_movies"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-reservations:
+    image: postgres:15-alpine
+    container_name: filmstars-db-reservations
+    environment:
+      POSTGRES_DB: filmstars_reservations
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5435:5432"
+    volumes:
+      - db_reservations_data:/var/lib/postgresql/data
+      - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/reservations/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_reservations"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-payments:
+    image: postgres:15-alpine
+    container_name: filmstars-db-payments
+    environment:
+      POSTGRES_DB: filmstars_payments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5436:5432"
+    volumes:
+      - db_payments_data:/var/lib/postgresql/data
+      - ./database/sql/payments/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: filmstars-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - filmstars-network
+    restart: unless-stopped
 
   users-service:
     build:
@@ -65,6 +141,9 @@ services:
 
 volumes:
   db_users_data:
+  db_movies_data:
+  db_reservations_data:
+  db_payments_data:
 
 networks:
   filmstars-network:
