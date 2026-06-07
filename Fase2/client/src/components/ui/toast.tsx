@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
 import { X } from 'lucide-react'
-import * as React from 'react'
 
 interface ToastProps {
   id: string

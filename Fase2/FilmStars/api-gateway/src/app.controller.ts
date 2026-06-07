@@ -11,9 +11,15 @@ export class AppController {
       timestamp: new Date().toISOString(),
       upstreams: {
         users: process.env.USERS_SERVICE_URL || 'http://localhost:3001',
+        movies: process.env.MOVIES_SERVICE_URL || 'http://localhost:3002',
       },
       routes: {
-        public: ['/api/auth/register', '/api/auth/login'],
+        public: [
+          '/api/auth/register',
+          '/api/auth/login',
+          '/api/movies',
+          '/api/movies/cities',
+        ],
         protected: ['/api/clientes', '/api/clientes/me', '/api/users'],
       },
     };
