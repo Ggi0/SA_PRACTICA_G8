@@ -18,6 +18,7 @@ interface RequestWithUser extends Request {
 const port = Number(process.env.PORT || process.env.API_GATEWAY_PORT || 8080);
 const jwtSecret = process.env.JWT_SECRET || 'filmstars_jwt_secret_key_2026';
 const usersServiceUrl = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
+const moviesServiceUrl = process.env.MOVIES_SERVICE_URL || 'http://localhost:3002';
 
 function jwtMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -58,6 +59,13 @@ function createUsersProxy(pathRewrite?: Record<string, string>) {
   });
 }
 
+function createMoviesProxy() {
+  return createProxyMiddleware({
+    target: moviesServiceUrl,
+    changeOrigin: true,
+  });
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
@@ -65,6 +73,9 @@ async function bootstrap(): Promise<void> {
   app.use('/api/auth', createUsersProxy());
   app.use('/api/clientes', jwtMiddleware, createUsersProxy());
   app.use('/api/users', jwtMiddleware, createUsersProxy({ '^/api/users': '/api/clientes' }));
+
+  // Movies service — rutas públicas (no requieren JWT para ver cartelera)
+  app.use('/api/movies', createMoviesProxy());
 
   await app.listen(port);
   console.log(`API Gateway (NestJS) listening on http://localhost:${port}`);
