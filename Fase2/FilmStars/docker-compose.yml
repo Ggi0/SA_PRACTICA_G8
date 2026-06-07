@@ -85,14 +85,23 @@ services:
     image: rabbitmq:3-management
     container_name: filmstars-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
     ports:
-      - "${RABBITMQ_PORT}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/filmstars.conf:ro
     networks:
       - filmstars-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   users-service:
     build:
@@ -121,20 +130,44 @@ services:
       - filmstars-network
     restart: unless-stopped
 
+  movies-service:
+    build:
+      context: ./movies-service
+      dockerfile: Dockerfile
+    container_name: filmstars-movies-service
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DB_HOST: db-movies
+      DB_PORT: 5432
+      DB_NAME: filmstars_movies
+      DB_USER: postgres
+      DB_PASS: postgres123
+    ports:
+      - "3002:3002"
+    depends_on:
+      db-movies:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+    restart: unless-stopped
+
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
     container_name: filmstars-api-gateway
     environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${API_GATEWAY_PORT}
-      JWT_SECRET: ${JWT_SECRET}
-      USERS_SERVICE_URL: ${USERS_SERVICE_URL_INTERNAL}
+      NODE_ENV: development
+      PORT: 8080
+      JWT_SECRET: filmstars_jwt_secret_key_2026
+      USERS_SERVICE_URL: http://users-service:3001
+      MOVIES_SERVICE_URL: http://movies-service:3002
     ports:
       - "${API_GATEWAY_PORT}:8080"
     depends_on:
       - users-service
+      - movies-service
     networks:
       - filmstars-network
     restart: unless-stopped
@@ -144,6 +177,7 @@ volumes:
   db_movies_data:
   db_reservations_data:
   db_payments_data:
+  rabbitmq_data:
 
 networks:
   filmstars-network:
