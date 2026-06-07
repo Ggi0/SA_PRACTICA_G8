@@ -29,7 +29,7 @@ async function bootstrap() {
     if (dataSource.isInitialized) {
       console.log('Conexión a PostgreSQL establecida correctamente');
       console.log(`Base de datos: ${dataSource.options.database}`);
-      console.log(`🖥️ Host: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+      console.log(`Host: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
       console.log(dataSource.options);
     } else {
       console.error('DataSource NO inicializado');
