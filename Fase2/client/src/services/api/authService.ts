@@ -1,55 +1,55 @@
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types'
-import { MOCK_USERS } from '@/services/mock/mockData'
+import axios from 'axios'
 
-// Simula delay de red para que la UI se sienta realista
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const api = axios.create({
+  baseURL: 'http://localhost:8080',
+  headers: { 'Content-Type': 'application/json' },
+})
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {
-  await delay(600)
+  const { data } = await api.post('/api/auth/login', credentials)
 
-  const user = MOCK_USERS.find((u) => u.email === credentials.email)
-  if (!user || credentials.password.length < 4) {
-    throw new Error('Credenciales inválidas')
+  return {
+    token: data.access_token,   // el backend usa access_token
+    user: {
+      id: data.user.id,
+      name: data.user.nombre,   // el backend usa nombre
+      email: data.user.email,
+      role: data.user.rol === 'admin' ? 'ADMIN' : 'USER',
+    },
   }
-
-  // JWT simulado — solo para desarrollo, la validación real es en el backend
-  const fakePayload = btoa(JSON.stringify({ sub: user.id, name: user.name, role: user.role }))
-  const fakeToken = `header.${fakePayload}.signature`
-
-  return { token: fakeToken, user }
 }
 
 // ─── Registro ─────────────────────────────────────────────────────────────────
 export async function register(payload: RegisterRequest): Promise<AuthResponse> {
-  await delay(800)
-
-  const exists = MOCK_USERS.find((u) => u.email === payload.email)
-  if (exists) throw new Error('El correo ya está registrado')
-
-  const newUser: User = {
-    id: `u${Date.now()}`,
-    name: payload.name,
+  const { data } = await api.post('/api/auth/register', {
+    nombre: payload.name,
     email: payload.email,
-    role: 'USER',
+    password: payload.password,
+  })
+
+  return {
+    token: data.access_token,
+    user: {
+      id: data.user.id,
+      name: data.user.nombre,
+      email: data.user.email,
+      role: data.user.rol === 'admin' ? 'ADMIN' : 'USER',
+    },
   }
-
-  const fakePayload = btoa(JSON.stringify({ sub: newUser.id, name: newUser.name, role: newUser.role }))
-  const fakeToken = `header.${fakePayload}.signature`
-
-  return { token: fakeToken, user: newUser }
 }
 
-// ─── Decodificar token (solo para UI, la verificación real es en el backend) ──
+// ─── Decodificar token ────────────────────────────────────────────────────────
 export function decodeToken(token: string): User | null {
   try {
     const payloadBase64 = token.split('.')[1]
     const decoded = JSON.parse(atob(payloadBase64))
     return {
       id: decoded.sub,
-      name: decoded.name,
+      name: decoded.nombre ?? decoded.name,
       email: decoded.email ?? '',
-      role: decoded.role,
+      role: decoded.rol === 'admin' ? 'ADMIN' : 'USER',
     }
   } catch {
     return null
