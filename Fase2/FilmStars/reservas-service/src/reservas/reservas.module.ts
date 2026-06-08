@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 
 import { ReservaEntity } from './entities/reserva.entity';
 import { EstadoAsientoFuncionEntity } from './entities/estado-asiento-funcion.entity';
@@ -19,10 +21,12 @@ import { ExpiracionService } from './services/expiracion.service';
 import { ReservasController } from './controllers/reservas.controller';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+import { MessagingModule } from '../messaging/messaging.module';
 
 /**
  * Módulo principal del dominio de reservas
  */
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -31,8 +35,12 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
       ReservaAsientoEntity,
       MensajeriaEntity,
     ]),
+
+    forwardRef(() => MessagingModule), // ✅ AQUÍ VA
   ],
+
   controllers: [ReservasController],
+
   providers: [
     ReservaRepository,
     EstadoAsientoFuncionRepository,
@@ -42,6 +50,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
     ExpiracionService,
     JwtAuthGuard,
   ],
+
   exports: [
     ReservaRepository,
     EstadoAsientoFuncionRepository,

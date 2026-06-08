@@ -972,3 +972,31 @@ Yo haría esto en este orden:
 
 ***
 
+
+
+
+
+```
+
+gio@gio:~$ sudo docker ps
+[sudo] contraseña para gio: 
+CONTAINER ID   IMAGE                            COMMAND                  CREATED              STATUS                          PORTS                                                                                                                                                     NAMES
+76ec81a238a5   filmstars-api-gateway            "docker-entrypoint.s…"   50 seconds ago       Up 39 seconds                   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp                                                                                                               filmstars-api-gateway
+e21630044da8   filmstars-reservations-service   "docker-entrypoint.s…"   About a minute ago   Restarting (1) 12 seconds ago                                                                                                                                                             filmstars-reservations-service
+839ec58a8bf8   postgres:15-alpine               "docker-entrypoint.s…"   About a minute ago   Up 39 seconds (healthy)         0.0.0.0:5435->5432/tcp, [::]:5435->5432/tcp                                                                                                               filmstars-db-reservations
+90e4b4ec6b39   filmstars-users-service          "docker-entrypoint.s…"   About a minute ago   Up 39 seconds                   0.0.0.0:3001->3001/tcp, [::]:3001->3001/tcp                                                                                                               filmstars-users-service
+5bdb89dee963   filmstars-movies-service         "docker-entrypoint.s…"   About a minute ago   Up 39 seconds                   0.0.0.0:3002->3002/tcp, [::]:3002->3002/tcp                                                                                                               filmstars-movies-service
+2445b3b4cfb3   postgres:15-alpine               "docker-entrypoint.s…"   3 hours ago          Up 3 hours (healthy)            0.0.0.0:5434->5432/tcp, [::]:5434->5432/tcp                                                                                                               filmstars-db-movies
+ae931340ae2d   rabbitmq:3-management            "docker-entrypoint.s…"   3 hours ago          Up 3 hours (healthy)            4369/tcp, 5671/tcp, 0.0.0.0:5672->5672/tcp, [::]:5672->5672/tcp, 15671/tcp, 15691-15692/tcp, 25672/tcp, 0.0.0.0:15672->15672/tcp, [::]:15672->15672/tcp   filmstars-rabbitmq
+22187a5f14ee   postgres:15-alpine               "docker-entrypoint.s…"   3 hours ago          Up 3 hours (healthy)            0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp                                                                                                               filmstars-db-users
+c7db36433baa   postgres:15-alpine               "docker-entrypoint.s…"   3 hours ago          Up 3 hours (healthy)            0.0.0.0:5436->5432/tcp, [::]:5436->5432/tcp                                                                                                               filmstars-db-payments
+46ac8854cefe   fase2-frontend                   "/docker-entrypoint.…"   8 weeks ago          Up 7 hours                      0.0.0.0:5173->80/tcp, [::]:5173->80/tcp                                                                                                                   ayd2-g13-frontend
+7c0426bf2199   fase2-backend                    "docker-entrypoint.s…"   8 weeks ago          Up 7 hours                      3001/tcp                                                                                                                                                  ayd2-g13-backend
+gio@gio:~$ 
+
+```
+
+
+sudo docker logs filmstars-reservations-service
+
+sudo docker logs -f filmstars-reservations-service

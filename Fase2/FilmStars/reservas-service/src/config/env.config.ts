@@ -28,4 +28,13 @@ jwt: {
     timeoutMinutes: parseInt(process.env.RESERVATION_TIMEOUT_MINUTES ?? '10', 10),
   },
 
+
+rabbit: {
+  host: process.env.RABBITMQ_HOST,
+  port: parseInt(process.env.RABBITMQ_PORT ?? '5672', 10),
+  user: process.env.RABBITMQ_USER,
+  pass: process.env.RABBITMQ_PASS,
+},
+
+
 };

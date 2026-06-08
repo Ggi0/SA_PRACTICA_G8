@@ -20,6 +20,8 @@ import { AsientoNoDisponibleException } from '../../common/exceptions/asiento-no
 import { ReservaNoEncontradaException } from '../../common/exceptions/reserva-no-encontrada.exception';
 import { ReservaInvalidaException } from '../../common/exceptions/reserva-invalida.exception';
 
+import { RabbitMQPublisher } from '../../messaging/rabbitmq.publisher';
+
 /**
  * Service central del dominio de reservas.
  *
@@ -47,6 +49,8 @@ export class ReservasService {
     private readonly dataSource: DataSource,
     private readonly reservaRepository: ReservaRepository,
     private readonly estadoAsientoRepository: EstadoAsientoFuncionRepository,
+    private readonly publisher: RabbitMQPublisher,
+
 
     @InjectRepository(ReservaAsientoEntity)
     private readonly reservaAsientoOrmRepo: Repository<ReservaAsientoEntity>,
@@ -167,6 +171,14 @@ export class ReservasService {
         }),
       );
 
+      await this.publisher.publish('seat_hold_queue', {
+  reservaId: reservaGuardada.id,
+  usuarioId,
+  funcionId,
+  asientos: asientos.map(a => a.id),
+  expiraEn,
+});
+
       return {
         id: reservaGuardada.id,
         estado: reservaGuardada.estado,
@@ -269,6 +281,13 @@ export class ReservasService {
         }),
       );
 
+
+await this.publisher.publish('seat_release_queue', {
+  reservaId: reserva.id,
+});
+
+
+
       return {
         message: 'Reserva cancelada',
       };
@@ -281,54 +300,86 @@ export class ReservasService {
    * - reserva PENDIENTE -> CONFIRMADA
    * - asientos BLOQUEADO -> OCUPADO
    */
-  async confirmarReserva(id: string, referenciaPagoRef?: string) {
-    return this.dataSource.transaction(async (manager) => {
-      const reservaRepoTx = manager.getRepository(ReservaEntity);
-      const asientoRepoTx = manager.getRepository(EstadoAsientoFuncionEntity);
+async confirmarReserva(id: string, referenciaPagoRef?: string) {
+  return this.dataSource.transaction(async (manager) => {
+    const reservaRepoTx = manager.getRepository(ReservaEntity);
+    const asientoRepoTx = manager.getRepository(EstadoAsientoFuncionEntity);
+    const mensajeriaRepoTx = manager.getRepository(MensajeriaEntity);
 
-      const reserva = await reservaRepoTx
-        .createQueryBuilder('reserva')
-        .setLock('pessimistic_write')
-        .where('reserva.id = :id', { id })
-        .getOne();
+    const reserva = await reservaRepoTx
+      .createQueryBuilder('reserva')
+      .setLock('pessimistic_write')
+      .where('reserva.id = :id', { id })
+      .getOne();
 
-      if (!reserva) {
-        throw new ReservaNoEncontradaException();
-      }
+    if (!reserva) {
+      throw new ReservaNoEncontradaException();
+    }
 
-      if (reserva.estado !== ReservaEstado.PENDIENTE) {
-        throw new ReservaInvalidaException(
-          'Solo se pueden confirmar reservas en estado PENDIENTE',
-        );
-      }
+    if (reserva.estado !== ReservaEstado.PENDIENTE) {
+      throw new ReservaInvalidaException(
+        'Solo se pueden confirmar reservas en estado PENDIENTE',
+      );
+    }
 
-      const asientos = await asientoRepoTx
-        .createQueryBuilder('asiento')
-        .setLock('pessimistic_write')
-        .where('asiento.reserva_id = :reservaId', { reservaId: reserva.id })
-        .getMany();
+    const asientos = await asientoRepoTx
+      .createQueryBuilder('asiento')
+      .setLock('pessimistic_write')
+      .where('asiento.reserva_id = :reservaId', { reservaId: reserva.id })
+      .getMany();
 
-      reserva.estado = ReservaEstado.CONFIRMADA;
-      reserva.modificacion = new Date();
+    reserva.estado = ReservaEstado.CONFIRMADA;
+    reserva.modificacion = new Date();
 
-      if (referenciaPagoRef) {
-        reserva.referenciaPagoRef = referenciaPagoRef;
-      }
+    if (referenciaPagoRef) {
+      reserva.referenciaPagoRef = referenciaPagoRef;
+    }
 
-      await reservaRepoTx.save(reserva);
+    await reservaRepoTx.save(reserva);
 
-      for (const asiento of asientos) {
-        asiento.estado = AsientoEstado.OCUPADO;
-        asiento.bloqueadoHasta = undefined;
-        asiento.modificacion = new Date();
-      }
+    for (const asiento of asientos) {
+      asiento.estado = AsientoEstado.OCUPADO;
+      asiento.bloqueadoHasta = undefined;
+      asiento.modificacion = new Date();
+    }
 
-      await asientoRepoTx.save(asientos);
+    await asientoRepoTx.save(asientos);
 
-      return {
-        estado: reserva.estado,
-      };
+    // Guardar en outbox (MensajeriaEntity)
+    await mensajeriaRepoTx.save(
+      mensajeriaRepoTx.create({
+        servicioOrigen: 'reservas-service',
+        agregadoTipo: 'reserva',
+        agregadoId: reserva.id,
+        tipoEvento: 'reserva.confirmada',
+        payloadJson: {
+          reservaId: reserva.id,
+          total: reserva.precioTotal,
+        },
+        estado: MensajeriaEstado.PENDIENTE,
+        fechaCreacion: new Date(),
+      }),
+    );
+
+    /**
+     *  Publicar eventos externos
+     */
+
+    // A) Mandar a pago
+    await this.publisher.publish('payment_process_queue', {
+      reservaId: reserva.id,
+      total: reserva.precioTotal,
     });
-  }
+
+    // B) Ticket emitido
+    await this.publisher.publish('ticket_issued_queue', {
+      reservaId: reserva.id,
+    });
+
+    return {
+      estado: reserva.estado,
+    };
+  });
 }
-``
+
+}

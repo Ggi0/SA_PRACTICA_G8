@@ -7,6 +7,10 @@ import { databaseConfig } from './config/database.config';
 import { ReservasModule } from './reservas/reservas.module';
 
 
+import { HealthModule } from './health/health.module';
+import { MessagingModule } from './messaging/messaging.module';
+
+
 /**
  * Módulo principal de la aplicación
  */
@@ -25,6 +29,8 @@ import { ReservasModule } from './reservas/reservas.module';
     TypeOrmModule.forRoot(databaseConfig),
 
     ReservasModule,
+    MessagingModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

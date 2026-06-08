@@ -9,6 +9,10 @@ import { ReservaEstado } from '../../common/enums/reserva-estado.enum';
 import { AsientoEstado } from '../../common/enums/asiento-estado.enum';
 import { MensajeriaEstado } from '../../common/enums/mensajeria-estado.enum';
 
+import { RabbitMQPublisher } from '../../messaging/rabbitmq.publisher';
+
+
+
 /**
  * Service encargado exclusivamente de expirar reservas vencidas.
  *
@@ -17,13 +21,17 @@ import { MensajeriaEstado } from '../../common/enums/mensajeria-estado.enum';
  */
 @Injectable()
 export class ExpiracionService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly publisher: RabbitMQPublisher, // ✅ nueva dependencia
+  ) {}
 
   /**
    * Busca reservas PENDIENTE vencidas y:
    * - las marca como EXPIRADA
    * - libera sus asientos
    * - registra evento reserva.expirada en outbox
+   * - publica evento en seat_release_queue
    */
   async expirarReservasVencidas() {
     return this.dataSource.transaction(async (manager) => {
@@ -75,6 +83,11 @@ export class ExpiracionService {
             fechaCreacion: new Date(),
           }),
         );
+
+        // ✅ Publicar en la cola de liberación
+        await this.publisher.publish('seat_release_queue', {
+          reservaId: reserva.id,
+        });
       }
 
       return {
