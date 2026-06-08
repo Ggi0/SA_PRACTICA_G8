@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cinemax-frontend
+    ports:
+      - "80:80"
+   
+    restart: unless-stopped
+
+networks:
+  default:
+    name: cinemax-network
