@@ -84,6 +84,7 @@ export interface MyReservationItem {
   id: string
   estado: 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA'
   precioTotal: number
+  fechaCreacion?: string
 }
 
 export interface CreateReservationResult {

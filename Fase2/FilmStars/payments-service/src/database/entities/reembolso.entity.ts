@@ -6,6 +6,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 
 import { PagoEntity } from './pago.entity';
@@ -21,13 +22,13 @@ export class ReembolsoEntity {
   @Column()
   motivo: string;
 
-  @Column({ default: 'PENDIENTE' })
+  @Column({ type: 'varchar', length: 50, default: 'PENDIENTE' })
   estado: string;
 
-  @Column({ name: 'creado_en' })
+  @CreateDateColumn({ name: 'creado_en', type: 'timestamp' })
   creadoEn: Date;
 
-  @Column({ name: 'procesado_en', nullable: true })
+  @Column({ name: 'procesado_en', type: 'timestamp', nullable: true })
   procesadoEn?: Date;
 
   @ManyToOne(() => PagoEntity, (pago) => pago.reembolsos, { onDelete: 'CASCADE' })

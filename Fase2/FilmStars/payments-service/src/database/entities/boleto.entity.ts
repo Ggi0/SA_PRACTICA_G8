@@ -6,6 +6,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,   // 👈 agregado
 } from 'typeorm';
 
 import { PagoEntity } from './pago.entity';
@@ -27,10 +28,10 @@ export class BoletoEntity {
   @Column({ name: 'codigo_qr', nullable: true })
   codigoQr?: string;
 
-  @Column({ default: 'EMITIDO' })
+  @Column({ type: 'varchar', length: 50, default: 'EMITIDO' })
   estado: string;
 
-  @Column({ name: 'creado' })
+  @CreateDateColumn({ name: 'creado', type: 'timestamp' })
   creado: Date;
 
   @ManyToOne(() => PagoEntity, (pago) => pago.boletos, { onDelete: 'CASCADE' })

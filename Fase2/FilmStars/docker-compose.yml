@@ -164,6 +164,8 @@ services:
       USERS_SERVICE_URL: http://users-service:3001
       MOVIES_SERVICE_URL: http://movies-service:3002
       RESERVAS_SERVICE_URL: http://reservations-service:3003
+      PAYMENTS_SERVICE_URL: http://payments-service:3004 
+
       
     ports:
       - "8080:8080"
@@ -206,6 +208,62 @@ services:
     networks:
       - filmstars-network
     restart: unless-stopped  
+
+  payments-service:
+      build:
+        context: ./payments-service
+        dockerfile: Dockerfile
+      container_name: filmstars-payments-service
+      environment:
+        NODE_ENV: development
+        PORT: 3004
+
+        DB_HOST: db-payments
+        DB_PORT: 5432
+        DB_NAME: filmstars_payments
+        DB_USER: postgres
+        DB_PASS: postgres123
+
+        JWT_SECRET: filmstars_jwt_secret_key_2026
+
+        RABBITMQ_HOST: rabbitmq
+        RABBITMQ_PORT: 5672
+        RABBITMQ_USER: admin
+        RABBITMQ_PASS: admin123
+
+      ports:
+        - "3004:3004"
+
+      depends_on:
+        db-payments:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+
+      networks:
+        - filmstars-network
+
+      restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+
+    container_name: filmstars-frontend
+
+    ports:
+      - "5173:80"
+
+    depends_on:
+      - api-gateway
+
+    networks:
+      - filmstars-network
+
+    restart: unless-stopped
+
+
 
 volumes:
   db_users_data:

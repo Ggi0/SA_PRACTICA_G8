@@ -20,6 +20,8 @@ const jwtSecret = process.env.JWT_SECRET || 'filmstars_jwt_secret_key_2026';
 const usersServiceUrl = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
 const moviesServiceUrl = process.env.MOVIES_SERVICE_URL || 'http://localhost:3002';
 const reservasServiceUrl = process.env.RESERVAS_SERVICE_URL || 'http://localhost:3003';
+const paymentsServiceUrl =
+  process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004';
 
 function jwtMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -91,6 +93,28 @@ function createReservasProxy() {
 }
 
 
+function createPaymentsProxy() {
+  return createProxyMiddleware({
+    target: paymentsServiceUrl,
+    changeOrigin: true,
+
+    pathRewrite: {
+      '^/api': '',
+    },
+
+    logLevel: 'debug',
+
+    onProxyReq: (proxyReq, req: RequestWithUser) => {
+      if (req.user) {
+        proxyReq.setHeader('X-User-Id', req.user.id);
+        proxyReq.setHeader('X-User-Email', req.user.email);
+        proxyReq.setHeader('X-User-Nombre', req.user.nombre);
+        proxyReq.setHeader('X-User-Rol', req.user.rol);
+      }
+    },
+  });
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
@@ -111,6 +135,17 @@ async function bootstrap(): Promise<void> {
   '/api/reservas',
   jwtMiddleware, // puedes quitarlo en endpoints públicos si quieres
   createReservasProxy(),
+);
+
+
+// ==========================
+// PAYMENTS SERVICE
+// ==========================
+
+app.use(
+  '/api/payments',
+  jwtMiddleware, // ✅ igual que reservas
+  createPaymentsProxy(),
 );
 
 

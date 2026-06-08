@@ -1,27 +1,26 @@
 // src/app.module.ts
 
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { databaseConfig } from './config/database.config';
 
-/**
- * Módulo principal del payments-service
- */
+import { PaymentsModule } from './payments/payments.module';
+import { HealthModule } from './health/health.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { ConsumersModule } from './consumers/consumers.module';
+
 @Module({
   imports: [
-    /**
-     * Variables de entorno globales
-     */
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
-    /**
-     * Conexión a PostgreSQL
-     */
     TypeOrmModule.forRoot(databaseConfig),
+    MessagingModule,
+    PaymentsModule,
+    ConsumersModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

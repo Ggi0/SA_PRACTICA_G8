@@ -27,11 +27,11 @@ export class MensajeriaEntity {
   @Column({ name: 'payload_json', type: 'jsonb' })
   payload: Record<string, any>;
 
-  @Column({ default: 'PENDIENTE' })
-  estado: string;
+@Column({ type: 'varchar', length: 50, default: 'PENDIENTE' })
+estado: string;
 
-  @CreateDateColumn({ name: 'fecha_creacion' })
-  fechaCreacion: Date;
+@CreateDateColumn({ name: 'fecha_creacion', type: 'timestamp' })
+fechaCreacion: Date;
 
   @Column({ name: 'fecha_procesado', nullable: true })
   fechaProcesado?: Date;

@@ -31,12 +31,9 @@ export class PagoEntity {
   @Column({ type: 'varchar', default: 'GTQ' })
   moneda: string;
 
-  @Column({
-    type: 'enum',
-    enum: PagoEstado,
-    default: PagoEstado.PENDIENTE,
-  })
-  estado: PagoEstado;
+  @Column({ type: 'varchar', length: 50, default: PagoEstado.PENDIENTE })
+estado: PagoEstado;
+
 
   @Column({ name: 'metodo_pago', type: 'varchar' })
   metodoPago: string;
