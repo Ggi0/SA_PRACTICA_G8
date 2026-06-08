@@ -1,0 +1,184 @@
+services:
+  db-users:
+    image: postgres:15-alpine
+    container_name: filmstars-db-users
+    environment:
+      POSTGRES_DB: filmstars_users
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+      - ./database/sql/users/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-movies:
+    image: postgres:15-alpine
+    container_name: filmstars-db-movies
+    environment:
+      POSTGRES_DB: filmstars_movies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_movies_data:/var/lib/postgresql/data
+      - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/movies/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_movies"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-reservations:
+    image: postgres:15-alpine
+    container_name: filmstars-db-reservations
+    environment:
+      POSTGRES_DB: filmstars_reservations
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5435:5432"
+    volumes:
+      - db_reservations_data:/var/lib/postgresql/data
+      - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/sql/reservations/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_reservations"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-payments:
+    image: postgres:15-alpine
+    container_name: filmstars-db-payments
+    environment:
+      POSTGRES_DB: filmstars_payments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5436:5432"
+    volumes:
+      - db_payments_data:/var/lib/postgresql/data
+      - ./database/sql/payments/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - filmstars-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: filmstars-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/filmstars.conf:ro
+    networks:
+      - filmstars-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: filmstars-users-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DB_HOST: db-users
+      DB_PORT: 5432
+      DB_NAME: filmstars_users
+      DB_USER: postgres
+      DB_PASS: postgres123
+      JWT_SECRET: filmstars_jwt_secret_key_2026
+      JWT_EXPIRES_IN: 24h
+      DEFAULT_ADMIN_NAME: FilmStars Admin
+      DEFAULT_ADMIN_EMAIL: admin@filmstars.com
+      DEFAULT_ADMIN_PASSWORD: admin12345
+    ports:
+      - "3001:3001"
+    depends_on:
+      db-users:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+    restart: unless-stopped
+
+  movies-service:
+    build:
+      context: ./movies-service
+      dockerfile: Dockerfile
+    container_name: filmstars-movies-service
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DB_HOST: db-movies
+      DB_PORT: 5432
+      DB_NAME: filmstars_movies
+      DB_USER: postgres
+      DB_PASS: postgres123
+    ports:
+      - "3002:3002"
+    depends_on:
+      db-movies:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: filmstars-api-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      JWT_SECRET: filmstars_jwt_secret_key_2026
+      USERS_SERVICE_URL: http://users-service:3001
+      MOVIES_SERVICE_URL: http://movies-service:3002
+    ports:
+      - "8080:8080"
+    depends_on:
+      - users-service
+      - movies-service
+    networks:
+      - filmstars-network
+    restart: unless-stopped
+
+volumes:
+  db_users_data:
+  db_movies_data:
+  db_reservations_data:
+  db_payments_data:
+  rabbitmq_data:
+
+networks:
+  filmstars-network:
+    driver: bridge

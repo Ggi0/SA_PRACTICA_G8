@@ -1,0 +1,60 @@
+{
+  "rabbit_version": "3.12.0",
+  "users": [
+    {
+      "name": "admin",
+      "password_hash": "V0KSdWbHqRQiN63T0r0h9yNhCY7mH58FP0aeWmAZhUHTk/oQ",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [{ "name": "/" }],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "seat_hold_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-message-ttl": 600000 }
+    },
+    {
+      "name": "seat_release_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payment_process_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payment_result_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "ticket_issued_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [],
+  "bindings": []
+}
