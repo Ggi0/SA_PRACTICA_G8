@@ -1,6 +1,6 @@
 # Diagrama de Actividades – Flujo de Compra de Boletos
 
-![](./img/diagrama_actividad_v2.png)
+![](./img/diagrama-actividades-jwt.png)
 
 # Justificación del enfoque utilizado
 

@@ -3,18 +3,18 @@ services:
     image: postgres:15-alpine
     container_name: filmstars-db-users
     environment:
-      POSTGRES_DB: filmstars_users
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${USERS_DB_NAME}
+      POSTGRES_USER: ${USERS_DB_USER}
+      POSTGRES_PASSWORD: ${USERS_DB_PASS}
     ports:
-      - "5433:5432"
+      - "${USERS_DB_PORT}:5432"
     volumes:
       - db_users_data:/var/lib/postgresql/data
       - ./database/sql/users/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - filmstars-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_users"]
+      test: ["CMD-SHELL", "pg_isready -U ${USERS_DB_USER} -d ${USERS_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,11 +23,11 @@ services:
     image: postgres:15-alpine
     container_name: filmstars-db-movies
     environment:
-      POSTGRES_DB: filmstars_movies
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${MOVIES_DB_NAME}
+      POSTGRES_USER: ${MOVIES_DB_USER}
+      POSTGRES_PASSWORD: ${MOVIES_DB_PASS}
     ports:
-      - "5434:5432"
+      - "${MOVIES_DB_PORT}:5432"
     volumes:
       - db_movies_data:/var/lib/postgresql/data
       - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/01_init.sql
@@ -35,7 +35,7 @@ services:
     networks:
       - filmstars-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_movies"]
+      test: ["CMD-SHELL", "pg_isready -U ${MOVIES_DB_USER} -d ${MOVIES_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -44,11 +44,11 @@ services:
     image: postgres:15-alpine
     container_name: filmstars-db-reservations
     environment:
-      POSTGRES_DB: filmstars_reservations
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${RESERVATIONS_DB_NAME}
+      POSTGRES_USER: ${RESERVATIONS_DB_USER}
+      POSTGRES_PASSWORD: ${RESERVATIONS_DB_PASS}
     ports:
-      - "5435:5432"
+      - "${RESERVATIONS_DB_PORT}:5432"
     volumes:
       - db_reservations_data:/var/lib/postgresql/data
       - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
@@ -56,7 +56,7 @@ services:
     networks:
       - filmstars-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_reservations"]
+      test: ["CMD-SHELL", "pg_isready -U ${RESERVATIONS_DB_USER} -d ${RESERVATIONS_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -65,18 +65,18 @@ services:
     image: postgres:15-alpine
     container_name: filmstars-db-payments
     environment:
-      POSTGRES_DB: filmstars_payments
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${PAYMENTS_DB_NAME}
+      POSTGRES_USER: ${PAYMENTS_DB_USER}
+      POSTGRES_PASSWORD: ${PAYMENTS_DB_PASS}
     ports:
-      - "5436:5432"
+      - "${PAYMENTS_DB_PORT}:5432"
     volumes:
       - db_payments_data:/var/lib/postgresql/data
       - ./database/sql/payments/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - filmstars-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d filmstars_payments"]
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENTS_DB_USER} -d ${PAYMENTS_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -109,20 +109,20 @@ services:
       dockerfile: Dockerfile
     container_name: filmstars-users-service
     environment:
-      NODE_ENV: development
-      PORT: 3001
-      DB_HOST: db-users
-      DB_PORT: 5432
-      DB_NAME: filmstars_users
-      DB_USER: postgres
-      DB_PASS: postgres123
-      JWT_SECRET: filmstars_jwt_secret_key_2026
-      JWT_EXPIRES_IN: 24h
-      DEFAULT_ADMIN_NAME: FilmStars Admin
-      DEFAULT_ADMIN_EMAIL: admin@filmstars.com
-      DEFAULT_ADMIN_PASSWORD: admin12345
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${USERS_SERVICE_PORT}
+      DB_HOST: ${USERS_DB_HOST_INTERNAL}
+      DB_PORT: ${USERS_DB_PORT_INTERNAL}
+      DB_NAME: ${USERS_DB_NAME}
+      DB_USER: ${USERS_DB_USER}
+      DB_PASS: ${USERS_DB_PASS}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      DEFAULT_ADMIN_NAME: ${DEFAULT_ADMIN_NAME}
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD}
     ports:
-      - "3001:3001"
+      - "${USERS_SERVICE_PORT}:3001"
     depends_on:
       db-users:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
       USERS_SERVICE_URL: http://users-service:3001
       MOVIES_SERVICE_URL: http://movies-service:3002
     ports:
-      - "8080:8080"
+      - "${API_GATEWAY_PORT}:8080"
     depends_on:
       - users-service
       - movies-service
