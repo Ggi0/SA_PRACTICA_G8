@@ -51,7 +51,8 @@ services:
       - "5435:5432"
     volumes:
       - db_reservations_data:/var/lib/postgresql/data
-      - ./reservas-service/src/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./reservas-service/src/docker/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./reservas-service/src/docker/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     networks:
       - filmstars-network
     healthcheck:
@@ -162,6 +163,8 @@ services:
       JWT_SECRET: filmstars_jwt_secret_key_2026
       USERS_SERVICE_URL: http://users-service:3001
       MOVIES_SERVICE_URL: http://movies-service:3002
+      RESERVAS_SERVICE_URL: http://reservations-service:3003
+      
     ports:
       - "8080:8080"
     depends_on:

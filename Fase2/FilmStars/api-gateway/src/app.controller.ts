@@ -12,6 +12,7 @@ export class AppController {
       upstreams: {
         users: process.env.USERS_SERVICE_URL || 'http://localhost:3001',
         movies: process.env.MOVIES_SERVICE_URL || 'http://localhost:3002',
+        reservas: process.env.RESERVAS_SERVICE_URL || 'http://localhost:3003',
       },
       routes: {
         public: [

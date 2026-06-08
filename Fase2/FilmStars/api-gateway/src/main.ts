@@ -19,6 +19,7 @@ const port = Number(process.env.PORT || process.env.API_GATEWAY_PORT || 8080);
 const jwtSecret = process.env.JWT_SECRET || 'filmstars_jwt_secret_key_2026';
 const usersServiceUrl = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
 const moviesServiceUrl = process.env.MOVIES_SERVICE_URL || 'http://localhost:3002';
+const reservasServiceUrl = process.env.RESERVAS_SERVICE_URL || 'http://localhost:3003';
 
 function jwtMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -66,6 +67,30 @@ function createMoviesProxy() {
   });
 }
 
+
+function createReservasProxy() {
+  return createProxyMiddleware({
+    target: reservasServiceUrl,
+    changeOrigin: true,
+
+    pathRewrite: {
+      '^/api': '', // ✅ CLAVE
+    },
+
+    logLevel: 'debug', // opcional para ver qué está pasando
+
+    onProxyReq: (proxyReq, req: RequestWithUser) => {
+      if (req.user) {
+        proxyReq.setHeader('X-User-Id', req.user.id);
+        proxyReq.setHeader('X-User-Email', req.user.email);
+        proxyReq.setHeader('X-User-Nombre', req.user.nombre);
+        proxyReq.setHeader('X-User-Rol', req.user.rol);
+      }
+    },
+  });
+}
+
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
@@ -76,6 +101,19 @@ async function bootstrap(): Promise<void> {
 
   // Movies service — rutas públicas (no requieren JWT para ver cartelera)
   app.use('/api/movies', createMoviesProxy());
+
+
+  // ==========================
+  // RESERVAS SERVICE
+  // ==========================
+
+  app.use(
+  '/api/reservas',
+  jwtMiddleware, // puedes quitarlo en endpoints públicos si quieres
+  createReservasProxy(),
+);
+
+
 
   await app.listen(port);
   console.log(`API Gateway (NestJS) listening on http://localhost:${port}`);

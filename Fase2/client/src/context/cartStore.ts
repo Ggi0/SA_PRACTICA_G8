@@ -15,7 +15,7 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'id' | 'blockedAt' | 'expiresAt'> & { reservationId: string }) => void
+  addItem: (item: Omit<CartItem, 'id' | 'blockedAt' | 'expiresAt'> & { reservationId: string, expiraEn?: string }) => void
   removeItem: (reservationId: string) => void
   clearCart: () => void
   totalAmount: () => number
@@ -27,29 +27,33 @@ interface CartState {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
-  addItem: ({ reservationId, movie, showtime, seats, totalAmount }) => {
-    const now = new Date()
-    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000) // +10 min
+  addItem: ({ reservationId, movie, showtime, seats, totalAmount, expiraEn }) => {
+  const now = new Date()
 
-    const newItem: CartItem = {
-      id: reservationId,
-      movie,
-      showtime,
-      seats,
-      totalAmount,
-      blockedAt: now,
-      expiresAt,
-    }
+  const expiresAt = expiraEn
+    ? new Date(expiraEn)
+    : new Date(now.getTime() + 10 * 60 * 1000)
 
-    set((state) => ({ items: [...state.items, newItem] }))
+  const newItem: CartItem = {
+    id: reservationId,
+    movie,
+    showtime,
+    seats,
+    totalAmount,
+    blockedAt: now,
+    expiresAt,
+  }
 
-    // Auto-elimina del carrito cuando expira el bloqueo
-    setTimeout(() => {
-      set((state) => ({
-        items: state.items.filter((i) => i.id !== reservationId),
-      }))
-    }, 10 * 60 * 1000)
-  },
+  set((state) => ({ items: [...state.items, newItem] }))
+
+  const timeout = expiresAt.getTime() - now.getTime()
+
+  setTimeout(() => {
+    set((state) => ({
+      items: state.items.filter((i) => i.id !== reservationId),
+    }))
+  }, timeout)
+},
 
   removeItem: (reservationId) =>
     set((state) => ({

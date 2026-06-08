@@ -1,3 +1,4 @@
+import React from 'react'
 import { create } from 'zustand'
 import type { Movie, Showtime, Seat } from '@/types'
 
@@ -63,3 +64,21 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   isExpired: (item) => new Date() > item.expiresAt,
 }))
+
+// ─── Componente CartIcon ─────────────────────────────────────────────────────
+
+export function CartIcon() {
+  const items = useCartStore((state) => state.items)
+  const total = items.length
+
+  return (
+    <div className="relative cursor-pointer">
+      <span role="img" aria-label="cart">🛒</span>
+      {total > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full px-2 text-xs">
+          {total}
+        </span>
+      )}
+    </div>
+  )
+}

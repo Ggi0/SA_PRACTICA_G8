@@ -7,11 +7,12 @@ import {
   getShowtimes,
   getShowtimeById,
 } from '@/services/api/moviesService'
-import { getSeatsByShowtime } from '@/services/api/reservationService'
+import {
+  getSeatsByShowtime,
+  getAvailabilityByShowtime,
+} from '@/services/api/reservationService'
 import type { MovieCategory } from '@/types'
 
-// ─── Query keys centralizados ─────────────────────────────────────────────────
-// Tenerlos aquí evita typos y facilita invalidar el caché desde cualquier lugar
 export const queryKeys = {
   cities: ['cities'] as const,
   cinemas: (cityId: string) => ['cinemas', cityId] as const,
@@ -20,13 +21,14 @@ export const queryKeys = {
   showtimes: (movieId: string, cityId?: string) => ['showtimes', movieId, cityId] as const,
   showtime: (id: string) => ['showtime', id] as const,
   seats: (showtimeId: string) => ['seats', showtimeId] as const,
+  availability: (showtimeId: string) => ['availability', showtimeId] as const,
 }
 
 export function useCities() {
   return useQuery({
     queryKey: queryKeys.cities,
     queryFn: getCities,
-    staleTime: 1000 * 60 * 60, // Las ciudades no cambian — caché de 1 hora
+    staleTime: 1000 * 60 * 60,
   })
 }
 
@@ -34,7 +36,7 @@ export function useCinemas(cityId: string | null) {
   return useQuery({
     queryKey: queryKeys.cinemas(cityId ?? ''),
     queryFn: () => getCinemasByCity(cityId!),
-    enabled: !!cityId, // No consulta hasta que haya ciudad seleccionada
+    enabled: !!cityId,
     staleTime: 1000 * 60 * 30,
   })
 }
@@ -79,7 +81,17 @@ export function useSeats(showtimeId: string | undefined) {
     queryKey: queryKeys.seats(showtimeId ?? ''),
     queryFn: () => getSeatsByShowtime(showtimeId!),
     enabled: !!showtimeId,
-    refetchInterval: 15 * 1000, // Refresca cada 15 segundos para ver cambios en tiempo real
+    refetchInterval: 15 * 1000,
+    staleTime: 0,
+  })
+}
+
+export function useAvailability(showtimeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.availability(showtimeId ?? ''),
+    queryFn: () => getAvailabilityByShowtime(showtimeId!),
+    enabled: !!showtimeId,
+    refetchInterval: 15 * 1000,
     staleTime: 0,
   })
 }

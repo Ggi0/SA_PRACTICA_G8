@@ -3,6 +3,7 @@ import {
   IsArray,
   IsNotEmpty,
   IsUUID,
+  IsString,
 } from 'class-validator';
 
 /**
@@ -15,9 +16,10 @@ import {
  * }
  */
 export class CrearReservaDto {
-  @IsNotEmpty()
-  @IsUUID('4', { message: 'funcionId debe ser un UUID válido' })
-  funcionId: string;
+  
+@IsNotEmpty()
+@IsString({ message: 'funcionId debe ser un string' })
+funcionId: string
 
   @IsArray({ message: 'asientos debe ser un arreglo' })
   @ArrayMinSize(1, { message: 'Debes enviar al menos un asiento' })
