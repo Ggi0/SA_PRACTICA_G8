@@ -30,7 +30,7 @@ export function SeatsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: showtime } = useShowtime(showtimeId)
-  const { selectedSeats, selectedMovie, toggleSeat } = useCheckoutStore()
+  const { selectedSeats } = useCheckoutStore()
   const { addItem } = useCartStore()
   const [isBlocking, setIsBlocking] = useState(false)
 
