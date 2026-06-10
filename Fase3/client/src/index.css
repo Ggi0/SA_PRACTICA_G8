@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta cinematográfica */
+    --background: 0 0% 12%;         /* Casi negro, tono cálido */      /* Cotton #EDEBDD */
+    --foreground: 30 20% 90%;        /* Cotton claro para texto */          /* Noir Black #1B1717 */
+
+    --card: 0 8% 16%;
+    --card-foreground: 30 20% 93%;
+
+    --primary: 0 99% 25%;            /* Cherry Red #810100 */
+    --primary-foreground: 30 20% 93%;
+
+    --secondary: 0 100% 19%;         /* Maroon #630000 */
+    --secondary-foreground: 30 20% 93%;
+
+    --muted: 30 15% 85%;
+    --muted-foreground: 0 8% 35%;
+
+    --accent: 0 99% 25%;
+    --accent-foreground: 30 20% 93%;
+
+    --destructive: 0 84% 40%;
+    --destructive-foreground: 30 20% 93%;
+
+    --border: 0 8% 22%;
+    --input: 0 8% 22%;
+    --ring: 0 99% 25%;
+    --radius: 0.5rem;
+
+    /* Colores de asientos */
+    --seat-available: 160 60% 35%;
+    --seat-occupied: 0 8% 55%;
+    --seat-selected: 0 99% 25%;
+    --seat-blocked: 38 90% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}

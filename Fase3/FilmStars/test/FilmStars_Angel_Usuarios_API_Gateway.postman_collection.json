@@ -1,0 +1,539 @@
+{
+  "info": {
+    "name": "FilmStars - Angel - Usuarios y API Gateway",
+    "description": "Coleccion para probar la parte de Angel: API Gateway, Users Service, login JWT y gestion de clientes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('uniqueEmail')) {",
+          "  pm.collectionVariables.set('uniqueEmail', `postman.cliente.${Date.now()}@filmstars.com`);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@filmstars.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "admin12345"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "clientId",
+      "value": ""
+    },
+    {
+      "key": "clientToken",
+      "value": ""
+    },
+    {
+      "key": "selfRegisteredClientId",
+      "value": ""
+    },
+    {
+      "key": "uniqueEmail",
+      "value": ""
+    },
+    {
+      "key": "selfRegisterEmail",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health API Gateway",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Gateway responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Gateway es NestJS', () => pm.expect(pm.response.json().framework).to.eql('nestjs'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Ruta protegida sin token debe dar 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Sin token responde 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Login admin y guardar JWT",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login responde 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Devuelve access_token', () => pm.expect(json.access_token).to.be.a('string').and.not.empty);",
+              "pm.collectionVariables.set('token', json.access_token);",
+              "pm.test('Usuario admin correcto', () => pm.expect(json.user.rol).to.eql('admin'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Perfil autenticado /api/clientes/me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Perfil responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Perfil es admin', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('adminEmail')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Registro publico de cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cliente Registro Publico\",\n  \"email\": \"{{selfRegisterEmail}}\",\n  \"password\": \"cliente12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('selfRegisterEmail')) {",
+              "  pm.collectionVariables.set('selfRegisterEmail', `self.register.${Date.now()}@filmstars.com`);",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Registro publico responde 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.test('Devuelve token de cliente', () => pm.expect(json.access_token).to.be.a('string').and.not.empty);",
+              "pm.test('Rol del usuario registrado es customer', () => pm.expect(json.user.rol).to.eql('customer'));",
+              "pm.collectionVariables.set('clientToken', json.access_token);",
+              "pm.collectionVariables.set('selfRegisteredClientId', json.user.id);",
+              "pm.collectionVariables.set('clientId', json.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Login del cliente auto-registrado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{selfRegisterEmail}}\",\n  \"password\": \"cliente12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login cliente responde 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Login devuelve token de cliente', () => pm.expect(json.access_token).to.be.a('string').and.not.empty);",
+              "pm.test('Login mantiene rol customer', () => pm.expect(json.user.rol).to.eql('customer'));",
+              "pm.collectionVariables.set('clientToken', json.access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Cliente puede ver su perfil",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Perfil cliente responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Perfil corresponde al cliente registrado', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('selfRegisterEmail')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Cliente NO puede listar clientes (403)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Cliente sin rol admin recibe 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Admin NO puede crear clientes desde gestion (404)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Intento Admin\",\n  \"email\": \"admin.no.crea.{{$timestamp}}@filmstars.com\",\n  \"password\": \"cliente12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('POST /api/clientes ya no existe para admin', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Admin lista clientes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Listar clientes responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Respuesta es arreglo', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Admin consulta cliente por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clientId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Consultar cliente responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('ID coincide', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('clientId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Admin actualiza cliente",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cliente Postman Actualizado\",\n  \"telefono\": \"5555-2222\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clientId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Actualizar responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Nombre actualizado', () => pm.expect(pm.response.json().nombre).to.eql('Cliente Postman Actualizado'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Admin desactiva cliente",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"activo\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clientId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clientId}}", "status"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Desactivar responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Activo es false', () => pm.expect(pm.response.json().activo).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Alias /api/users funciona",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "users"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Alias responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Alias devuelve arreglo', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Admin elimina logicamente cliente",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/clientes/{{clientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clientes", "{{clientId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Eliminar logicamente responde 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
