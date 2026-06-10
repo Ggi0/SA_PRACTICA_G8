@@ -51,8 +51,8 @@ services:
       - "${RESERVATIONS_DB_PORT}:5432"
     volumes:
       - db_reservations_data:/var/lib/postgresql/data
-      - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
-      - ./database/sql/reservations/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./reservas-service/src/docker/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./reservas-service/src/docker/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     networks:
       - filmstars-network
     healthcheck:
@@ -163,6 +163,10 @@ services:
       JWT_SECRET: filmstars_jwt_secret_key_2026
       USERS_SERVICE_URL: http://users-service:3001
       MOVIES_SERVICE_URL: http://movies-service:3002
+      RESERVAS_SERVICE_URL: http://reservations-service:3003
+      PAYMENTS_SERVICE_URL: http://payments-service:3004 
+
+      
     ports:
       - "${API_GATEWAY_PORT}:8080"
     depends_on:
@@ -171,6 +175,95 @@ services:
     networks:
       - filmstars-network
     restart: unless-stopped
+
+  reservations-service:
+    build:
+      context: ./reservas-service
+      dockerfile: Dockerfile
+    container_name: filmstars-reservations-service
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+
+      DB_HOST: db-reservations
+      DB_PORT: 5432
+      DB_NAME: filmstars_reservations
+      DB_USER: postgres
+      DB_PASS: postgres123
+
+      JWT_SECRET: filmstars_jwt_secret_key_2026
+
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+
+    ports:
+      - "3003:3003"
+    depends_on:
+      db-reservations:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+    restart: unless-stopped  
+
+  payments-service:
+      build:
+        context: ./payments-service
+        dockerfile: Dockerfile
+      container_name: filmstars-payments-service
+      environment:
+        NODE_ENV: development
+        PORT: 3004
+
+        DB_HOST: db-payments
+        DB_PORT: 5432
+        DB_NAME: filmstars_payments
+        DB_USER: postgres
+        DB_PASS: postgres123
+
+        JWT_SECRET: filmstars_jwt_secret_key_2026
+
+        RABBITMQ_HOST: rabbitmq
+        RABBITMQ_PORT: 5672
+        RABBITMQ_USER: admin
+        RABBITMQ_PASS: admin123
+
+      ports:
+        - "3004:3004"
+
+      depends_on:
+        db-payments:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+
+      networks:
+        - filmstars-network
+
+      restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+
+    container_name: filmstars-frontend
+
+    ports:
+      - "5173:80"
+
+    depends_on:
+      - api-gateway
+
+    networks:
+      - filmstars-network
+
+    restart: unless-stopped
+
+
 
 volumes:
   db_users_data:

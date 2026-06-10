@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { processPayment } from '@/services/api/paymentsService'
 import { confirmReservation } from '@/services/api/reservationService'
-import { getTicket } from '@/services/api/paymentsService'
 import { useCartStore } from '@/context/cartStore'
-import { useCheckoutStore } from '@/context/checkoutStore'
 
 interface PaymentFormProps {
   totalAmount: number
@@ -16,7 +13,6 @@ interface PaymentFormProps {
 
 export function PaymentForm({ totalAmount }: PaymentFormProps) {
   const { items, clearCart } = useCartStore()
-  const { setTicket } = useCheckoutStore()
   const [isProcessing, setIsProcessing] = useState(false)
 
   const [fields, setFields] = useState({
@@ -37,11 +33,27 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
 
   const validate = (): boolean => {
     const newErrors: Partial<typeof fields> = {}
-    if (fields.cardNumber.replace(/\s/g, '').length < 16) newErrors.cardNumber = 'Número inválido'
-    if (fields.cardHolder.trim().length < 3) newErrors.cardHolder = 'Ingresa el nombre del titular'
-    if (!fields.expiryMonth || +fields.expiryMonth < 1 || +fields.expiryMonth > 12) newErrors.expiryMonth = 'MM inválido'
-    if (!fields.expiryYear || fields.expiryYear.length < 2) newErrors.expiryYear = 'AA inválido'
-    if (fields.cvv.length < 3) newErrors.cvv = 'CVV inválido'
+
+    if (fields.cardNumber.replace(/\s/g, '').length < 16) {
+      newErrors.cardNumber = 'Número inválido'
+    }
+
+    if (fields.cardHolder.trim().length < 3) {
+      newErrors.cardHolder = 'Ingresa el nombre del titular'
+    }
+
+    if (!fields.expiryMonth || +fields.expiryMonth < 1 || +fields.expiryMonth > 12) {
+      newErrors.expiryMonth = 'MM inválido'
+    }
+
+    if (!fields.expiryYear || fields.expiryYear.length < 2) {
+      newErrors.expiryYear = 'AA inválido'
+    }
+
+    if (fields.cvv.length < 3) {
+      newErrors.cvv = 'CVV inválido'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -51,42 +63,32 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
 
     setIsProcessing(true)
     try {
-      // Confirma todas las reservaciones del carrito → publica a RabbitMQ
+      // Aquí puedes generar una referencia de pago frontend si quieres trazabilidad
+      // o dejarla vacía porque el backend la marca como opcional
       await Promise.all(
-        items.map((item) => confirmReservation(item.id, item.totalAmount))
+        items.map((item) =>
+          confirmReservation(item.id)
+        )
       )
 
-      // Procesa el pago total
-      const result = await processPayment({
-        reservationId: items.map((i) => i.id).join(','),
-        cardNumber: fields.cardNumber,
-        cardHolder: fields.cardHolder,
-        expiryMonth: fields.expiryMonth,
-        expiryYear: fields.expiryYear,
-        cvv: fields.cvv,
+      clearCart()
+
+      toast({
+        title: '¡Pago enviado correctamente!',
+        description: 'Tus reservaciones fueron confirmadas.',
       })
 
-      if (result.status === 'REJECTED') {
-        toast({
-          variant: 'destructive',
-          title: 'Pago rechazado',
-          description: 'Verifica los datos de tu tarjeta.',
-        })
-        return
-      }
+      // Aquí puedes navegar a /confirmation si tu ruta ya existe
+      // navigate('/confirmation')
 
-      // Obtiene el boleto del primer item (en el futuro será uno por reservación)
-      const ticket = await getTicket(items[0].id)
+    } catch (err: unknown) {
+      const apiMessage = (err as { message?: string })?.message
 
-      // Limpia el carrito y navega a confirmación
-      clearCart()
-      setTicket(ticket)
-
-    } catch {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Ocurrió un problema al procesar el pago.',
+        description:
+          apiMessage || 'Ocurrió un problema al confirmar la reservación.',
       })
     } finally {
       setIsProcessing(false)
@@ -107,7 +109,8 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
         <Label htmlFor="cardNumber">Número de tarjeta</Label>
         <div className="relative">
           <Input
-            id="cardNumber" name="cardNumber"
+            id="cardNumber"
+            name="cardNumber"
             placeholder="1234 5678 9012 3456"
             value={formatCardNumber(fields.cardNumber)}
             onChange={handleChange}
@@ -116,36 +119,73 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
           />
           <CreditCard className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
         </div>
-        {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
+        {errors.cardNumber && (
+          <p className="text-xs text-destructive">{errors.cardNumber}</p>
+        )}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="cardHolder">Nombre en la tarjeta</Label>
         <Input
-          id="cardHolder" name="cardHolder"
+          id="cardHolder"
+          name="cardHolder"
           placeholder="NOMBRE APELLIDO"
           value={fields.cardHolder}
           onChange={handleChange}
           className={errors.cardHolder ? 'border-destructive' : ''}
         />
-        {errors.cardHolder && <p className="text-xs text-destructive">{errors.cardHolder}</p>}
+        {errors.cardHolder && (
+          <p className="text-xs text-destructive">{errors.cardHolder}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="expiryMonth">Mes</Label>
-          <Input id="expiryMonth" name="expiryMonth" placeholder="MM" maxLength={2} value={fields.expiryMonth} onChange={handleChange} className={errors.expiryMonth ? 'border-destructive' : ''} />
-          {errors.expiryMonth && <p className="text-xs text-destructive">{errors.expiryMonth}</p>}
+          <Input
+            id="expiryMonth"
+            name="expiryMonth"
+            placeholder="MM"
+            maxLength={2}
+            value={fields.expiryMonth}
+            onChange={handleChange}
+            className={errors.expiryMonth ? 'border-destructive' : ''}
+          />
+          {errors.expiryMonth && (
+            <p className="text-xs text-destructive">{errors.expiryMonth}</p>
+          )}
         </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="expiryYear">Año</Label>
-          <Input id="expiryYear" name="expiryYear" placeholder="AA" maxLength={2} value={fields.expiryYear} onChange={handleChange} className={errors.expiryYear ? 'border-destructive' : ''} />
-          {errors.expiryYear && <p className="text-xs text-destructive">{errors.expiryYear}</p>}
+          <Input
+            id="expiryYear"
+            name="expiryYear"
+            placeholder="AA"
+            maxLength={2}
+            value={fields.expiryYear}
+            onChange={handleChange}
+            className={errors.expiryYear ? 'border-destructive' : ''}
+          />
+          {errors.expiryYear && (
+            <p className="text-xs text-destructive">{errors.expiryYear}</p>
+          )}
         </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="cvv">CVV</Label>
-          <Input id="cvv" name="cvv" placeholder="123" maxLength={4} value={fields.cvv} onChange={handleChange} className={errors.cvv ? 'border-destructive' : ''} />
-          {errors.cvv && <p className="text-xs text-destructive">{errors.cvv}</p>}
+          <Input
+            id="cvv"
+            name="cvv"
+            placeholder="123"
+            maxLength={4}
+            value={fields.cvv}
+            onChange={handleChange}
+            className={errors.cvv ? 'border-destructive' : ''}
+          />
+          {errors.cvv && (
+            <p className="text-xs text-destructive">{errors.cvv}</p>
+          )}
         </div>
       </div>
 
@@ -156,7 +196,10 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
 
       <Button className="w-full" size="lg" onClick={handleSubmit} disabled={isProcessing}>
         {isProcessing ? (
-          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Procesando pago...</>
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Confirmando reservación...
+          </>
         ) : (
           `Pagar Q${totalAmount.toFixed(2)}`
         )}
@@ -168,3 +211,4 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
     </div>
   )
 }
+``

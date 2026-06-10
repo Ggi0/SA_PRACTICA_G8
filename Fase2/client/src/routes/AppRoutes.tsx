@@ -12,6 +12,7 @@ import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { AdminMoviesPage } from '@/pages/admin/AdminMoviesPage'
 import { AdminFunctionsPage } from '@/pages/admin/AdminFunctionsPage'
+import { ReservationsPage } from '@/pages/ReservationsPage'
 
 // Protege rutas que requieren login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,17 @@ export function AppRoutes() {
         <Route path="movies" element={<AdminMoviesPage />} />
         <Route path="functions" element={<AdminFunctionsPage />} />
       </Route>
+
+
+<Route
+  path="/reservations"
+  element={
+    <ProtectedRoute>
+      <ReservationsPage />
+    </ProtectedRoute>
+  }
+/>
+
     </Routes>
   )
 }

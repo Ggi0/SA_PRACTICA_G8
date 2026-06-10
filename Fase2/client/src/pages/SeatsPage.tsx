@@ -30,7 +30,7 @@ export function SeatsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: showtime } = useShowtime(showtimeId)
-  const { selectedSeats, selectedMovie, toggleSeat } = useCheckoutStore()
+  const { selectedSeats} = useCheckoutStore()
   const { addItem } = useCartStore()
   const [isBlocking, setIsBlocking] = useState(false)
 
@@ -41,47 +41,46 @@ export function SeatsPage() {
   const totalAmount = selectedSeats.length * (showtime?.price ?? 0)
 
   const handleAddToCart = async () => {
-    if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
+  if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
 
-    setIsBlocking(true)
-    try {
-      // Bloquea los asientos en el backend — inicia el countdown de 10 min
-      const { reservationId } = await blockSeats(
-        showtimeId,
-        selectedSeats.map((s) => s.id),
-        user.id
-      )
+  setIsBlocking(true)
+  try {
+    const result = await blockSeats(
+      showtimeId,
+      selectedSeats.map((s) => s.id)
+    )
 
-      // Agrega al carrito con toda la info necesaria para el checkout
-      addItem({
-        reservationId,
-        movie,
-        showtime,
-        seats: selectedSeats,
-        totalAmount,
-      })
+    addItem({
+  reservationId: result.reservationId,
+  movie,
+  showtime,
+  seats: selectedSeats,
+  totalAmount,
+  expiraEn: result.expiraEn,
+})
 
-      toast({
-        title: '¡Agregado al carrito!',
-        description: `${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''} reservado${selectedSeats.length !== 1 ? 's' : ''}. Tienes 10 min para pagar.`,
-      })
+    toast({
+      title: '¡Agregado al carrito!',
+      description: `${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''} reservado${selectedSeats.length !== 1 ? 's' : ''}. Tienes hasta que expire la reserva para pagar.`,
+    })
 
-      navigate('/')
+    navigate('/')
 
-    } catch (err: unknown) {
-      const isConflict = (err as { status?: number })?.status === 409
-      toast({
-        variant: 'destructive',
-        title: isConflict ? 'Asiento no disponible' : 'Error',
-        description: isConflict
-          ? 'Otro usuario tomó ese asiento. Por favor elige otro.'
-          : 'No se pudo reservar los asientos. Intenta de nuevo.',
-      })
-    } finally {
-      setIsBlocking(false)
-    }
+  } catch (err: unknown) {
+    const isConflict = (err as { status?: number })?.status === 409
+    const apiMessage = (err as { message?: string })?.message
+
+    toast({
+      variant: 'destructive',
+      title: isConflict ? 'Asiento no disponible' : 'Error',
+      description: isConflict
+        ? apiMessage || 'Uno o más asientos ya están bloqueados u ocupados.'
+        : apiMessage || 'No se pudo reservar los asientos. Intenta de nuevo.',
+    })
+  } finally {
+    setIsBlocking(false)
   }
-
+}
   return (
     <div className="container mx-auto px-4 py-6">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6 -ml-2">

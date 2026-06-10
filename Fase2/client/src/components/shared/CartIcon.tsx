@@ -1,21 +1,26 @@
 import { create } from 'zustand'
+import { useNavigate } from 'react-router-dom'
 import type { Movie, Showtime, Seat } from '@/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface CartItem {
-  id: string              // reservationId del bloqueo temporal
+  id: string // reservationId del bloqueo temporal
   movie: Movie
   showtime: Showtime
   seats: Seat[]
   totalAmount: number
-  blockedAt: Date         // momento en que se bloqueó — para el countdown
-  expiresAt: Date         // blockedAt + 10 minutos
+  blockedAt: Date // momento en que se bloqueó — para el countdown
+  expiresAt: Date // blockedAt + 10 minutos
 }
 
 interface CartState {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'id' | 'blockedAt' | 'expiresAt'> & { reservationId: string }) => void
+  addItem: (
+    item: Omit<CartItem, 'id' | 'blockedAt' | 'expiresAt'> & {
+      reservationId: string
+    }
+  ) => void
   removeItem: (reservationId: string) => void
   clearCart: () => void
   totalAmount: () => number
@@ -63,3 +68,28 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   isExpired: (item) => new Date() > item.expiresAt,
 }))
+
+// ─── Componente CartIcon ─────────────────────────────────────────────────────
+
+export function CartIcon() {
+  const items = useCartStore((state) => state.items)
+  const total = items.length
+  const navigate = useNavigate()
+
+  return (
+    <div
+      className="relative cursor-pointer"
+      onClick={() => navigate('/reservations')}
+    >
+      <span role="img" aria-label="cart">
+        🛒
+      </span>
+
+      {total > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full px-2 text-xs">
+          {total}
+        </span>
+      )}
+    </div>
+  )
+}
