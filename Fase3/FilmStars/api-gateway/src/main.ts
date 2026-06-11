@@ -125,6 +125,7 @@ async function bootstrap(): Promise<void> {
 
   // Movies service — rutas públicas (no requieren JWT para ver cartelera)
   app.use('/api/movies', createMoviesProxy());
+  app.use('/api/admin/movies', createMoviesProxy());
 
 
   // ==========================

@@ -10,7 +10,7 @@ import {
 
 import { MoviesAdmService } from './moviesAdm.service';
 
-@Controller('adm/movies')
+@Controller('api/admin/movies')
 export class MoviesAdmController {
   constructor(
     private readonly service: MoviesAdmService,

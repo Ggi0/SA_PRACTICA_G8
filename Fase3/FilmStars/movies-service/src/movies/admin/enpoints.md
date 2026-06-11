@@ -1,4 +1,7 @@
 
+---> http://localhost:3002/adm/movies/genres/list
+---> api 
+
 
 ```http
 GET /adm/movies/genres/list
