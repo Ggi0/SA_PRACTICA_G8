@@ -17,7 +17,7 @@ RUN npm run build
 # ==========================
 # Etapa 2 - Runtime
 # ==========================
-FROM nginx:alpine
+FROM nginx:1.27-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
