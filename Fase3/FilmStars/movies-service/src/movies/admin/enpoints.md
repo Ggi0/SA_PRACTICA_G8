@@ -1,10 +1,12 @@
 
 ---> http://localhost:3002/adm/movies/genres/list
+
 ---> api 
+http://localhost:8080/api/admin/movies/genres/list
 
 
 ```http
-GET /adm/movies/genres/list
+GET /api/admin/movies/genres/list
 ```
 
 Respuesta:
@@ -39,7 +41,7 @@ Respuesta:
 ## Crear película
 
 ```http
-POST /adm/movies
+POST /api/admin/movies
 ```
 
 Request:
@@ -66,7 +68,7 @@ Request:
 ## Obtener película
 
 ```http
-GET /adm/movies/:id
+GET /api/admin/movies/:id
 ```
 
 Respuesta:
@@ -97,7 +99,7 @@ Respuesta:
 ## Actualizar película
 
 ```http
-PUT /adm/movies/:id
+PUT /api/admin/movies/:id
 ```
 
 Si envías:
@@ -127,7 +129,7 @@ Primero elimina todas las relaciones existentes de `pelicula_genero` y luego ins
 ## Eliminar película
 
 ```http
-DELETE /adm/movies/:id
+DELETE /api/admin/movies/:id
 ```
 
 PostgreSQL hará automáticamente:
