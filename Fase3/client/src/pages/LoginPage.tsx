@@ -5,11 +5,19 @@ import { LoginForm } from '@/components/auth/LoginForm'
 import { useAuth } from '@/context/AuthContext'
 
 export function LoginPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/', { replace: true })
+
+    if (!isAuthenticated || !user) return
+
+  if (user.role === 'ADMIN') {
+    navigate('/admin', { replace: true })
+  } else {
+    navigate('/', { replace: true })
+  }
+
   }, [isAuthenticated, navigate])
 
   return (
