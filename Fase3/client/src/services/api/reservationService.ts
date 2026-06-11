@@ -2,9 +2,9 @@ import axios from 'axios'
 import httpClient from './httpClient'
 import type { Seat } from '@/types'
 
-// =========================
+
 // Tipos del backend real
-// =========================
+
 
 type ApiSeatState = 'DISPONIBLE' | 'BLOQUEADO' | 'OCUPADO'
 
@@ -60,9 +60,9 @@ interface ApiConfirmReservationResponse {
   estado: 'CONFIRMADA'
 }
 
-// =========================
+
 // Tipos que usa el frontend
-// =========================
+
 
 export interface ReservationAvailability {
   funcionId: string
@@ -95,9 +95,9 @@ export interface CreateReservationResult {
   asientos: Seat[]
 }
 
-// =========================
+
 // Helpers
-// =========================
+
 
 function mapSeatStatus(apiStatus: ApiSeatState): Seat['status'] {
   switch (apiStatus) {
@@ -149,9 +149,9 @@ function normalizeApiError(error: unknown): never {
   throw error
 }
 
-// =========================
+
 // Endpoints reales
-// =========================
+
 
 // 1. Mapa de asientos
 export async function getSeatsByShowtime(funcionId: string): Promise<Seat[]> {
