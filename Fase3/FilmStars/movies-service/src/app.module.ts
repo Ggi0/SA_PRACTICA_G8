@@ -4,6 +4,7 @@ import { CitiesModule } from './cities/cities.module';
 import { TheatersModule } from './theaters/theaters.module';
 import { MoviesModule } from './movies/movies.module';
 import { FunctionsModule } from './functions/functions.module';
+import { MoviesAdmModule } from './movies/admin/moviesAdm.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { FunctionsModule } from './functions/functions.module';
     TheatersModule,
     MoviesModule,
     FunctionsModule,
+    MoviesAdmModule,
   ],
 })
 export class AppModule {}

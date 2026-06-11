@@ -51,9 +51,9 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO pelicula (id, titulo, sinopsis, duracion_min, clasificacion, poster_url, fecha_estreno, tipo, activa)
 VALUES
-('66666666-6666-6666-6666-666666666661', 'Guardianes del Cine', 'Un grupo de héroes debe proteger la última sala de cine de la ciudad.', 125, 'PG-13', 'https://example.com/posters/guardianes.jpg', '2026-06-01', 'ESTRENO', TRUE),
-('66666666-6666-6666-6666-666666666662', 'La Última Función', 'Una historia de drama y misterio dentro de un antiguo cine.', 110, 'PG-13', 'https://example.com/posters/ultima-funcion.jpg', '2026-06-10', 'PREVENTA', TRUE),
-('66666666-6666-6666-6666-666666666663', 'Risas de Medianoche', 'Una comedia familiar llena de situaciones inesperadas.', 95, 'PG', 'https://example.com/posters/risas.jpg', '2025-12-20', 'REESTRENO', TRUE)
+('66666666-6666-6666-6666-666666666661', 'Guardianes del Cine', 'Un grupo de héroes debe proteger la última sala de cine de la ciudad.', 125, 'PG-13', 'https://es.web.img3.acsta.net/medias/nmedia/18/91/56/29/20282576.jpg', '2026-06-01', 'ESTRENO', TRUE),
+('66666666-6666-6666-6666-666666666662', 'La Última Función', 'Una historia de drama y misterio dentro de un antiguo cine.', 110, 'PG-13', 'https://m.media-amazon.com/images/M/MV5BNzE4MTcyN2QtMGUyOS00ZDEwLWEwNzUtZTk0ZjQzNDk2MWIyXkEyXkFqcGc@._V1_.jpg', '2026-06-10', 'PREVENTA', TRUE),
+('66666666-6666-6666-6666-666666666663', 'Risas de Medianoche', 'Una comedia familiar llena de situaciones inesperadas.', 95, 'PG', 'https://m.media-amazon.com/images/M/MV5BZTRiOGMxYzctMTk3Ny00ODBkLWIyNTMtOGZhMWY0MjZiYzAxXkEyXkFqcGc@._V1_.jpg', '2025-12-20', 'REESTRENO', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO pelicula_genero (pelicula_id, genero_id)
