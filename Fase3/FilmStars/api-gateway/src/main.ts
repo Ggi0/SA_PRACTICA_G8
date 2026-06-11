@@ -127,6 +127,7 @@ async function bootstrap(): Promise<void> {
   app.use('/api/movies', createMoviesProxy());
   app.use('/api/admin/movies', createMoviesProxy());
   app.use('/api/admin/cinemas', createMoviesProxy());
+  app.use('/api/admin/salas', createMoviesProxy());
 
 
   // ==========================

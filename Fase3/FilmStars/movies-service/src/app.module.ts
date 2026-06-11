@@ -6,6 +6,7 @@ import { MoviesModule } from './movies/movies.module';
 import { FunctionsModule } from './functions/functions.module';
 import { MoviesAdmModule } from './movies/admin/moviesAdm.module';
 import { CineAdmModule } from './theaters/admin/cineAdm.module';
+import { SalaAdmModule } from './functions/admin/salas/salaAdm.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CineAdmModule } from './theaters/admin/cineAdm.module';
     FunctionsModule,
     MoviesAdmModule,
     CineAdmModule,
+    SalaAdmModule,
   ],
 })
 export class AppModule {}
