@@ -1,0 +1,13 @@
+export const PG_POOL = Symbol('PG_POOL');
+
+export const CITIES_REPOSITORY = Symbol('CITIES_REPOSITORY');
+export const CITIES_SERVICE = Symbol('CITIES_SERVICE');
+
+export const THEATERS_REPOSITORY = Symbol('THEATERS_REPOSITORY');
+export const THEATERS_SERVICE = Symbol('THEATERS_SERVICE');
+
+export const MOVIES_REPOSITORY = Symbol('MOVIES_REPOSITORY');
+export const MOVIES_SERVICE = Symbol('MOVIES_SERVICE');
+
+export const FUNCTIONS_REPOSITORY = Symbol('FUNCTIONS_REPOSITORY');
+export const FUNCTIONS_SERVICE = Symbol('FUNCTIONS_SERVICE');
