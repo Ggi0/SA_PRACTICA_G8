@@ -128,7 +128,7 @@ async function bootstrap(): Promise<void> {
   app.use('/api/admin/movies', createMoviesProxy());
   app.use('/api/admin/cinemas', createMoviesProxy());
   app.use('/api/admin/salas', createMoviesProxy());
-
+  app.use('/api/admin/funciones', createMoviesProxy());
 
   // ==========================
   // RESERVAS SERVICE

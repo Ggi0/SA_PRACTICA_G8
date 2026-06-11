@@ -7,6 +7,7 @@ import { FunctionsModule } from './functions/functions.module';
 import { MoviesAdmModule } from './movies/admin/moviesAdm.module';
 import { CineAdmModule } from './theaters/admin/cineAdm.module';
 import { SalaAdmModule } from './functions/admin/salas/salaAdm.module';
+import { FunctAdmModule } from './functions/admin/funciones/functAdm.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SalaAdmModule } from './functions/admin/salas/salaAdm.module';
     MoviesAdmModule,
     CineAdmModule,
     SalaAdmModule,
+    FunctAdmModule,
   ],
 })
 export class AppModule {}
