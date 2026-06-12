@@ -31,10 +31,10 @@ export class EstadoAsientoFuncionEntity {
   estado: AsientoEstado;
 
   @Column({ name: 'reserva_id', type: 'uuid', nullable: true })
-  reservaId?: string;
+  reservaId?: string | null;
 
   @Column({ name: 'bloqueado_hasta', type: 'timestamp', nullable: true })
-  bloqueadoHasta?: Date;
+  bloqueadoHasta?: Date | null;
 
   @Column({ name: 'modificacion', type: 'timestamp' })
   modificacion: Date;

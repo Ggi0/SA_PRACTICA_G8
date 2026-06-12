@@ -42,6 +42,27 @@
 | RF-37 | API Gateway / Frontend | Alta | El sistema debe enviar el token JWT en la cabecera `Authorization: Bearer <token>` para acceder a rutas protegidas. |
 | RF-38 | API Gateway | Alta | El sistema debe validar el JWT antes de permitir el acceso a rutas protegidas como gestión de usuarios, selección de asientos y flujo de compra. |
 | RF-39 | API Gateway | Media | El sistema debe funcionar como punto de entrada único para enrutar las peticiones del frontend hacia los servicios internos. |
+| RF-40  | Frontend / API Gateway                     | Alta      | El sistema debe permitir el acceso a un panel de administración únicamente a usuarios autenticados con rol `Admin`.                    |
+| RF-41  | Frontend                                   | Alta      | El sistema debe ocultar o restringir las vistas administrativas a usuarios que no posean rol `Admin`.                                  |
+| RF-42  | API Gateway / Backend SOA                  | Alta      | El sistema debe validar en cada endpoint administrativo que el JWT pertenezca a un usuario con rol `Admin`.                            |
+| RF-43  | API Gateway / Backend SOA                  | Alta      | El sistema debe denegar el acceso a endpoints administrativos cuando el usuario no esté autenticado o no tenga rol `Admin`.            |
+| RF-44  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador crear nuevos cines                                                         |
+| RF-45  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador consultar cines registrados.                                                   |
+| RF-46  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador actualizar la información de un cine existente.                                              |
+| RF-47  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador eliminar o desactivar cines registrados.                                                     |
+| RF-48  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador crear salas asociadas a un cine.                                                             |
+| RF-49  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador consultar las salas registradas por cine.                                                    |
+| RF-50  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador actualizar la información de una sala existente.                                             |
+| RF-51  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador eliminar o desactivar salas registradas.                                                     |
+| RF-52  | Servicio de Películas/Cartelera / Reservas | Alta      | El sistema debe permitir configurar el mapa base de asientos de una sala.                                                              |
+| RF-53  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador asignar películas a salas específicas.                                                       |
+| RF-54  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador crear horarios y funciones para una película.                                                |
+| RF-55  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador actualizar horarios y funciones existentes.                                                  |
+| RF-56  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir al administrador eliminar, cancelar o desactivar funciones programadas.                                       |
+| RF-57  | Servicio de Películas/Cartelera            | Alta      | El sistema debe validar que no existan dos funciones en la misma sala y horario.                                             |
+| RF-58  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir definir si una función corresponde a Estreno, Pre-venta o Re-estreno.                                         |
+| RF-59  | Servicio de Reservas/Asientos              | Alta      | El sistema debe generar o actualizar la disponibilidad de asientos de una función con base en el mapa de asientos de la sala asignada. |
+
 
 ## Requerimientos NO Funcionales (RNF)
 
@@ -71,3 +92,16 @@
 | RNF-22 | API Gateway | Media | El frontend debe comunicarse preferentemente con el API Gateway y no directamente con los servicios internos. |
 | RNF-23 | Persistencia independiente | Alta | Cada servicio debe contar con su propia base de datos o lógica de acceso a datos. |
 | RNF-24 | Trazabilidad | Media | Los procesos críticos de reserva, pago y emisión de boleto deben registrar eventos o estados que permitan seguimiento del flujo. |
+| RNF-25 | Seguridad | Alta      | Las rutas administrativas deben protegerse mediante control de acceso basado en roles.                                                                                         |
+| RNF-26 | Seguridad | Alta      | El JWT debe incluir los claims necesarios para validar identidad y rol del usuario, especialmente el rol `Admin`.                                                              |
+| RNF-27 | Seguridad | Alta      | La validación de rol administrador debe aplicarse tanto en frontend como en backend, evitando acceso directo a vistas o APIs administrativas.                                  |
+| RNF-28 | Calidad | Alta      | El backend debe contar con pruebas unitarias automatizadas para validar lógica de negocio crítica.                                                                             |
+| RNF-29 | Cobertura | Alta      | Las pruebas unitarias deben alcanzar como mínimo un 75% de cobertura en los componentes principales del backend.                                                               |
+| RNF-30 | Calidad | Alta      | El pipeline debe ejecutar automáticamente la instalación de dependencias, compilación y pruebas unitarias.                                                                     |
+| RNF-31 | Control de calidad   | Alta      | El pipeline debe detenerse si alguna prueba falla o si la cobertura es menor al 75%.                                                                                           |
+| RNF-32 | CI/CD | Alta      | El proyecto debe contar con un pipeline de CI/CD, preferiblemente mediante GitHub Actions.                                                                                     |
+| RNF-33 | Monitoreo | Media     | El sistema debe generar reportes o logs legibles de ejecución de pruebas y cobertura.                                                                                          |
+| RNF-34 | DevOps  | Alta      | Cada componente independiente debe contar con su Dockerfile correspondiente.                                                                                                   |
+| RNF-35 | Docker Compose  | Alta      | El archivo `docker-compose.yml` debe permitir replicar el entorno completo de manera local con un solo comando.                                                                |
+| RNF-36 | Despliegue | Alta      | El proyecto debe documentar el flujo de despliegue desde GitHub hacia el entorno definido por el equipo.                                                                       |
+| RNF-37 | Trazabilidad | Media     | La documentación debe incluir el flujo desde commit, Pull Request, ejecución del pipeline, pruebas y despliegue.                                                               |

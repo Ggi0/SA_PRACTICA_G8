@@ -108,4 +108,39 @@ export class EstadoAsientoFuncionRepository {
       ocupados,
     };
   }
+
+
+  async crearEstadosInicialesDeFuncion(
+    funcionId: string,
+    asientos: {
+      asientoId: string;
+      codigo: string;
+      fila: string;
+      numero: number;
+    }[],
+  ): Promise<void> {
+    if (!asientos || asientos.length === 0) {
+      return;
+    }
+
+    const values = asientos.map((a) => ({
+      funcionIdRef: funcionId,
+      asientoIdRef: a.asientoId,
+      codigoAsiento: a.codigo,
+      fila: a.fila,
+      numero: a.numero,
+      estado: AsientoEstado.DISPONIBLE,
+      bloqueadoHasta: null,
+      reservaId: null,
+      modificacion: new Date(),
+    }));
+
+    await this.repo
+      .createQueryBuilder()
+      .insert()
+      .into(EstadoAsientoFuncionEntity)
+      .values(values)
+      .orIgnore() // ON CONFLICT DO NOTHING
+      .execute();
+  }
 }

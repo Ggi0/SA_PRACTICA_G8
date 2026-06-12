@@ -1,243 +1,926 @@
-import { useState } from 'react'
-import { Plus, Trash2, Calendar } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+
+import {
+  CalendarDays,
+  CheckCircle,
+  Clock3,
+  DoorOpen,
+  Film,
+  Pencil,
+  Plus,
+  Tag,
+  Trash2,
+  Building2,
+} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { MOCK_MOVIES, MOCK_CINEMAS, MOCK_CITIES } from '@/services/mock/mockData'
-import type { Showtime, ProjectionType } from '@/types'
 
-const PROJECTION_TYPES: ProjectionType[] = ['STANDARD', '3D', 'IMAX', '4DX']
+import {
+  createFuncion,
+  deleteFuncion,
+  getFuncion,
+  getFunciones,
+  getFuncionesByFecha,
+  getFuncionesByMovie,
+  getFuncionesBySala,
+  getPeliculasList,
+  getSalasList,
+  updateFuncion,
+  type Funcion,
+  type FuncionPayload,
+  type PeliculaOption,
+  type SalaOption,
+} from '@/services/api/admin/funcionesCRUD'
 
-const EMPTY_FORM = {
-  movieId: MOCK_MOVIES[0].id,
-  cityId: MOCK_CITIES[0].id,
-  cinemaId: '',
-  startTime: '',
-  projectionType: 'STANDARD' as ProjectionType,
-  price: '',
-}
-
-// Funciones iniciales de ejemplo
-const INITIAL_FUNCTIONS: Showtime[] = [
-  { id: 'st1', movieId: 'm1', roomId: 'r1', cinemaId: 'cin1', cityId: 'city1', startTime: '2026-06-08T14:00:00', projectionType: 'IMAX', price: 85 },
-  { id: 'st2', movieId: 'm1', roomId: 'r2', cinemaId: 'cin1', cityId: 'city1', startTime: '2026-06-08T18:30:00', projectionType: 'STANDARD', price: 60 },
-  { id: 'st4', movieId: 'm2', roomId: 'r4', cinemaId: 'cin2', cityId: 'city1', startTime: '2026-06-08T16:00:00', projectionType: 'STANDARD', price: 60 },
-]
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('es-GT', {
-    weekday: 'short', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit',
-  })
+const EMPTY_FORM: FuncionPayload = {
+  peliculaId: '',
+  salaId: '',
+  fechaHora: '',
+  tipo: 'ESTRENO',
+  activa: true,
 }
 
 export function AdminFunctionsPage() {
-  const [functions, setFunctions] = useState<Showtime[]>(INITIAL_FUNCTIONS)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [funciones, setFunciones] =
+    useState<Funcion[]>([])
 
-  // Filtra cines según la ciudad seleccionada
-  const availableCinemas = MOCK_CINEMAS.filter((c) => c.cityId === form.cityId)
+  const [peliculas, setPeliculas] =
+    useState<PeliculaOption[]>([])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-      // Si cambia la ciudad, resetea el cine
-      ...(name === 'cityId' ? { cinemaId: '' } : {}),
-    }))
+  const [salas, setSalas] =
+    useState<SalaOption[]>([])
+
+  const [showForm, setShowForm] =
+    useState(false)
+
+  const [editingId, setEditingId] =
+    useState<string | null>(null)
+
+  const [success, setSuccess] =
+    useState('')
+
+  const [form, setForm] =
+    useState<FuncionPayload>(EMPTY_FORM)
+
+  const [filters, setFilters] = useState({
+    peliculaId: '',
+    salaId: '',
+    fecha: '',
+  })
+
+  const peliculasMap = useMemo(() => {
+    return new Map(
+      peliculas.map((p) => [p.id, p]),
+    )
+  }, [peliculas])
+
+  const salasMap = useMemo(() => {
+    return new Map(
+      salas.map((s) => [s.id, s]),
+    )
+  }, [salas])
+
+  function toDateInputValue(
+    value: string,
+  ): string {
+    if (!value) return ''
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime()))
+      return ''
+
+    const local =
+      new Date(
+        date.getTime() -
+          date.getTimezoneOffset() *
+            60000,
+      )
+
+    return local
+      .toISOString()
+      .slice(0, 16)
   }
 
-  const handleSubmit = () => {
-    if (!form.movieId || !form.cinemaId || !form.startTime || !form.price) return
+  function formatDateTime(
+    value: string,
+  ): string {
+    if (!value) return '-'
 
-    const newFunction: Showtime = {
-      id: `st${Date.now()}`,
-      movieId: form.movieId,
-      roomId: `r${Date.now()}`,
-      cinemaId: form.cinemaId,
-      cityId: form.cityId,
-      startTime: new Date(form.startTime).toISOString(),
-      projectionType: form.projectionType,
-      price: Number(form.price),
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime()))
+      return value
+
+    return date.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  function enrichFunciones(
+    data: Funcion[],
+  ): Funcion[] {
+    return data.map((funcion) => {
+      const peliculaId =
+        funcion.pelicula?.id ?? ''
+      const salaId = funcion.sala?.id ?? ''
+
+      const pelicula =
+        peliculaId
+          ? peliculasMap.get(peliculaId)
+          : undefined
+
+      const sala = salaId
+        ? salasMap.get(salaId)
+        : undefined
+
+      return {
+        ...funcion,
+        pelicula: {
+          id:
+            funcion.pelicula?.id ??
+            pelicula?.id ??
+            '',
+          titulo:
+            funcion.pelicula?.titulo ??
+            pelicula?.titulo ??
+            '-',
+          tipo:
+            funcion.pelicula?.tipo ??
+            pelicula?.tipo ??
+            '-',
+        },
+        sala: {
+          id:
+            funcion.sala?.id ??
+            sala?.id ??
+            '',
+          nombre:
+            funcion.sala?.nombre ??
+            sala?.nombre ??
+            '-',
+          tipoSala:
+            funcion.sala?.tipoSala ??
+            sala?.tipoSala ??
+            '-',
+        },
+        cine: {
+          id:
+            funcion.cine?.id ??
+            sala?.cine?.id ??
+            '',
+          nombre:
+            funcion.cine?.nombre ??
+            sala?.cine?.nombre ??
+            '-',
+        },
+      }
+    })
+  }
+
+  async function loadCatalogs() {
+    const [peliculasData, salasData] =
+      await Promise.all([
+        getPeliculasList(),
+        getSalasList(),
+      ])
+
+    setPeliculas(peliculasData)
+    setSalas(salasData)
+
+    return {
+      peliculasData,
+      salasData,
+    }
+  }
+
+  async function loadData() {
+    const {
+      peliculasData,
+      salasData,
+    } = await loadCatalogs()
+
+    const peliculasLocalMap = new Map(
+      peliculasData.map((p) => [p.id, p]),
+    )
+
+    const salasLocalMap = new Map(
+      salasData.map((s) => [s.id, s]),
+    )
+
+    const funcionesData =
+      await getFunciones()
+
+    const enriched = funcionesData.map(
+      (funcion) => {
+        const peliculaId =
+          funcion.pelicula?.id ?? ''
+        const salaId =
+          funcion.sala?.id ?? ''
+
+        const pelicula =
+          peliculaId
+            ? peliculasLocalMap.get(
+                peliculaId,
+              )
+            : undefined
+
+        const sala = salaId
+          ? salasLocalMap.get(salaId)
+          : undefined
+
+        return {
+          ...funcion,
+          pelicula: {
+            id:
+              funcion.pelicula?.id ??
+              pelicula?.id ??
+              '',
+            titulo:
+              funcion.pelicula?.titulo ??
+              pelicula?.titulo ??
+              '-',
+            tipo:
+              funcion.pelicula?.tipo ??
+              pelicula?.tipo ??
+              '-',
+          },
+          sala: {
+            id:
+              funcion.sala?.id ??
+              sala?.id ??
+              '',
+            nombre:
+              funcion.sala?.nombre ??
+              sala?.nombre ??
+              '-',
+            tipoSala:
+              funcion.sala?.tipoSala ??
+              sala?.tipoSala ??
+              '-',
+          },
+          cine: {
+            id:
+              funcion.cine?.id ??
+              sala?.cine?.id ??
+              '',
+            nombre:
+              funcion.cine?.nombre ??
+              sala?.cine?.nombre ??
+              '-',
+          },
+        }
+      },
+    )
+
+    setFunciones(enriched)
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function applyFilters(
+    nextFilters = filters,
+  ) {
+    try {
+      let baseData: Funcion[]
+
+      if (nextFilters.fecha) {
+        baseData =
+          await getFuncionesByFecha(
+            nextFilters.fecha,
+          )
+      } else if (nextFilters.salaId) {
+        baseData =
+          await getFuncionesBySala(
+            nextFilters.salaId,
+          )
+      } else if (nextFilters.peliculaId) {
+        baseData =
+          await getFuncionesByMovie(
+            nextFilters.peliculaId,
+          )
+      } else {
+        baseData = await getFunciones()
+      }
+
+      let enriched =
+        enrichFunciones(baseData)
+
+      if (nextFilters.peliculaId) {
+        enriched = enriched.filter(
+          (f) =>
+            f.pelicula?.id ===
+            nextFilters.peliculaId,
+        )
+      }
+
+      if (nextFilters.salaId) {
+        enriched = enriched.filter(
+          (f) =>
+            f.sala?.id === nextFilters.salaId,
+        )
+      }
+
+      if (nextFilters.fecha) {
+        enriched = enriched.filter((f) =>
+          (
+            f.fechaHora ?? ''
+          ).startsWith(nextFilters.fecha),
+        )
+      }
+
+      setFunciones(enriched)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function handleSubmit() {
+    try {
+      if (
+        !form.peliculaId ||
+        !form.salaId ||
+        !form.fechaHora ||
+        !form.tipo
+      ) {
+        return
+      }
+
+      if (editingId) {
+        await updateFuncion(
+          editingId,
+          form,
+        )
+
+        setSuccess(
+          'Función actualizada correctamente',
+        )
+      } else {
+        await createFuncion(form)
+
+        setSuccess(
+          'Función creada correctamente',
+        )
+      }
+
+      setShowForm(false)
+      setEditingId(null)
+      setForm(EMPTY_FORM)
+
+      if (
+        filters.peliculaId ||
+        filters.salaId ||
+        filters.fecha
+      ) {
+        await applyFilters(filters)
+      } else {
+        await loadData()
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function handleEdit(id: string) {
+    try {
+      const funcion = await getFuncion(id)
+
+      setEditingId(id)
+
+      setForm({
+        peliculaId:
+          funcion.pelicula?.id ?? '',
+        salaId: funcion.sala?.id ?? '',
+        fechaHora: toDateInputValue(
+          funcion.fechaHora,
+        ),
+        tipo:
+          funcion.pelicula?.tipo ??
+          'ESTRENO',
+        activa: funcion.activa,
+      })
+
+      setShowForm(true)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function handleDelete(
+    id: string,
+  ) {
+    if (
+      !confirm('¿Eliminar función?')
+    ) {
+      return
     }
 
-    setFunctions((prev) => [...prev, newFunction])
-    setForm(EMPTY_FORM)
-    setShowForm(false)
+    try {
+      await deleteFuncion(id)
+
+      setSuccess(
+        'Función eliminada correctamente',
+      )
+
+      if (
+        filters.peliculaId ||
+        filters.salaId ||
+        filters.fecha
+      ) {
+        await applyFilters(filters)
+      } else {
+        await loadData()
+      }
+    } catch (error) {
+      console.error(error)
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setFunctions((prev) => prev.filter((f) => f.id !== id))
+  function handleChangeFilter(
+    field:
+      | 'peliculaId'
+      | 'salaId'
+      | 'fecha',
+    value: string,
+  ) {
+    const next = {
+      ...filters,
+      [field]: value,
+    }
+
+    setFilters(next)
+    applyFilters(next)
+  }
+
+  function handleResetFilters() {
+    const empty = {
+      peliculaId: '',
+      salaId: '',
+      fecha: '',
+    }
+
+    setFilters(empty)
+    loadData()
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+      <div className="flex justify-between items-center">
+
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
+          <h1 className="text-3xl font-bold">
             Gestión de Funciones
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {functions.length} funciones programadas
+
+          <p className="text-muted-foreground">
+            {funciones.length} funciones registradas
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva función
+
+        <Button
+          onClick={() => {
+            setEditingId(null)
+            setForm(EMPTY_FORM)
+            setShowForm(true)
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Función
         </Button>
+
       </div>
 
-      {/* Formulario */}
-      {showForm && (
-        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold">Nueva función</h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Película */}
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="movieId">Película</Label>
-              <select
-                id="movieId" name="movieId"
-                value={form.movieId} onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {MOCK_MOVIES.map((m) => (
-                  <option key={m.id} value={m.id}>{m.title}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Ciudad */}
-            <div className="space-y-1.5">
-              <Label htmlFor="cityId">Ciudad</Label>
-              <select
-                id="cityId" name="cityId"
-                value={form.cityId} onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {MOCK_CITIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Cine */}
-            <div className="space-y-1.5">
-              <Label htmlFor="cinemaId">Cine</Label>
-              <select
-                id="cinemaId" name="cinemaId"
-                value={form.cinemaId} onChange={handleChange}
-                disabled={!form.cityId}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-              >
-                <option value="">Selecciona un cine</option>
-                {availableCinemas.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Fecha y hora */}
-            <div className="space-y-1.5">
-              <Label htmlFor="startTime">Fecha y hora</Label>
-              <Input
-                id="startTime" name="startTime"
-                type="datetime-local"
-                value={form.startTime} onChange={handleChange}
-              />
-            </div>
-
-            {/* Tipo de proyección */}
-            <div className="space-y-1.5">
-              <Label htmlFor="projectionType">Tipo de proyección</Label>
-              <select
-                id="projectionType" name="projectionType"
-                value={form.projectionType} onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {PROJECTION_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Precio */}
-            <div className="space-y-1.5">
-              <Label htmlFor="price">Precio (Q)</Label>
-              <Input
-                id="price" name="price"
-                type="number" min="0"
-                value={form.price} onChange={handleChange}
-                placeholder="60"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleSubmit}>Agregar función</Button>
-            <Button variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
-          </div>
-
-          <p className="text-xs text-muted-foreground border-t border-border pt-3">
-            ⚠️ <strong>Pendiente de integración:</strong> Este formulario deberá conectarse a{' '}
-            <code>POST /api/movies/functions</code> del movies-service cuando esté implementado.
-          </p>
+      {success && (
+        <div className="border border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800 rounded-lg p-4 flex gap-3 text-green-700 dark:text-green-300">
+          <CheckCircle size={20} />
+          {success}
         </div>
       )}
 
-      {/* Tabla de funciones */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      {/* FILTROS */}
+      <div className="border rounded-lg p-4 bg-card">
+        <div className="grid md:grid-cols-3 gap-4">
+
+          <div>
+            <Label>Filtrar por Película</Label>
+
+            <select
+              className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+              value={filters.peliculaId}
+              onChange={(e) =>
+                handleChangeFilter(
+                  'peliculaId',
+                  e.target.value,
+                )
+              }
+            >
+              <option value="">
+                Todas las películas
+              </option>
+
+              {peliculas.map((pelicula) => (
+                <option
+                  key={pelicula.id}
+                  value={pelicula.id}
+                >
+                  {pelicula.titulo}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label>Filtrar por Sala</Label>
+
+            <select
+              className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+              value={filters.salaId}
+              onChange={(e) =>
+                handleChangeFilter(
+                  'salaId',
+                  e.target.value,
+                )
+              }
+            >
+              <option value="">
+                Todas las salas
+              </option>
+
+              {salas.map((sala) => (
+                <option
+                  key={sala.id}
+                  value={sala.id}
+                >
+                  {sala.nombre} —{' '}
+                  {sala.cine?.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label>Filtrar por Fecha</Label>
+
+            <Input
+              type="date"
+              className="mt-2"
+              value={filters.fecha}
+              onChange={(e) =>
+                handleChangeFilter(
+                  'fecha',
+                  e.target.value,
+                )
+              }
+            />
+          </div>
+
+        </div>
+
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            onClick={handleResetFilters}
+          >
+            Limpiar filtros
+          </Button>
+        </div>
+      </div>
+
+      {showForm && (
+        <div className="border rounded-lg p-6 bg-card">
+
+          <h2 className="font-semibold text-lg mb-4">
+            {editingId
+              ? 'Editar Función'
+              : 'Nueva Función'}
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+
+            <div>
+              <Label>Película</Label>
+
+              <select
+                value={form.peliculaId}
+                onChange={(e) => {
+                  const selected =
+                    peliculas.find(
+                      (p) =>
+                        p.id ===
+                        e.target.value,
+                    )
+
+                  setForm({
+                    ...form,
+                    peliculaId:
+                      e.target.value,
+                    tipo:
+                      selected?.tipo ??
+                      form.tipo,
+                  })
+                }}
+                className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+              >
+                <option value="">
+                  Seleccione una película
+                </option>
+
+                {peliculas.map((pelicula) => (
+                  <option
+                    key={pelicula.id}
+                    value={pelicula.id}
+                  >
+                    {pelicula.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Sala</Label>
+
+              <select
+                value={form.salaId}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    salaId: e.target.value,
+                  })
+                }
+                className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+              >
+                <option value="">
+                  Seleccione una sala
+                </option>
+
+                {salas.map((sala) => (
+                  <option
+                    key={sala.id}
+                    value={sala.id}
+                  >
+                    {sala.nombre} —{' '}
+                    {sala.cine?.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Fecha y hora</Label>
+
+              <Input
+                type="datetime-local"
+                value={form.fechaHora}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    fechaHora:
+                      e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Tipo</Label>
+
+              <select
+                value={form.tipo}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tipo: e.target.value,
+                  })
+                }
+                className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+              >
+                <option value="ESTRENO">
+                  ESTRENO
+                </option>
+                <option value="PREVENTA">
+                  PREVENTA
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <Label>Precio base</Label>
+
+              <Input
+                value="Q 45.00"
+                disabled
+              />
+            </div>
+
+            <div className="flex gap-2 items-center pt-8">
+              <input
+                type="checkbox"
+                checked={form.activa}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    activa:
+                      e.target.checked,
+                  })
+                }
+              />
+
+              <Label>
+                Función activa
+              </Label>
+            </div>
+
+          </div>
+
+          <div className="flex gap-2 mt-6">
+            <Button
+              onClick={handleSubmit}
+            >
+              {editingId
+                ? 'Guardar Cambios'
+                : 'Crear Función'}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowForm(false)
+                setEditingId(null)
+                setForm(EMPTY_FORM)
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+
+        </div>
+      )}
+
+      {/* TABLA */}
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full">
+
           <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left px-4 py-3 font-medium">Película</th>
-              <th className="text-left px-4 py-3 font-medium">Ciudad</th>
-              <th className="text-left px-4 py-3 font-medium">Cine</th>
-              <th className="text-left px-4 py-3 font-medium">Fecha y hora</th>
-              <th className="text-left px-4 py-3 font-medium">Proyección</th>
-              <th className="text-left px-4 py-3 font-medium">Precio</th>
-              <th className="text-right px-4 py-3 font-medium">Acciones</th>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-4">
+                Función
+              </th>
+              <th className="text-left p-4">
+                Sala / Cine
+              </th>
+              <th className="text-left p-4">
+                Fecha y hora
+              </th>
+              <th className="text-left p-4">
+                Precio
+              </th>
+              <th className="text-left p-4">
+                Estado
+              </th>
+              <th className="text-right p-4">
+                Acciones
+              </th>
             </tr>
           </thead>
+
           <tbody>
-            {functions.map((fn) => {
-              const movie = MOCK_MOVIES.find((m) => m.id === fn.movieId)
-              const cinema = MOCK_CINEMAS.find((c) => c.id === fn.cinemaId)
-              const city = MOCK_CITIES.find((c) => c.id === fn.cityId)
-              return (
-                <tr key={fn.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{movie?.title ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{city?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{cinema?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDateTime(fn.startTime)}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="outline" className="text-xs">{fn.projectionType}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">Q{fn.price.toFixed(2)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end">
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(fn.id)} className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+            {funciones.map((funcion) => (
+              <tr
+                key={funcion.id}
+                className="border-b hover:bg-muted/30"
+              >
+                <td className="p-4">
+                  <div className="space-y-2">
+
+                    <div className="flex items-center gap-2">
+                      <Film className="h-4 w-4" />
+                      <span className="font-medium">
+                        {funcion.pelicula
+                          ?.titulo ??
+                          '-'}
+                      </span>
                     </div>
-                  </td>
-                </tr>
-              )
-            })}
+
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Tag className="h-4 w-4" />
+                      {funcion.pelicula
+                        ?.tipo ?? '-'}
+                    </div>
+
+                  </div>
+                </td>
+
+                <td className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <DoorOpen className="h-4 w-4" />
+                      <span>
+                        {funcion.sala?.nombre ??
+                          '-'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Building2 className="h-4 w-4" />
+                      {funcion.cine?.nombre ??
+                        '-'}
+                    </div>
+                  </div>
+                </td>
+
+                <td className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      <span>
+                        {formatDateTime(
+                          funcion.fechaHora,
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Clock3 className="h-4 w-4" />
+                      {funcion.sala
+                        ?.tipoSala ?? '-'}
+                    </div>
+                  </div>
+                </td>
+
+                <td className="p-4">
+                  Q{' '}
+                  {Number(
+                    funcion.precioBase,
+                  ).toFixed(2)}
+                </td>
+
+                <td className="p-4">
+                  <Badge
+                    variant={
+                      funcion.activa
+                        ? 'default'
+                        : 'secondary'
+                    }
+                  >
+                    {funcion.activa
+                      ? 'Activa'
+                      : 'Inactiva'}
+                  </Badge>
+                </td>
+
+                <td className="p-4">
+                  <div className="flex justify-end gap-2">
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleEdit(
+                          funcion.id,
+                        )
+                      }
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        handleDelete(
+                          funcion.id,
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
+
         </table>
 
-        {functions.length === 0 && (
+        {funciones.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
-            <Calendar className="mx-auto h-8 w-8 mb-2 opacity-30" />
-            No hay funciones programadas.
+            <CalendarDays className="mx-auto h-8 w-8 mb-2 opacity-40" />
+            No hay funciones registradas
           </div>
         )}
       </div>
+
     </div>
   )
 }

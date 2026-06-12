@@ -143,6 +143,7 @@ services:
       DB_NAME: filmstars_movies
       DB_USER: postgres
       DB_PASS: postgres123
+      RESERVATIONS_SERVICE_URL: http://reservations-service:3003
     ports:
       - "3002:3002"
     depends_on:
