@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: true   # Si un servicio falla, cancela los demás inmediatamente
       matrix:
-        service: [reservas-service, payments-service]
+        service: [reservas-service, payments-service, users-service, movies-service]
 
     defaults:
       run:
