@@ -1,0 +1,38 @@
+{
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11"
+  },
+   "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.service.ts",
+      "!**/*.module.ts",
+      "!**/main.ts"
+    ],
+    "coverageDirectory": "../coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "lines": 75,
+        "functions": 75,
+        "branches": 70,
+        "statements": 75
+      }
+    }
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:cov:open": "jest --coverage && open coverage/lcov-report/index.html"
+  }
+
+}
