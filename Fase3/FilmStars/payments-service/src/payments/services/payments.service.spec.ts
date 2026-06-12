@@ -160,9 +160,9 @@ describe('PaymentsService', () => {
       );
     });
 
-    it('throws NotFoundException when processed pago is not found on reload', async () => {
+    it('throws InternalServerErrorException when processed pago is not found on reload', async () => {
       pagoRepository.findById.mockResolvedValue(null);
-      await expect(service.crearYProcesarPago(defaultDto)).rejects.toThrow(NotFoundException);
+      await expect(service.crearYProcesarPago(defaultDto)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
