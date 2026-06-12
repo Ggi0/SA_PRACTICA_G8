@@ -16,7 +16,7 @@ import { ReservationsPage } from '@/pages/ReservationsPage'
 // admin
 import { AdminMoviesPage } from '@/pages/admin/AdminMoviesPage'
 import { AdminFunctionsPage } from '@/pages/admin/AdminFunctionsPage'
-import { AdminCinesPage } from '@/pages/admin/AdminCinesPage'
+import { AdminCinemasPage } from '@/pages/admin/AdminCinemasPage'
 import { AdminSalasPage } from '@/pages/admin/AdminSalasPage'
 
 // Protege rutas que requieren login
@@ -65,7 +65,7 @@ export function AppRoutes() {
         <Route path="movies" element={<AdminMoviesPage />} />
         <Route path="functions" element={<AdminFunctionsPage />} />
         <Route path="salas" element={<AdminSalasPage />} />
-        <Route path="cines" element={<AdminCinesPage />} />
+        <Route path="cines" element={<AdminCinemasPage />} />
       </Route>
 
 
