@@ -14,6 +14,7 @@ const makeFunctRepo = () => ({
   findByMovie: jest.fn(),
   findByRoom: jest.fn(),
   findByDate: jest.fn(),
+  findSeatsBySalaId: jest.fn().mockResolvedValue([]),
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -31,10 +32,12 @@ const makeFunction = (overrides: any = {}) => ({
 describe('FunctAdmService', () => {
   let service: FunctAdmService;
   let repo: ReturnType<typeof makeFunctRepo>;
+  let mockSyncService: { inicializarAsientosFuncion: jest.Mock };
 
   beforeEach(() => {
     repo = makeFunctRepo();
-    service = new FunctAdmService(repo);
+    mockSyncService = { inicializarAsientosFuncion: jest.fn().mockResolvedValue({}) };
+    service = new FunctAdmService(repo, mockSyncService as any);
   });
 
   describe('findAll()', () => {
@@ -120,6 +123,8 @@ describe('FunctAdmService', () => {
     it('crea una función y la retorna', async () => {
       const data = { movieId: 'movie-1', roomId: 'room-1', tipo: 'ESTRENO' };
       repo.create.mockResolvedValue(makeFunction(data));
+      repo.findSeatsBySalaId.mockResolvedValue([]);
+      mockSyncService.inicializarAsientosFuncion.mockResolvedValue({});
 
       const result = await service.create(data);
 

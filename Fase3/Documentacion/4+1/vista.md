@@ -11,7 +11,7 @@ El modelo **4+1** describe la arquitectura del sistema desde cinco perspectivas 
 
 Representa los casos de uso críticos del sistema desde la perspectiva del usuario final y el administrador. Incluye los cuatro flujos principales: autenticación y gestión de usuarios (CDU001), gestión de cartelera (CDU002), búsqueda y visualización (CDU003), y reserva y compra de boletos (CDU004). Además, detalla escenarios de concurrencia como la compra exitosa simultánea, condiciones de carrera entre usuarios, pagos rechazados y expiración de bloqueos TTL.
 
-![Vista de Escenarios](<Vista de Escenarios.png>)
+![Vista de Escenarios](<VistaEscenariosFase3.png>)
 
 ---
 
