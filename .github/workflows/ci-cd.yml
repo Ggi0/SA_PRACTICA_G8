@@ -112,7 +112,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
           build-args: |
-            VITE_API_URL=http://${{ secrets.AWS_EC2_HOST }}:8080/api
+            VITE_API_URL=http://${{ secrets.AWS_EC2_HOST }}:8080
 
   # ─────────────────────────────────────────────────────────────────────────────
   # FASE 3: CD — Despliegue en AWS EC2
