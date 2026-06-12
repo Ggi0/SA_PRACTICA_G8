@@ -126,15 +126,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose to AWS EC2
+      - name: Copy deployment files to AWS EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.AWS_EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.AWS_SSH_KEY }}
-          source: Fase3/FilmStars/docker-compose.yml
+          source: "Fase3/FilmStars/docker-compose.prod.yml,Fase3/FilmStars/database,Fase3/FilmStars/rabbitmq,Fase3/FilmStars/reservas-service/src/docker"
           target: ~/filmstars/
-          strip_components: 3
+          strip_components: 2
 
       - name: Execute deployment on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -144,15 +144,18 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             cd ~/filmstars
-            # Escribir variables de entorno desde los secrets de GitHub
-            cat > .env << EOF
+            # Crear estructura de directorios para SQL de reservas
+            mkdir -p database/sql/reservations
+            cp -n reservas-service/src/docker/init.sql database/sql/reservations/init.sql 2>/dev/null || true
+            cp -n reservas-service/src/docker/seed.sql database/sql/reservations/seed.sql 2>/dev/null || true
+            # Escribir variables de entorno
+            cat > .env << 'ENVEOF'
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            NODE_ENV=production
-            EOF
+            ENVEOF
             # Descargar imágenes más recientes de DockerHub
-            docker compose pull
+            docker compose -f docker-compose.prod.yml pull
             # Reiniciar los contenedores con las imágenes nuevas
-            docker compose up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             # Limpiar imágenes antiguas para liberar espacio
             docker image prune -f
