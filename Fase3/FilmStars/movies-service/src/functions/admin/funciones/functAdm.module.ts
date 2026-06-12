@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 
 import {
   FUNCTIONS_ADMIN_REPOSITORY,
@@ -11,8 +12,12 @@ import { FunctAdmController } from './functAdm.controller';
 import { FunctAdmRepository } from './functAdm.repository';
 import { FunctAdmService } from './functAdm.service';
 
+
+import { ReservasSyncService } from './reservas-sync.service';
+
+
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, HttpModule],
 
   controllers: [FunctAdmController],
 
@@ -25,6 +30,7 @@ import { FunctAdmService } from './functAdm.service';
       provide: FUNCTIONS_ADMIN_SERVICE,
       useClass: FunctAdmService,
     },
+    ReservasSyncService,
   ],
 })
 export class FunctAdmModule {}

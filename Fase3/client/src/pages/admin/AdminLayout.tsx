@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { label: 'Películas', href: '/admin/movies', icon: Film },
+  { label: 'Cines', href: '/admin/cines', icon: Calendar },
+  { label: 'Salas', href: '/admin/salas', icon: Calendar },
   { label: 'Funciones', href: '/admin/functions', icon: Calendar },
 ]
 
