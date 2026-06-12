@@ -36,6 +36,7 @@ const EMPTY_FORM = {
 export function AdminSalasPage() {
   const [salas, setSalas] = useState<any[]>([])
   const [cines, setCines] = useState<any[]>([])
+  const [selectedCinema, setSelectedCinema] = useState('')
 
   const [showForm, setShowForm] =
     useState(false)
@@ -191,26 +192,25 @@ export function AdminSalasPage() {
         </Label>
 
         <select
-          className="w-full h-10 mt-2 rounded-md border bg-background px-3"
-          onChange={(e) =>
-            handleFilterCinema(
-              e.target.value,
-            )
-          }
-        >
-          <option value="">
-            Todos los cines
-          </option>
+  value={selectedCinema}
+  className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+  onChange={(e) => {
+    const value = e.target.value
 
-          {cines.map((cine) => (
-            <option
-              key={cine.id}
-              value={cine.id}
-            >
-              {cine.nombre}
-            </option>
-          ))}
-        </select>
+    setSelectedCinema(value)
+    handleFilterCinema(value)
+  }}
+>
+  <option value="">
+    Todos los cines
+  </option>
+
+  {cines.map((cine) => (
+    <option key={cine.id} value={cine.id}>
+      {cine.nombre}
+    </option>
+  ))}
+</select>
 
       </div>
 

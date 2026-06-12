@@ -19,7 +19,7 @@ Representa los casos de uso críticos del sistema desde la perspectiva del usuar
 
 Muestra la estructura estática del sistema mediante un diagrama de secuencia que describe la interacción entre los componentes principales durante el flujo de reserva y compra. El cliente interactúa con la **Interfaz WebClient**, que se comunica de forma síncrona (REST) con el **ControladorSeatService** para bloquear el asiento y confirmar la compra. El controlador delega el procesamiento del pago de forma asíncrona a los **WorkersAsíncronos** mediante eventos, quienes retornan la confirmación final.
 
-![Vista Lógica](<Vista lógica.png>)
+![Vista Lógica](<Vista Logica.png>)
 
 ---
 
