@@ -1,253 +1,549 @@
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, Film } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
+import {
+  DoorOpen,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle,
+  Building2,
+  Users,
+} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { MOCK_MOVIES } from '@/services/mock/mockData'
-import type { Movie, MovieCategory } from '@/types'
 
-const CATEGORY_LABELS: Record<MovieCategory, string> = {
-  ESTRENO: 'Estreno',
-  PRE_VENTA: 'Pre-venta',
-  RE_ESTRENO: 'Re-estreno',
-}
-
-const CATEGORY_VARIANTS = {
-  ESTRENO: 'estreno' as const,
-  PRE_VENTA: 'preventa' as const,
-  RE_ESTRENO: 'reestreno' as const,
-}
+import {
+  getCinesList,
+  getSalas,
+  getSala,
+  getSalasByCinema,
+  createSala,
+  updateSala,
+  deleteSala,
+} from '@/services/api/admin/salasCRUD'
 
 const EMPTY_FORM = {
-  title: '',
-  synopsis: '',
-  duration: '',
-  rating: 'PG-13',
-  category: 'ESTRENO' as MovieCategory,
-  genre: '',
-  releaseDate: '',
+  cineId: '',
+  nombre: '',
+  capacidad: 20,
+  tipoSala: 'NORMAL',
+  activa: true,
 }
 
 export function AdminSalasPage() {
-  const [movies, setMovies] = useState<Movie[]>(MOCK_MOVIES)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [salas, setSalas] = useState<any[]>([])
+  const [cines, setCines] = useState<any[]>([])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  const [showForm, setShowForm] =
+    useState(false)
+
+  const [editingId, setEditingId] =
+    useState<string | null>(null)
+
+  const [success, setSuccess] =
+    useState('')
+
+  const [form, setForm] =
+    useState(EMPTY_FORM)
+
+  async function loadData() {
+    const [salasData, cinesData] =
+      await Promise.all([
+        getSalas(),
+        getCinesList(),
+      ])
+
+    setSalas(salasData)
+    setCines(cinesData)
   }
 
-  const handleEdit = (movie: Movie) => {
-    setEditingId(movie.id)
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function handleSubmit() {
+    try {
+      const payload = {
+        ...form,
+        capacidad: Number(
+          form.capacidad,
+        ),
+      }
+
+      if (editingId) {
+        await updateSala(
+          editingId,
+          payload,
+        )
+
+        setSuccess(
+          'Sala actualizada correctamente',
+        )
+      } else {
+        await createSala(payload)
+
+        setSuccess(
+          'Sala creada correctamente',
+        )
+      }
+
+      setShowForm(false)
+
+      setEditingId(null)
+
+      setForm(EMPTY_FORM)
+
+      loadData()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function handleEdit(
+    id: string,
+  ) {
+    const sala = await getSala(id)
+
+    setEditingId(id)
+
     setForm({
-      title: movie.title,
-      synopsis: movie.synopsis,
-      duration: String(movie.duration),
-      rating: movie.rating,
-      category: movie.category,
-      genre: movie.genre.join(', '),
-      releaseDate: movie.releaseDate,
-    })
+  cineId: sala.cine?.id ?? '',
+  nombre: sala.nombre,
+  capacidad: sala.capacidad,
+  tipoSala: sala.tipoSala,
+  activa: sala.activa,
+})
+
     setShowForm(true)
   }
 
-  const handleDelete = (id: string) => {
-    setMovies((prev) => prev.filter((m) => m.id !== id))
+  async function handleDelete(
+    id: string,
+  ) {
+    if (
+      !confirm(
+        '¿Eliminar sala?',
+      )
+    )
+      return
+
+    await deleteSala(id)
+
+    loadData()
   }
 
-  const handleSubmit = () => {
-    if (!form.title || !form.duration) return
-
-    if (editingId) {
-      setMovies((prev) => prev.map((m) =>
-        m.id === editingId
-          ? {
-              ...m,
-              title: form.title,
-              synopsis: form.synopsis,
-              duration: Number(form.duration),
-              rating: form.rating,
-              category: form.category,
-              genre: form.genre.split(',').map((g) => g.trim()),
-              releaseDate: form.releaseDate,
-            }
-          : m
-      ))
-    } else {
-      const newMovie: Movie = {
-        id: `m${Date.now()}`,
-        title: form.title,
-        synopsis: form.synopsis,
-        duration: Number(form.duration),
-        rating: form.rating,
-        category: form.category,
-        genre: form.genre.split(',').map((g) => g.trim()),
-        releaseDate: form.releaseDate,
-        posterUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300&h=450&fit=crop',
-      }
-      setMovies((prev) => [...prev, newMovie])
+  async function handleFilterCinema(
+    cinemaId: string,
+  ) {
+    if (!cinemaId) {
+      loadData()
+      return
     }
 
-    setForm(EMPTY_FORM)
-    setEditingId(null)
-    setShowForm(false)
-  }
+    const data =
+      await getSalasByCinema(
+        cinemaId,
+      )
 
-  const handleCancel = () => {
-    setForm(EMPTY_FORM)
-    setEditingId(null)
-    setShowForm(false)
+    setSalas(data)
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+      <div className="flex justify-between items-center">
+
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
-            Gestión de SALAS
+          <h1 className="text-3xl font-bold">
+            Gestión de Salas
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {movies.length} películas en cartelera
+
+          <p className="text-muted-foreground">
+            {salas.length} salas registradas
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva película
+
+        <Button
+          onClick={() =>
+            setShowForm(true)
+          }
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Sala
         </Button>
+
       </div>
 
-      {/* Formulario */}
-      {showForm && (
-        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-          <h2 className="font-semibold">
-            {editingId ? 'Editar película' : 'Nueva película'}
-          </h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="title">Título</Label>
-              <Input id="title" name="title" value={form.title} onChange={handleChange} placeholder="Título de la película" />
-            </div>
-
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="synopsis">Sinopsis</Label>
-              <textarea
-                id="synopsis" name="synopsis"
-                value={form.synopsis} onChange={handleChange}
-                placeholder="Descripción de la película"
-                rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="duration">Duración (min)</Label>
-              <Input id="duration" name="duration" type="number" value={form.duration} onChange={handleChange} placeholder="120" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="rating">Clasificación</Label>
-              <select
-                id="rating" name="rating"
-                value={form.rating} onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option>G</option>
-                <option>PG</option>
-                <option>PG-13</option>
-                <option>R</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="category">Categoría</Label>
-              <select
-                id="category" name="category"
-                value={form.category} onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="ESTRENO">Estreno</option>
-                <option value="PRE_VENTA">Pre-venta</option>
-                <option value="RE_ESTRENO">Re-estreno</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="releaseDate">Fecha de estreno</Label>
-              <Input id="releaseDate" name="releaseDate" type="date" value={form.releaseDate} onChange={handleChange} />
-            </div>
-
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="genre">Géneros (separados por coma)</Label>
-              <Input id="genre" name="genre" value={form.genre} onChange={handleChange} placeholder="Acción, Drama, Ciencia Ficción" />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleSubmit}>
-              {editingId ? 'Guardar cambios' : 'Agregar película'}
-            </Button>
-            <Button variant="ghost" onClick={handleCancel}>Cancelar</Button>
-          </div>
-
-          {/* Nota de implementación */}
-          <p className="text-xs text-muted-foreground border-t border-border pt-3 mt-2">
-            ⚠️ <strong>Pendiente de integración:</strong> Este formulario deberá conectarse a{' '}
-            <code>POST /api/movies</code> del movies-service cuando esté implementado.
-          </p>
+      {success && (
+        <div className="border border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800 rounded-lg p-4 flex gap-3 text-green-700 dark:text-green-300">
+          <CheckCircle size={20} />
+          {success}
         </div>
       )}
 
-      {/* Tabla de películas */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border rounded-lg p-4 bg-card">
+
+        <Label>
+          Filtrar por Cine
+        </Label>
+
+        <select
+          className="w-full h-10 mt-2 rounded-md border bg-background px-3"
+          onChange={(e) =>
+            handleFilterCinema(
+              e.target.value,
+            )
+          }
+        >
+          <option value="">
+            Todos los cines
+          </option>
+
+          {cines.map((cine) => (
+            <option
+              key={cine.id}
+              value={cine.id}
+            >
+              {cine.nombre}
+            </option>
+          ))}
+        </select>
+
+      </div>
+
+      {showForm && (
+        <div className="border rounded-lg p-6 bg-card">
+
+          <h2 className="font-semibold text-lg mb-4">
+            {editingId
+              ? 'Editar Sala'
+              : 'Nueva Sala'}
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+
+            <div>
+              <Label>Cine</Label>
+
+              <select
+                value={
+                  form.cineId
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    cineId:
+                      e.target
+                        .value,
+                  })
+                }
+                className="w-full h-10 rounded-md border bg-background px-3"
+              >
+                <option value="">
+                  Seleccione un cine
+                </option>
+
+                {cines.map(
+                  (cine) => (
+                    <option
+                      key={
+                        cine.id
+                      }
+                      value={
+                        cine.id
+                      }
+                    >
+                      {
+                        cine.nombre
+                      }
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+
+            <div>
+              <Label>
+                Nombre
+              </Label>
+
+              <Input
+                value={
+                  form.nombre
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    nombre:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <Label>
+                Capacidad
+              </Label>
+
+              <Input
+                type="number"
+                value={
+                  form.capacidad
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    capacidad:
+                      Number(
+                        e.target
+                          .value,
+                      ),
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <Label>
+                Tipo de Sala
+              </Label>
+
+              <select
+                value={
+                  form.tipoSala
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tipoSala:
+                      e.target
+                        .value,
+                  })
+                }
+                className="w-full h-10 rounded-md border bg-background px-3"
+              >
+                <option value="NORMAL">
+                  NORMAL
+                </option>
+
+                <option value="VIP">
+                  VIP
+                </option>
+
+                <option value="IMAX">
+                  IMAX
+                </option>
+
+                <option value="4DX">
+                  4DX
+                </option>
+              </select>
+            </div>
+
+            <div className="flex gap-2 items-center">
+
+              <input
+                type="checkbox"
+                checked={
+                  form.activa
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    activa:
+                      e.target
+                        .checked,
+                  })
+                }
+              />
+
+              <Label>
+                Sala Activa
+              </Label>
+
+            </div>
+
+          </div>
+
+          <div className="flex gap-2 mt-6">
+
+            <Button
+              onClick={
+                handleSubmit
+              }
+            >
+              {editingId
+                ? 'Guardar Cambios'
+                : 'Crear Sala'}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() =>
+                setShowForm(
+                  false,
+                )
+              }
+            >
+              Cancelar
+            </Button>
+
+          </div>
+
+        </div>
+      )}
+
+      <div className="border rounded-lg overflow-hidden">
+
+        <table className="w-full">
+
           <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left px-4 py-3 font-medium">Título</th>
-              <th className="text-left px-4 py-3 font-medium">Categoría</th>
-              <th className="text-left px-4 py-3 font-medium">Duración</th>
-              <th className="text-left px-4 py-3 font-medium">Clasificación</th>
-              <th className="text-left px-4 py-3 font-medium">Géneros</th>
-              <th className="text-right px-4 py-3 font-medium">Acciones</th>
+
+            <tr className="border-b bg-muted/50">
+
+              <th className="text-left p-4">
+                Sala
+              </th>
+
+              <th className="text-left p-4">
+                Cine
+              </th>
+
+              <th className="text-left p-4">
+                Capacidad
+              </th>
+
+              <th className="text-left p-4">
+                Tipo
+              </th>
+
+              <th className="text-right p-4">
+                Acciones
+              </th>
+
             </tr>
+
           </thead>
+
           <tbody>
-            {movies.map((movie) => (
-              <tr key={movie.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3 font-medium">{movie.title}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={CATEGORY_VARIANTS[movie.category]}>
-                    {CATEGORY_LABELS[movie.category]}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{movie.duration} min</td>
-                <td className="px-4 py-3 text-muted-foreground">{movie.rating}</td>
-                <td className="px-4 py-3 text-muted-foreground">{movie.genre.join(', ')}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(movie)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(movie.id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+
+            {salas.map((sala) => (
+              <tr
+                key={sala.id}
+                className="border-b hover:bg-muted/30"
+              >
+                <td className="p-4">
+
+                  <div className="flex items-center gap-2">
+
+                    <DoorOpen className="h-4 w-4" />
+
+                    <span className="font-medium">
+                      {
+                        sala.nombre
+                      }
+                    </span>
+
                   </div>
+
                 </td>
+
+                <td className="p-4">
+
+                  <div className="flex items-center gap-2 text-muted-foreground">
+
+                    <Building2 className="h-4 w-4" />
+
+                    {sala.cine
+                      ?.nombre ??
+                      '-'}
+
+                  </div>
+
+                </td>
+
+                <td className="p-4">
+
+                  <div className="flex items-center gap-2">
+
+                    <Users className="h-4 w-4" />
+
+                    {
+                      sala.capacidad
+                    }
+
+                  </div>
+
+                </td>
+
+                <td className="p-4">
+
+                  <Badge
+                    variant="outline"
+                  >
+                    {
+                      sala.tipoSala
+                    }
+                  </Badge>
+
+                </td>
+
+                <td className="p-4">
+
+                  <div className="flex justify-end gap-2">
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleEdit(
+                          sala.id,
+                        )
+                      }
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        handleDelete(
+                          sala.id,
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+
+                  </div>
+
+                </td>
+
               </tr>
             ))}
+
           </tbody>
+
         </table>
 
-        {movies.length === 0 && (
+        {salas.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
-            <Film className="mx-auto h-8 w-8 mb-2 opacity-30" />
-            No hay películas registradas.
+
+            <DoorOpen className="mx-auto h-8 w-8 mb-2 opacity-40" />
+
+            No hay salas registradas
+
           </div>
         )}
+
       </div>
+
     </div>
   )
 }
