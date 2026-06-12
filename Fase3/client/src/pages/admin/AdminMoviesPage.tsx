@@ -77,41 +77,68 @@ export function AdminMoviesPage() {
     loadData()
   }, [])
 
-  const handleSubmit = async () => {
-    const payload = {
-      ...form,
-      duracion_min: Number(form.duracion_min),
-    }
+const handleSubmit = async () => {
+  const payload = {
+    ...form,
+    duracion_min: Number(form.duracion_min),
+  }
 
-    try {
-      if (editingId) {
-        await updateMovie(editingId, payload)
-        setSuccess('Película actualizada correctamente')
-      } else {
-        await createMovie(payload)
+  if (!payload.titulo.trim()) {
+    alert('El título es obligatorio')
+    return
+  }
 
-        const updatedMovies = await getMovies()
+  if (!payload.sinopsis.trim()) {
+    alert('La sinopsis es obligatoria')
+    return
+  }
 
-        setMovies(updatedMovies)
+  if (!payload.duracion_min || Number.isNaN(payload.duracion_min)) {
+    alert('La duración debe ser un número válido')
+    return
+  }
 
-        const latest = updatedMovies[0]
+  if (!payload.fecha_estreno) {
+    alert('La fecha de estreno es obligatoria')
+    return
+  }
 
-        if (latest) {
-          setLastMovieId(latest.id)
-        }
+  if (!payload.poster_url.trim()) {
+    alert('El poster es obligatorio')
+    return
+  }
 
-        setSuccess('Película creada exitosamente')
+  if (payload.generos.length === 0) {
+    alert('Debes seleccionar al menos un género')
+    return
+  }
+
+  try {
+    console.log('payload enviado:', payload)
+
+    if (editingId) {
+      await updateMovie(editingId, payload)
+      setSuccess('Película actualizada correctamente')
+    } else {
+      const created = await createMovie(payload)
+
+      if (created?.id) {
+        setLastMovieId(created.id)
       }
 
-      await loadData()
-
-      setShowForm(false)
-      setEditingId(null)
-      setForm(EMPTY_FORM)
-    } catch (err) {
-      console.error(err)
+      setSuccess('Película creada exitosamente')
     }
+
+    await loadData()
+
+    setShowForm(false)
+    setEditingId(null)
+    setForm(EMPTY_FORM)
+  } catch (err: any) {
+    console.error('Error creando/editando película:', err)
+    console.error('Respuesta backend:', err?.response?.data)
   }
+}
 
   const handleDeleteMovie = async (id: string) => {
     if (!confirm('¿Eliminar película?')) return
@@ -121,29 +148,27 @@ export function AdminMoviesPage() {
     loadData()
   }
 
-  const handleEdit = async (id: string) => {
-    const movie = await getMovie(id)
+const handleEdit = async (id: string) => {
+  const movie = await getMovie(id)
 
-    setEditingId(id)
+  setEditingId(id)
 
-    setForm({
-      titulo: movie.titulo,
-      sinopsis: movie.sinopsis,
-      duracion_min: String(movie.duracion_min),
-      clasificacion:
-        movie.clasificacion ?? 'PG-13',
-      poster_url: movie.poster_url ?? '',
-      fecha_estreno:
-        movie.fecha_estreno ?? '',
-      tipo: movie.tipo,
-      activa: true,
-      generos: movie.generos.map(
-        (g) => g.id,
-      ),
-    })
+  setForm({
+    titulo: movie.titulo,
+    sinopsis: movie.sinopsis,
+    duracion_min: String(movie.duracion_min),
+    clasificacion: movie.clasificacion ?? 'PG-13',
+    poster_url: movie.poster_url ?? '',
+    fecha_estreno: movie.fecha_estreno
+      ? movie.fecha_estreno.slice(0, 10)
+      : '',
+    tipo: movie.tipo,
+    activa: movie.activa ?? true,
+    generos: movie.generos.map((g) => g.id),
+  })
 
-    setShowForm(true)
-  }
+  setShowForm(true)
+}
 
   return (
   <div className="space-y-6">
@@ -293,8 +318,8 @@ export function AdminMoviesPage() {
                   className="w-full h-10 mt-2 rounded-md border bg-background px-3"
                 >
                   <option>ESTRENO</option>
-                  <option>PRE_VENTA</option>
-                  <option>RE_ESTRENO</option>
+                  <option>PREVENTA</option>
+                  <option>REESTRENO</option>
                 </select>
               </div>
 
