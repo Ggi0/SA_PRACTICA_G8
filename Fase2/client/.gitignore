@@ -23,4 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Vite compiled config
+vite.config.js
+vite.config.d.ts
  
