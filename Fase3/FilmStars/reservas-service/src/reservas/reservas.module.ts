@@ -23,6 +23,9 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 import { MessagingModule } from '../messaging/messaging.module';
 
+import { InternalFuncionesController } from './controllers/internal-funciones.controller';
+import { FuncionesSyncService } from './services/funciones-sync.service';
+
 /**
  * Módulo principal del dominio de reservas
  */
@@ -39,7 +42,7 @@ import { MessagingModule } from '../messaging/messaging.module';
     forwardRef(() => MessagingModule), // ✅ AQUÍ VA
   ],
 
-  controllers: [ReservasController],
+  controllers: [ReservasController, InternalFuncionesController],
 
   providers: [
     ReservaRepository,
@@ -49,6 +52,7 @@ import { MessagingModule } from '../messaging/messaging.module';
     DisponibilidadService,
     ExpiracionService,
     JwtAuthGuard,
+    FuncionesSyncService,
   ],
 
   exports: [
@@ -58,6 +62,7 @@ import { MessagingModule } from '../messaging/messaging.module';
     ReservasService,
     DisponibilidadService,
     ExpiracionService,
+    FuncionesSyncService,
   ],
 })
 export class ReservasModule {}
