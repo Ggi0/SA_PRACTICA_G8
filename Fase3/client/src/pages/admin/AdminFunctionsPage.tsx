@@ -454,7 +454,7 @@ export function AdminFunctionsPage() {
   ) {
     const next = {
       ...filters,
-      value,
+      [field]: value,
     }
 
     setFilters(next)
