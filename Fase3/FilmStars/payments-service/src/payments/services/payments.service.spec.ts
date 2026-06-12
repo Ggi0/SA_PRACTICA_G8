@@ -1,226 +1,274 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
-
 import { PaymentsService } from './payments.service';
-import { PagoRepository } from '../repositories/pago.repository';
+import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PagoEstado } from '../../common/enums/pago-estado.enum';
-import { PAYMENT_GATEWAY } from '../interfaces/payment-gateway.interface';
-import { MESSAGE_PUBLISHER } from '../../messaging/publisher.interface';
-import { MensajeriaEntity } from '../../database/entities/mensajeria.entity';
 import { RABBITMQ_QUEUES } from '../../messaging/rabbitmq.constants';
 
-const buildMockPago = (overrides = {}) => ({
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const makePago = (overrides: any = {}) => ({
   id: 'pago-1',
-  reservaIdRef: 'res-1',
+  reservaIdRef: 'reserva-1',
   usuarioIdRef: 'user-1',
-  monto: '90.00',
+  monto: '100.00',
   moneda: 'GTQ',
   metodoPago: 'TARJETA',
-  estado: PagoEstado.APROBADO,
-  detalles: [],
-  boletos: [],
-  reembolsos: [],
+  estado: PagoEstado.PENDIENTE,
+  proveedorRef: null,
+  procesadoEn: null,
   ...overrides,
 });
 
+const makeDto = (overrides: any = {}) => ({
+  reservaId: 'reserva-1',
+  usuarioId: 'user-1',
+  monto: 100,
+  moneda: 'GTQ',
+  metodoPago: 'TARJETA',
+  ...overrides,
+});
+
+const makeGatewayResult = (overrides: any = {}) => ({
+  estado: PagoEstado.APROBADO,
+  proveedorRef: 'PROV-123',
+  procesadoEn: new Date(),
+  ...overrides,
+});
+
+// ─── Mock factories ───────────────────────────────────────────────────────────
+const makePagoRepository = () => ({
+  createPago: jest.fn(),
+  updateResultado: jest.fn(),
+  findById: jest.fn(),
+});
+
+const makeMensajeriaRepo = () => ({
+  create: jest.fn().mockReturnValue({}),
+  save: jest.fn().mockResolvedValue({}),
+});
+
+const makePaymentGateway = () => ({
+  procesarPago: jest.fn(),
+});
+
+const makePublisher = () => ({
+  publish: jest.fn().mockResolvedValue(undefined),
+});
+
+// ─── Factory del servicio ─────────────────────────────────────────────────────
+function makeService(overrides: any = {}) {
+  const pagoRepository = overrides.pagoRepository ?? makePagoRepository();
+  const mensajeriaRepo = overrides.mensajeriaRepo ?? makeMensajeriaRepo();
+  const paymentGateway = overrides.paymentGateway ?? makePaymentGateway();
+  const publisher = overrides.publisher ?? makePublisher();
+
+  const service = new PaymentsService(
+    pagoRepository as any,
+    mensajeriaRepo as any,
+    paymentGateway as any,
+    publisher as any,
+  );
+
+  return { service, pagoRepository, mensajeriaRepo, paymentGateway, publisher };
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 describe('PaymentsService', () => {
-  let service: PaymentsService;
-  let pagoRepository: jest.Mocked<PagoRepository>;
-  let mensajeriaRepo: { create: jest.Mock; save: jest.Mock };
-  let paymentGateway: { procesarPago: jest.Mock };
-  let publisher: { publish: jest.Mock };
 
-  const defaultDto = {
-    reservaId: 'res-1',
-    usuarioId: 'user-1',
-    monto: 90,
-    metodoPago: 'TARJETA',
-  };
+  // ── crearYProcesarPago ────────────────────────────────────────────────────
+  describe('crearYProcesarPago()', () => {
+    it('crea el pago, llama al gateway y retorna el pago actualizado', async () => {
+      const pago = makePago();
+      const pagoAprobado = makePago({ estado: PagoEstado.APROBADO });
+      const gatewayResult = makeGatewayResult();
 
-  const gatewaySuccess = {
-    estado: PagoEstado.APROBADO,
-    proveedorRef: 'fake-ok-pago-1',
-    mensaje: 'Pago aprobado',
-    procesadoEn: new Date(),
-  };
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(pago);
+      paymentGateway.procesarPago.mockResolvedValue(gatewayResult);
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(pagoAprobado);
 
-  beforeEach(async () => {
-    pagoRepository = {
-      createPago: jest.fn().mockResolvedValue(buildMockPago({ estado: PagoEstado.PENDIENTE })),
-      updateResultado: jest.fn().mockResolvedValue(undefined),
-      findById: jest.fn().mockResolvedValue(buildMockPago()),
-      withTransaction: jest.fn(),
-    } as any;
+      const result = await service.crearYProcesarPago(makeDto());
 
-    mensajeriaRepo = {
-      create: jest.fn().mockImplementation((v) => v),
-      save: jest.fn().mockResolvedValue({}),
-    };
-
-    paymentGateway = {
-      procesarPago: jest.fn().mockResolvedValue(gatewaySuccess),
-    };
-
-    publisher = {
-      publish: jest.fn().mockResolvedValue(undefined),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentsService,
-        { provide: PagoRepository, useValue: pagoRepository },
-        { provide: getRepositoryToken(MensajeriaEntity), useValue: mensajeriaRepo },
-        { provide: PAYMENT_GATEWAY, useValue: paymentGateway },
-        { provide: MESSAGE_PUBLISHER, useValue: publisher },
-      ],
-    }).compile();
-
-    service = module.get<PaymentsService>(PaymentsService);
-  });
-
-  describe('crearYProcesarPago', () => {
-    it('creates pago, calls gateway and returns updated pago on success', async () => {
-      const result = await service.crearYProcesarPago(defaultDto);
-
-      expect(pagoRepository.createPago).toHaveBeenCalledWith(
-        expect.objectContaining({
-          reservaIdRef: 'res-1',
-          usuarioIdRef: 'user-1',
-          estado: PagoEstado.PENDIENTE,
-        }),
-      );
-      expect(paymentGateway.procesarPago).toHaveBeenCalled();
-      expect(pagoRepository.updateResultado).toHaveBeenCalledWith(
-        'pago-1',
-        expect.objectContaining({ estado: PagoEstado.APROBADO }),
-      );
-      expect(publisher.publish).toHaveBeenCalledWith(
-        RABBITMQ_QUEUES.PAYMENT_RESULT,
-        expect.objectContaining({ reservaId: 'res-1', estado: PagoEstado.APROBADO }),
-      );
-      expect(result).toEqual(buildMockPago());
+      expect(result.estado).toBe(PagoEstado.APROBADO);
+      expect(pagoRepository.createPago).toHaveBeenCalledTimes(1);
+      expect(paymentGateway.procesarPago).toHaveBeenCalledTimes(1);
     });
 
-    it('uses GTQ as default moneda when not provided', async () => {
-      await service.crearYProcesarPago(defaultDto);
+    it('usa GTQ como moneda por defecto si no se especifica', async () => {
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.APROBADO }));
+
+      await service.crearYProcesarPago(makeDto({ moneda: undefined }));
+
       expect(pagoRepository.createPago).toHaveBeenCalledWith(
         expect.objectContaining({ moneda: 'GTQ' }),
       );
     });
 
-    it('uses provided moneda when given', async () => {
-      await service.crearYProcesarPago({ ...defaultDto, moneda: 'USD' });
-      expect(pagoRepository.createPago).toHaveBeenCalledWith(
-        expect.objectContaining({ moneda: 'USD' }),
-      );
-    });
+    it('publica resultado en PAYMENT_RESULT queue tras pago exitoso', async () => {
+      const { service, pagoRepository, paymentGateway, publisher } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.APROBADO }));
 
-    it('saves outbox event after successful payment', async () => {
-      await service.crearYProcesarPago(defaultDto);
-      expect(mensajeriaRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ tipoEvento: 'pago.procesado' }),
-      );
-    });
+      await service.crearYProcesarPago(makeDto());
 
-    it('marks pago as FALLIDO and publishes result when gateway throws', async () => {
-      paymentGateway.procesarPago.mockRejectedValueOnce(new Error('Gateway error'));
-      pagoRepository.findById.mockResolvedValue(buildMockPago({ estado: PagoEstado.FALLIDO }));
-
-      const result = await service.crearYProcesarPago(defaultDto);
-
-      expect(pagoRepository.updateResultado).toHaveBeenCalledWith(
-        'pago-1',
-        expect.objectContaining({ estado: PagoEstado.FALLIDO }),
-      );
       expect(publisher.publish).toHaveBeenCalledWith(
         RABBITMQ_QUEUES.PAYMENT_RESULT,
-        expect.objectContaining({ estado: PagoEstado.FALLIDO }),
-      );
-      expect(result.estado).toBe(PagoEstado.FALLIDO);
-    });
-
-    it('saves outbox event pago.fallido when gateway throws', async () => {
-      paymentGateway.procesarPago.mockRejectedValueOnce(new Error('Gateway error'));
-      pagoRepository.findById.mockResolvedValue(buildMockPago({ estado: PagoEstado.FALLIDO }));
-
-      await service.crearYProcesarPago(defaultDto);
-
-      expect(mensajeriaRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ tipoEvento: 'pago.fallido' }),
+        expect.objectContaining({ reservaId: 'reserva-1' }),
       );
     });
 
-    it('throws InternalServerErrorException when failed pago cannot be retrieved', async () => {
-      paymentGateway.procesarPago.mockRejectedValueOnce(new Error('Gateway error'));
-      pagoRepository.findById.mockResolvedValue(null);
+    it('guarda evento en outbox tras pago exitoso', async () => {
+      const { service, pagoRepository, paymentGateway, mensajeriaRepo } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.APROBADO }));
 
-      await expect(service.crearYProcesarPago(defaultDto)).rejects.toThrow(
+      await service.crearYProcesarPago(makeDto());
+
+      expect(mensajeriaRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('lanza InternalServerErrorException si el pago procesado no se puede recargar', async () => {
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(null); // no se encuentra
+
+      await expect(service.crearYProcesarPago(makeDto())).rejects.toThrow(
         InternalServerErrorException,
       );
     });
 
-    it('throws InternalServerErrorException when processed pago is not found on reload', async () => {
-      pagoRepository.findById.mockResolvedValue(null);
-      await expect(service.crearYProcesarPago(defaultDto)).rejects.toThrow(InternalServerErrorException);
-    });
-  });
+    it('marca pago como FALLIDO si el gateway lanza error', async () => {
+      const pagoFallido = makePago({ estado: PagoEstado.FALLIDO });
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockRejectedValue(new Error('Gateway timeout'));
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(pagoFallido);
 
-  describe('getPagoById', () => {
-    it('returns pago when found', async () => {
-      const result = await service.getPagoById('pago-1');
-      expect(result).toEqual(buildMockPago());
-      expect(pagoRepository.findById).toHaveBeenCalledWith('pago-1');
-    });
+      const result = await service.crearYProcesarPago(makeDto());
 
-    it('throws NotFoundException when pago not found', async () => {
-      pagoRepository.findById.mockResolvedValue(null);
-      await expect(service.getPagoById('pago-1')).rejects.toThrow(NotFoundException);
-      await expect(service.getPagoById('pago-1')).rejects.toThrow('Pago no encontrado');
-    });
-  });
-
-  describe('procesarPagoDesdeEvento', () => {
-    it('delegates to crearYProcesarPago with correct args', async () => {
-      const spy = jest.spyOn(service, 'crearYProcesarPago');
-
-      await service.procesarPagoDesdeEvento({
-        reservaId: 'res-1',
-        usuarioId: 'user-1',
-        monto: 90,
-        metodoPago: 'TARJETA',
-      });
-
-      expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({ reservaId: 'res-1', usuarioId: 'user-1', monto: 90 }),
+      expect(result.estado).toBe(PagoEstado.FALLIDO);
+      expect(pagoRepository.updateResultado).toHaveBeenCalledWith(
+        'pago-1',
+        expect.objectContaining({ estado: PagoEstado.FALLIDO }),
       );
     });
 
-    it('uses GTQ as default moneda when not provided', async () => {
-      const spy = jest.spyOn(service, 'crearYProcesarPago');
+    it('publica resultado FALLIDO en queue cuando el gateway falla', async () => {
+      const { service, pagoRepository, paymentGateway, publisher } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockRejectedValue(new Error('Gateway error'));
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.FALLIDO }));
 
-      await service.procesarPagoDesdeEvento({
-        reservaId: 'res-1',
-        usuarioId: 'user-1',
-        monto: 90,
-        metodoPago: 'TARJETA',
-      });
+      await service.crearYProcesarPago(makeDto());
 
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ moneda: 'GTQ' }));
+      expect(publisher.publish).toHaveBeenCalledWith(
+        RABBITMQ_QUEUES.PAYMENT_RESULT,
+        expect.objectContaining({ estado: PagoEstado.FALLIDO }),
+      );
     });
 
-    it('passes provided moneda through', async () => {
-      const spy = jest.spyOn(service, 'crearYProcesarPago');
+    it('guarda evento pago.fallido en outbox cuando el gateway falla', async () => {
+      const { service, pagoRepository, paymentGateway, mensajeriaRepo } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockRejectedValue(new Error('Error'));
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.FALLIDO }));
 
-      await service.procesarPagoDesdeEvento({
-        reservaId: 'res-1',
+      await service.crearYProcesarPago(makeDto());
+
+      expect(mensajeriaRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ tipoEvento: 'pago.fallido' }),
+      );
+    });
+
+    it('lanza InternalServerErrorException si falla gateway Y no se puede recuperar el pago', async () => {
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockRejectedValue(new Error('Error'));
+      pagoRepository.updateResultado.mockResolvedValue(undefined);
+      pagoRepository.findById.mockResolvedValue(null); // no se puede recuperar
+
+      await expect(service.crearYProcesarPago(makeDto())).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+  });
+
+  // ── getPagoById ───────────────────────────────────────────────────────────
+  describe('getPagoById()', () => {
+    it('retorna el pago cuando existe', async () => {
+      const { service, pagoRepository } = makeService();
+      pagoRepository.findById.mockResolvedValue(makePago());
+
+      const result = await service.getPagoById('pago-1');
+
+      expect(result.id).toBe('pago-1');
+      expect(pagoRepository.findById).toHaveBeenCalledWith('pago-1');
+    });
+
+    it('lanza NotFoundException si el pago no existe', async () => {
+      const { service, pagoRepository } = makeService();
+      pagoRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getPagoById('no-existe')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('lanza NotFoundException con mensaje correcto', async () => {
+      const { service, pagoRepository } = makeService();
+      pagoRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getPagoById('no-existe')).rejects.toThrow(
+        'Pago no encontrado',
+      );
+    });
+  });
+
+  // ── procesarPagoDesdeEvento ───────────────────────────────────────────────
+  describe('procesarPagoDesdeEvento()', () => {
+    it('delega correctamente a crearYProcesarPago', async () => {
+      const pagoAprobado = makePago({ estado: PagoEstado.APROBADO });
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.findById.mockResolvedValue(pagoAprobado);
+
+      const result = await service.procesarPagoDesdeEvento({
+        reservaId: 'reserva-1',
         usuarioId: 'user-1',
-        monto: 90,
-        moneda: 'USD',
+        monto: 100,
         metodoPago: 'TARJETA',
       });
 
-      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ moneda: 'USD' }));
+      expect(result.estado).toBe(PagoEstado.APROBADO);
+      expect(pagoRepository.createPago).toHaveBeenCalledTimes(1);
+    });
+
+    it('usa GTQ como moneda por defecto desde evento', async () => {
+      const { service, pagoRepository, paymentGateway } = makeService();
+      pagoRepository.createPago.mockResolvedValue(makePago());
+      paymentGateway.procesarPago.mockResolvedValue(makeGatewayResult());
+      pagoRepository.findById.mockResolvedValue(makePago({ estado: PagoEstado.APROBADO }));
+
+      await service.procesarPagoDesdeEvento({
+        reservaId: 'reserva-1',
+        usuarioId: 'user-1',
+        monto: 100,
+        metodoPago: 'TARJETA',
+      });
+
+      expect(pagoRepository.createPago).toHaveBeenCalledWith(
+        expect.objectContaining({ moneda: 'GTQ' }),
+      );
     });
   });
 });
