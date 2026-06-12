@@ -1,0 +1,158 @@
+name: CI/CD Pipeline - FilmStars
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FASE 1: CI — Pruebas Unitarias y Cobertura (servicios en paralelo con matriz)
+  # ─────────────────────────────────────────────────────────────────────────────
+  ci-tests:
+    name: CI - Test Services
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true   # Si un servicio falla, cancela los demás inmediatamente
+      matrix:
+        service: [reservas-service, payments-service]
+
+    defaults:
+      run:
+        working-directory: Fase3/FilmStars/${{ matrix.service }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit tests with coverage
+        run: npm run test:cov
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.service }}
+          path: Fase3/FilmStars/${{ matrix.service }}/coverage/
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FASE 2: CD — Build y Push de imágenes a DockerHub
+  # Solo se ejecuta si TODOS los tests pasan y solo en push directo a develop
+  # ─────────────────────────────────────────────────────────────────────────────
+  cd-docker:
+    name: CD - Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [ci-tests]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push reservas-service
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/FilmStars/reservas-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:latest
+
+      - name: Build & Push payments-service
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/FilmStars/payments-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-payments-service:latest
+
+      - name: Build & Push users-service
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/FilmStars/users-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-users-service:latest
+
+      - name: Build & Push movies-service
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/FilmStars/movies-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-movies-service:latest
+
+      - name: Build & Push api-gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/FilmStars/api-gateway
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:latest
+
+      - name: Build & Push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: Fase3/client
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FASE 3: CD — Despliegue en AWS EC2
+  # Se conecta por SSH, descarga las imágenes nuevas y reinicia los contenedores
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-aws:
+    name: Deploy to AWS EC2
+    runs-on: ubuntu-latest
+    needs: [cd-docker]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose to AWS EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_SSH_KEY }}
+          source: Fase3/FilmStars/docker-compose.yml
+          target: ~/filmstars/
+          strip_components: 3
+
+      - name: Execute deployment on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            cd ~/filmstars
+            # Escribir variables de entorno desde los secrets de GitHub
+            cat > .env << EOF
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NODE_ENV=production
+            EOF
+            # Descargar imágenes más recientes de DockerHub
+            docker compose pull
+            # Reiniciar los contenedores con las imágenes nuevas
+            docker compose up -d --remove-orphans
+            # Limpiar imágenes antiguas para liberar espacio
+            docker image prune -f
