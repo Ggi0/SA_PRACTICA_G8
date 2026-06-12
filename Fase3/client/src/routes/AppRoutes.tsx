@@ -10,9 +10,14 @@ import { SeatsPage } from '@/pages/SeatsPage'
 import { CheckoutPage } from '@/pages/Checkoutpage'
 import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+
+import { ReservationsPage } from '@/pages/ReservationsPage'
+
+// admin
 import { AdminMoviesPage } from '@/pages/admin/AdminMoviesPage'
 import { AdminFunctionsPage } from '@/pages/admin/AdminFunctionsPage'
-import { ReservationsPage } from '@/pages/ReservationsPage'
+import { AdminCinemasPage } from '@/pages/admin/AdminCinemasPage'
+import { AdminSalasPage } from '@/pages/admin/AdminSalasPage'
 
 // Protege rutas que requieren login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -55,12 +60,12 @@ export function AppRoutes() {
       </Route>
 
       {/* Rutas de admin con su propio layout */}
-      <Route path="/admin" element={
-        <AdminRoute><AdminLayout /></AdminRoute>
-      }>
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<Navigate to="/admin/movies" replace />} />
         <Route path="movies" element={<AdminMoviesPage />} />
         <Route path="functions" element={<AdminFunctionsPage />} />
+        <Route path="salas" element={<AdminSalasPage />} />
+        <Route path="cines" element={<AdminCinemasPage />} />
       </Route>
 
 

@@ -174,87 +174,93 @@ export class FunctAdmRepository {
   }
 
   async create(data: any) {
-    const client = await this.pool.connect();
+  const client = await this.pool.connect();
 
-    try {
-      await client.query('BEGIN');
+  try {
+    await client.query('BEGIN');
 
-      const movie = await client.query(
-        `SELECT id FROM pelicula WHERE id = $1`,
-        [data.peliculaId],
-      );
+    const movie = await client.query(
+      `SELECT id FROM pelicula WHERE id = $1`,
+      [data.peliculaId],
+    );
 
-      if (!movie.rowCount) {
-        throw new BadRequestException('Película no existe');
-      }
-
-      const room = await client.query(
-        `SELECT id FROM sala WHERE id = $1`,
-        [data.salaId],
-      );
-
-      if (!room.rowCount) {
-        throw new BadRequestException('Sala no existe');
-      }
-
-      const duplicated = await client.query(
-        `
-        SELECT id
-        FROM funcion
-        WHERE sala_id = $1
-        AND fecha_hora = $2
-        `,
-        [data.salaId, data.fechaHora],
-      );
-
-      if (duplicated.rowCount) {
-        throw new BadRequestException(
-          'La sala ya tiene una función programada en ese horario',
-        );
-      }
-
-      await client.query(
-        `
-        UPDATE pelicula
-        SET
-          tipo = $1,
-          modificacion = CURRENT_TIMESTAMP
-        WHERE id = $2
-        `,
-        [data.tipo, data.peliculaId],
-      );
-
-      await client.query(
-        `
-        INSERT INTO funcion
-        (
-          pelicula_id,
-          sala_id,
-          fecha_hora,
-          precio_base,
-          activa
-        )
-        VALUES
-        (
-          $1,$2,$3,45,$4
-        )
-        `,
-        [
-          data.peliculaId,
-          data.salaId,
-          data.fechaHora,
-          data.activa,
-        ],
-      );
-
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
+    if (!movie.rowCount) {
+      throw new BadRequestException('Película no existe');
     }
+
+    const room = await client.query(
+      `SELECT id FROM sala WHERE id = $1`,
+      [data.salaId],
+    );
+
+    if (!room.rowCount) {
+      throw new BadRequestException('Sala no existe');
+    }
+
+    const duplicated = await client.query(
+      `
+      SELECT id
+      FROM funcion
+      WHERE sala_id = $1
+      AND fecha_hora = $2
+      `,
+      [data.salaId, data.fechaHora],
+    );
+
+    if (duplicated.rowCount) {
+      throw new BadRequestException(
+        'La sala ya tiene una función programada en ese horario',
+      );
+    }
+
+    await client.query(
+      `
+      UPDATE pelicula
+      SET tipo = $1,
+          modificacion = CURRENT_TIMESTAMP
+      WHERE id = $2
+      `,
+      [data.tipo, data.peliculaId],
+    );
+
+    // ✅ CLAVE: RETURNING
+    const result = await client.query(
+      `
+      INSERT INTO funcion
+      (
+        pelicula_id,
+        sala_id,
+        fecha_hora,
+        precio_base,
+        activa
+      )
+      VALUES ($1,$2,$3,45,$4)
+      RETURNING
+        id,
+        pelicula_id,
+        sala_id,
+        fecha_hora,
+        precio_base,
+        activa
+      `,
+      [
+        data.peliculaId,
+        data.salaId,
+        data.fechaHora,
+        data.activa,
+      ],
+    );
+
+    await client.query('COMMIT');
+
+    return result.rows[0]; // ✅ IMPORTANTÍSIMO
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
+}
 
   async update(id: string, data: any) {
     await this.pool.query(
@@ -299,4 +305,24 @@ export class FunctAdmRepository {
       [id],
     );
   }
+
+  async findSeatsBySalaId(salaId: string) {
+  const result = await this.pool.query(
+    `
+    SELECT
+      id,
+      codigo,
+      fila,
+      numero
+    FROM asiento
+    WHERE sala_id = $1
+      AND activo = TRUE
+    ORDER BY fila ASC, numero ASC
+    `,
+    [salaId],
+  );
+
+  return result.rows;
+}
+
 }
