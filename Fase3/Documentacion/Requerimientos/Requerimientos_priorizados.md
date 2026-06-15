@@ -62,6 +62,28 @@
 | RF-57  | Servicio de Películas/Cartelera            | Alta      | El sistema debe validar que no existan dos funciones en la misma sala y horario.                                             |
 | RF-58  | Servicio de Películas/Cartelera            | Alta      | El sistema debe permitir definir si una función corresponde a Estreno, Pre-venta o Re-estreno.                                         |
 | RF-59  | Servicio de Reservas/Asientos              | Alta      | El sistema debe generar o actualizar la disponibilidad de asientos de una función con base en el mapa de asientos de la sala asignada. |
+| RF-60 | Frontend / Módulo Administrativo | Alta | El sistema debe permitir al administrador cargar un archivo `.csv` desde el panel administrativo para registrar múltiples películas de forma simultánea. |
+| RF-61 | Servicio de Películas / Cartelera | Alta | El sistema debe procesar archivos CSV que contengan registros de películas normalizados. |
+| RF-62 | Servicio de Películas / Cartelera | Alta | El sistema debe validar la estructura del archivo CSV antes de insertar información en la base de datos. |
+| RF-63 | Servicio de Películas / Cartelera | Alta | El sistema debe validar campos obligatorios por cada película importada, como título, duración, clasificación, fecha de estreno y tipo de función. |
+| RF-64 | Servicio de Películas / Cartelera | Alta | El sistema debe rechazar registros inválidos del CSV e informar el motivo del error al administrador. |
+| RF-65 | Servicio de Películas / Cartelera | Alta | El sistema debe permitir al administrador mantener la carga manual de películas una a una, además de la carga masiva por CSV. |
+| RF-66 | Servicio de Películas / Cartelera | Alta | El sistema debe registrar las películas válidas del archivo CSV en la base de datos `filmstars_movies`. |
+| RF-67 | Servicio de Películas / Cartelera | Media | El sistema debe mostrar un resumen de importación indicando registros procesados, registros exitosos y registros rechazados. |
+| RF-68 | Servicio de Películas / Cartelera | Media | El sistema debe evitar duplicidad de películas cuando el archivo CSV contenga títulos ya registrados bajo los criterios definidos por el equipo. |
+| RF-69 | Frontend / Servicio de Películas | Alta | El sistema debe implementar paginación del lado del servidor en la vista general de cartelera. |
+| RF-70 | Servicio de Películas / Cartelera | Alta | El sistema debe retornar un máximo de 10 películas por página desde el backend. |
+| RF-71 | Servicio de Películas / Cartelera | Alta | El sistema debe aceptar parámetros de consulta como `page`, `limit`, `category`, `city` y `search` para filtrar y paginar el catálogo. |
+| RF-72 | Frontend | Alta | El sistema debe mostrar controles de paginación: página actual, siguiente, anterior y total de páginas. |
+| RF-73 | Frontend / Servicio de Películas | Alta | El sistema debe conservar la paginación cuando el usuario aplique filtros por ciudad, búsqueda o tipo de función. |
+| RF-74 | Servicio de Películas / Cartelera | Alta | El sistema debe evitar enviar todo el catálogo al frontend para paginar en cliente. |
+| RF-75 | API Gateway | Alta | El sistema debe enrutar las peticiones paginadas de catálogo hacia el servicio de películas preservando los parámetros de consulta. |
+| RF-76 | Pipeline CI/CD | Alta | El sistema debe ejecutar automáticamente pruebas unitarias cuando exista push o merge hacia la rama correspondiente. |
+| RF-77 | Pipeline CI/CD | Alta | El sistema debe construir imágenes Docker de frontend y servicios backend únicamente dentro del pipeline. |
+| RF-78 | Pipeline CI/CD / Docker Hub | Alta | El sistema debe publicar las imágenes generadas en Docker Hub con el tag `latest`. |
+| RF-79 | Pipeline CI/CD / VM | Alta | El sistema debe desplegar en la VM mediante Docker Compose descargando imágenes precompiladas desde Docker Hub. |
+| RF-80 | Pipeline CI/CD | Alta | El sistema debe cancelar el despliegue si las pruebas fallan o la cobertura baja del 75%. |
+| RF-81 | Documentación | Media | El sistema debe documentar el formato esperado del CSV y los criterios de validación usados por el motor de carga masiva. |
 
 
 ## Requerimientos NO Funcionales (RNF)
@@ -105,3 +127,21 @@
 | RNF-35 | Docker Compose  | Alta      | El archivo `docker-compose.yml` debe permitir replicar el entorno completo de manera local con un solo comando.                                                                |
 | RNF-36 | Despliegue | Alta      | El proyecto debe documentar el flujo de despliegue desde GitHub hacia el entorno definido por el equipo.                                                                       |
 | RNF-37 | Trazabilidad | Media     | La documentación debe incluir el flujo desde commit, Pull Request, ejecución del pipeline, pruebas y despliegue.                                                               |
+| RNF-38 | Rendimiento | Alta | Las consultas paginadas de cartelera deben responder en un tiempo aceptable bajo condiciones normales de uso, evitando transferir catálogos completos al frontend. |
+| RNF-39 | Paginación | Alta | La paginación debe realizarse obligatoriamente en el backend mediante `LIMIT/OFFSET` o estrategia equivalente. |
+| RNF-40 | Escalabilidad | Alta | El catálogo debe soportar crecimiento de registros sin degradar significativamente la experiencia del usuario. |
+| RNF-41 | Usabilidad | Media | Los controles de paginación deben ser claros y mantenerse funcionales al aplicar filtros. |
+| RNF-42 | Integridad de datos | Alta | La carga CSV debe validar estructura, tipos de datos y campos obligatorios antes de registrar películas. |
+| RNF-43 | Tolerancia a errores | Alta | El sistema debe manejar errores de CSV sin interrumpir el funcionamiento general del servicio de cartelera. |
+| RNF-44 | Observabilidad | Media | El resultado de una carga masiva debe dejar evidencia de registros exitosos y rechazados. |
+| RNF-45 | Seguridad | Alta | La carga masiva de películas por CSV debe estar disponible únicamente para usuarios con rol `Admin`. |
+| RNF-46 | Seguridad | Alta | El backend debe validar el JWT y rol `Admin` aunque el frontend oculte la opción de carga CSV. |
+| RNF-47 | DevOps | Alta | Las imágenes Docker deben construirse exclusivamente en el pipeline CI/CD, no directamente en la VM de producción. |
+| RNF-48 | Infraestructura inmutable | Alta | El despliegue en producción debe usar imágenes precompiladas desde Docker Hub mediante `image: usuario/servicio:tag`. |
+| RNF-49 | Docker Hub | Alta | Docker Hub debe funcionar como registro público de artefactos para frontend y servicios backend. |
+| RNF-50 | CI/CD | Alta | El pipeline debe ejecutar secuencialmente las fases de Test, Build & Push y Deploy. |
+| RNF-51 | Cobertura | Alta | La fase de pruebas debe cancelar el pipeline si la cobertura de endpoints o componentes utilizados es menor al 75%. |
+| RNF-52 | Despliegue | Alta | El despliegue hacia la VM debe realizarse por `pull` de imágenes y reinicio de contenedores mediante Docker Compose. |
+| RNF-53 | Ambientes | Media | El proyecto debe diferenciar el flujo de despliegue hacia `develop` y `release` según el ambiente definido por el equipo. |
+| RNF-54 | Mantenibilidad | Alta | La lectura de CSV y la paginación deben implementarse con separación de responsabilidades y principios SOLID. |
+| RNF-55 | Versionamiento | Media | La entrega debe preparar el tag de versión `V2.2.0`. |
