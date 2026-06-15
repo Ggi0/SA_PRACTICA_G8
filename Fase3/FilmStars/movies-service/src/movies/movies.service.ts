@@ -2,7 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../common/app-error';
 import { MOVIES_REPOSITORY } from '../common/tokens';
 import { IMoviesRepository } from './movies.repository';
-import { MovieCategory, MovieFilters, MovieRecord, MovieType, PublicMovie } from './movie.types';
+import { MovieCategory, MovieFilters, MovieRecord, MovieType, PublicMovie, 
+MoviePageFilters,
+  PaginatedMoviesResult
+ } from './movie.types';
 import { IMoviePriceStrategy } from './price-strategy/movie-price.strategy';
 import { EstrenoPriceStrategy } from './price-strategy/estreno.strategy';
 import { PreventaPriceStrategy } from './price-strategy/preventa.strategy';
@@ -11,6 +14,9 @@ import { ReestrenoPriceStrategy } from './price-strategy/reestreno.strategy';
 // ISP: interfaz de servicio solo con los métodos que los clientes necesitan
 export interface IMoviesService {
   list(filters: MovieFilters): Promise<PublicMovie[]>;
+
+  listPage(filters: MoviePageFilters): Promise<PaginatedMoviesResult>;
+
   getById(id: string): Promise<PublicMovie>;
   calculatePrice(tipo: MovieType, basePrice: number): number;
 }
@@ -31,6 +37,38 @@ export class MoviesService implements IMoviesService {
     const movies = await this.repo.findAll(filters);
     return movies.map(this.toPublicMovie.bind(this));
   }
+
+
+
+
+
+  async listPage(filters: MoviePageFilters): Promise<PaginatedMoviesResult> {
+    const result = await this.repo.findPage(filters);
+    const data = result.items.map(this.toPublicMovie.bind(this));
+
+    const totalPages =
+      result.totalItems === 0
+        ? 0
+        : Math.ceil(result.totalItems / result.limit);
+
+    return {
+      data,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        totalItems: result.totalItems,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+        hasPreviousPage: result.page > 1,
+      },
+    };
+  }
+
+
+
+
+
+
 
   async getById(id: string): Promise<PublicMovie> {
     const movie = await this.repo.findById(id);
