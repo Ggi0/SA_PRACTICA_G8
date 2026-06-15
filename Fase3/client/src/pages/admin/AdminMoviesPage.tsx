@@ -5,6 +5,7 @@ import {
   Pencil,
   Trash2,
   CheckCircle,
+    Upload,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,8 @@ import {
   updateMovie,
   deleteMovie,
 } from '@/services/api/admin/moviesCRUD'
+
+import { useNavigate } from 'react-router-dom'
 
 interface Genre {
   id: string
@@ -61,6 +64,8 @@ export function AdminMoviesPage() {
 
   const [success, setSuccess] = useState('')
   const [lastMovieId, setLastMovieId] = useState<string>('')
+
+  const navigate = useNavigate()
 
   const loadData = async () => {
     const [moviesData, genresData] =
@@ -183,6 +188,16 @@ const handleEdit = async (id: string) => {
           {movies.length} películas registradas
         </p>
       </div>
+
+
+<Button
+    variant="outline"
+    onClick={() => navigate('/admin/movies/bulk')}
+  >
+    <Upload className="h-4 w-4 mr-2" />
+    Carga Masiva
+  </Button>
+
 
       <Button onClick={() => setShowForm(true)}>
         <Plus className="h-4 w-4 mr-2" />

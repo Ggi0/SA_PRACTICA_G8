@@ -1,0 +1,17 @@
+titulo,sinopsis,duracion_min,clasificacion,poster_url,fecha_estreno,tipo,activa,generos
+,Nueva película editadooo,180,PG-13,https://example.com/posters/superman.jpg,2026-12-15,ESTRENO,true,Acción|Aventura
+Toy Story 5,Animación familiar,110,PG,https://example.com/posters/toystory5.jpg,2026-11-01,PREVENTA,true,Animación|Comedia
+Titanic Re-Release,Clásico reestrenado,195,PG-13,https://example.com/posters/titanic.jpg,2026-09-10,REESTRENO,true,
+Avatar 3,Nueva entrega épica,170,PG-13,https://example.com/posters/avatar3.jpg,2026-10-20,ESTRENO,true,Aventura|Acción
+Shrek 5,Regreso de Shrek,100,PG,https://example.com/posters/shrek5.jpg,2026-08-01,PREVENTA,true,Animación|Comedia
+
+Bad Movie 1,Duración inválida,abc,PG,https://example.com/posters/bad1.jpg,2026-07-01,ESTRENO,true,Acción
+Bad Movie 2,Fecha inválida,120,PG,https://example.com/posters/bad2.jpg,2026-13-50,ESTRENO,true,Drama
+Bad Movie 3,Tipo inválido,100,PG,https://example.com/posters/bad3.jpg,2026-06-10,ESTRENOO,true,Acción
+Bad Movie 4,Género inexistente,140,PG-13,https://example.com/posters/bad4.jpg,2026-06-10,ESTRENO,true,Fantasia
+Bad Movie 5,Boolean inválido,90,PG,https://example.com/posters/bad5.jpg,2026-06-10,ESTRENO,maybe,Comedia
+Bad Movie 6,URL inválida,100,PG,http//bad-url,2026-06-10,ESTRENO,true,Acción
+,Sin título,110,PG,https://example.com/posters/bad7.jpg,2026-06-10,ESTRENO,true,Drama
+Bad Movie 8,Duración negativa,-50,PG,https://example.com/posters/bad8.jpg,2026-06-10,ESTRENO,true,Aventura
+Bad Movie 9,Sin géneros,120,PG,https://example.com/posters/bad9.jpg,2026-06-10,ESTRENO,true
+Bad Movie 10,Tipo vacío,120,PG,https://example.com/posters/bad10.jpg,2026-06-10,,true,Acción
