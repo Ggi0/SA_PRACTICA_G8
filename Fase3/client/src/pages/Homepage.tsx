@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Ticket, MapPin } from 'lucide-react'
+import { Ticket, ChevronLeft,ChevronRight, ChevronRight as ChevronRightIcon, MapPin } from 'lucide-react'
 import { MovieGrid } from '@/components/movies/MoviesGrid'
 import { Button } from '@/components/ui/button'
-import { useMovies, useCities, useCinemas } from '@/hooks/useMovieData'
+import { useMoviesPaginated, useCities, useCinemas } from '@/hooks/useMovieData'
 import { useAuth } from '@/context/AuthContext'
 import { useCheckoutStore } from '@/context/checkoutStore'
 import type { MovieCategory } from '@/types'
@@ -18,19 +18,37 @@ const TABS: { label: string; value: MovieCategory | 'ALL' }[] = [
 
 // Imagen de sala de cine para el banner
 const BANNER_IMAGE = 'https://i.pinimg.com/736x/ba/41/3b/ba413bc9fb77b13574c82db6d08a99b8.jpg'
+const LIMIT = 10
 
 export function HomePage() {
   const { isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState<MovieCategory | 'ALL'>('ALL')
   const { selectedCity, setCity } = useCheckoutStore()
   const [selectedCinema, setSelectedCinema] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
-  const { data: movies = [], isLoading } = useMovies(
-    activeTab === 'ALL' ? undefined : activeTab
-  )
   const { data: cities = [] } = useCities()
   const { data: cinemas = [] } = useCinemas(selectedCity)
 
+  const handleTabChange = (tab: MovieCategory | 'ALL') => {
+      setActiveTab(tab)
+      setPage(1)
+    }
+     const handleCityChange = (cityId: string) => {
+    setCity(cityId)
+    setSelectedCinema(null)
+    setPage(1)
+  }
+  
+  const { data: paginatedData, isLoading } = useMoviesPaginated({
+    page,
+    limit: LIMIT,
+    category: activeTab === 'ALL' ? undefined : activeTab,
+  })
+   const movies = paginatedData?.data ?? []
+  const totalPages = paginatedData?.totalPages ?? 1
+  const total = paginatedData?.total ?? 0
+  
   const selectedCityName = cities.find((c) => c.id === selectedCity)?.name
   const selectedCinemaName = cinemas.find((c) => c.id === selectedCinema)?.name
 
@@ -74,21 +92,17 @@ export function HomePage() {
           </div>
         </div>
       </section>
-{/* ── Selector ciudad → cine ── */}
+  {/* ── Selector ciudad → cine ── */}
       {isAuthenticated && (
         <section className="border-b border-border shadow-sm" style={{ backgroundColor: '#1B1717' }}>
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-wrap items-center gap-2">
-
-              {/* Ícono */}
               <MapPin className="h-4 w-4 text-primary shrink-0" />
-
-              {/* Ciudades */}
               <div className="flex flex-wrap gap-2">
                 {cities.map((city) => (
                   <button
                     key={city.id}
-                    onClick={() => { setCity(city.id); setSelectedCinema(null) }}
+                    onClick={() => handleCityChange(city.id)}
                     className={cn(
                       'rounded-full px-4 py-1.5 text-sm font-medium transition-colors border',
                       selectedCity === city.id
@@ -101,10 +115,29 @@ export function HomePage() {
                 ))}
               </div>
 
-             
+              {selectedCity && cinemas.length > 0 && (
+                <>
+                  <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-wrap gap-2">
+                    {cinemas.map((cinema) => (
+                      <button
+                        key={cinema.id}
+                        onClick={() => setSelectedCinema(cinema.id)}
+                        className={cn(
+                          'rounded-full px-4 py-1.5 text-sm font-medium transition-colors border',
+                          selectedCinema === cinema.id
+                            ? 'bg-secondary text-primary-foreground border-secondary'
+                            : 'bg-background text-foreground border-border hover:border-secondary hover:text-secondary'
+                        )}
+                      >
+                        {cinema.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Resumen de selección */}
             {selectedCityName && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Mostrando funciones en <strong>{selectedCityName}</strong>
@@ -115,20 +148,26 @@ export function HomePage() {
         </section>
       )}
 
-      {/* ── Cartelera ── */}
+    {/* ── Cartelera ── */}
       <section className="container mx-auto px-4 py-10">
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold"
-            style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
-            Cartelera
-          </h2>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
+              Cartelera
+            </h2>
+            {!isLoading && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {total} película{total !== 1 ? 's' : ''} encontrada{total !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
 
           {/* Tabs de categoría */}
           <div className="flex gap-1 rounded-lg bg-muted p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
+                onClick={() => handleTabChange(tab.value)}
                 className={cn(
                   'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   activeTab === tab.value
@@ -142,7 +181,62 @@ export function HomePage() {
           </div>
         </div>
 
+        {/* Grid de películas */}
         <MovieGrid movies={movies} isLoading={isLoading} />
+
+        {/* ── Controles de paginación ── */}
+        {!isLoading && totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
+            {/* Anterior */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Anterior
+            </Button>
+
+            {/* Números de página */}
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={cn(
+                    'h-8 w-8 rounded-md text-sm font-medium transition-colors',
+                    page === p
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Siguiente */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="gap-1"
+            >
+              Siguiente
+               <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Info de paginación */}
+        {!isLoading && total > 0 && (
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Página {page} de {totalPages} — mostrando {movies.length} de {total} películas
+          </p>
+        )}
       </section>
     </div>
   )
