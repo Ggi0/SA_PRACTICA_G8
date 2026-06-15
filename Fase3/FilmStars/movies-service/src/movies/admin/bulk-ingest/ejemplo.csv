@@ -1,0 +1,4 @@
+titulo,sinopsis,duracion_min,clasificacion,poster_url,fecha_estreno,tipo,activa,generos
+Superman 3,"Nueva película editadooo",180,PG-13,https://example.com/posters/superman.jpg,2026-12-15,ESTRENO,true,Acción|Aventura
+Toy Story 5,"Animación familiar",110,PG,https://example.com/posters/toystory5.jpg,2026-11-01,PREVENTA,true,Animación|Comedia
+Titanic Re-Release,"Clásico reestrenado",195,PG-13,https://example.com/posters/titanic.jpg,2026-09-10,REESTRENO,true,Drama
