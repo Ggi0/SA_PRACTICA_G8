@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,4 +27,15 @@ export class BulkController {
   ) {
     return this.bulkService.uploadCsv(file);
   }
+
+  @Get('health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      module: 'bulk-upload',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  
 }
