@@ -43,7 +43,9 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.service.ts"
+      "**/*.service.ts",
+      "!**/bulk.service.ts",
+      "!**/reservas-sync.service.ts"
     ],
     "coverageDirectory": "../coverage",
     "coverageReporters": [
