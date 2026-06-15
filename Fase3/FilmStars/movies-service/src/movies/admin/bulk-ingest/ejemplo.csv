@@ -11,7 +11,7 @@ Bad Movie 3,Tipo inválido,100,PG,https://example.com/posters/bad3.jpg,2026-06-1
 Bad Movie 4,Género inexistente,140,PG-13,https://example.com/posters/bad4.jpg,2026-06-10,ESTRENO,true,Fantasia
 Bad Movie 5,Boolean inválido,90,PG,https://example.com/posters/bad5.jpg,2026-06-10,ESTRENO,maybe,Comedia
 Bad Movie 6,URL inválida,100,PG,http//bad-url,2026-06-10,ESTRENO,true,Acción
-Bad Movie 7,,110,PG,https://example.com/posters/bad7.jpg,2026-06-10,ESTRENO,true,Drama
+,Sin título,110,PG,https://example.com/posters/bad7.jpg,2026-06-10,ESTRENO,true,Drama
 Bad Movie 8,Duración negativa,-50,PG,https://example.com/posters/bad8.jpg,2026-06-10,ESTRENO,true,Aventura
 Bad Movie 9,Sin géneros,120,PG,https://example.com/posters/bad9.jpg,2026-06-10,ESTRENO,true
 Bad Movie 10,Tipo vacío,120,PG,https://example.com/posters/bad10.jpg,2026-06-10,,true,Acción
