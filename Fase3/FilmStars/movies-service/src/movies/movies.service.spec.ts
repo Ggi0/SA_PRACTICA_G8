@@ -30,6 +30,7 @@ const makeMovie = (overrides: Partial<MovieRecord> = {}): MovieRecord => ({
 
 const makeMoviesRepo = (): jest.Mocked<IMoviesRepository> => ({
   findAll: jest.fn(),
+  findPage: jest.fn(),
   findById: jest.fn(),
 });
 
