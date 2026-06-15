@@ -78,6 +78,13 @@
   "**/services/**/*.service.ts"
 ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "lines": 75,
+        "functions": 75,
+        "statements": 75
+      }
+    }
   }
 }
