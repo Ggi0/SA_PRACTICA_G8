@@ -18,6 +18,8 @@ import { AdminMoviesPage } from '@/pages/admin/AdminMoviesPage'
 import { AdminFunctionsPage } from '@/pages/admin/AdminFunctionsPage'
 import { AdminCinemasPage } from '@/pages/admin/AdminCinemasPage'
 import { AdminSalasPage } from '@/pages/admin/AdminSalasPage'
+import { AdminBulkMoviesPage } from '@/pages/admin/AdminBulkMoviesPage'
+
 
 // Protege rutas que requieren login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -66,6 +68,7 @@ export function AppRoutes() {
         <Route path="functions" element={<AdminFunctionsPage />} />
         <Route path="salas" element={<AdminSalasPage />} />
         <Route path="cines" element={<AdminCinemasPage />} />
+        <Route path="movies/bulk" element={<AdminBulkMoviesPage />} />
       </Route>
 
 
