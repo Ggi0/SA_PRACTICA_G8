@@ -65,7 +65,7 @@ export function HomePage() {
             <div className="max-w-xl">
               <h1 className="text-4xl font-bold leading-tight text-white md:text-5xl"
                 style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
-                Tu cine,<br />a un clic.
+                Tu CALIFICACION,<br />a un clic.
               </h1>
               <p className="mt-3 text-base text-white/80">
                 Selecciona tu ciudad, elige tu función y reserva tus asientos en segundos.
