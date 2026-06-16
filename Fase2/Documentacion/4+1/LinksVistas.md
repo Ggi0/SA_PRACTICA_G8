@@ -16,4 +16,4 @@
 [Abrir en LucidChart](https://lucid.app/lucidchart/9c353bd3-d652-4647-89e1-eddc9209017b/edit?viewport_loc=-1521%2C-655%2C5221%2C2239%2C0_0&invitationId=inv_e461b605-a829-4937-8655-c5cba8c8ee3f)
 
 ## Vista 4+1
-[Abrir en LucidChart] (https://lucid.app/lucidchart/c2259583-33d7-4cdf-9911-c740dd780852/edit?view_items=pJq3oLMf-Ady&page=0_0&invitationId=inv_fd1036ff-2835-4344-bb30-0cea1ae464c6)
+[Abrir en LucidChart] (https://lucid.app/lucidchart/5836d2ec-eedc-47bd-a0e7-093e861777d6/edit?viewport_loc=-3312%2C-5806%2C19924%2C10127%2CLaX51kP5VfxX&invitationId=inv_81894290-c92d-457b-8370-695886be36b1)
