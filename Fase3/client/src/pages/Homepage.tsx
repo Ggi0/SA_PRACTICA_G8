@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Ticket, ChevronLeft,ChevronRight, ChevronRight as ChevronRightIcon, MapPin } from 'lucide-react'
+import { Ticket, ChevronLeft,ChevronRight, MapPin } from 'lucide-react'
 import { MovieGrid } from '@/components/movies/MoviesGrid'
 import { Button } from '@/components/ui/button'
-import { useMoviesPaginated, useCities, useCinemas } from '@/hooks/useMovieData'
+import { useMoviesPaginated, useCities } from '@/hooks/useMovieData'
 import { useAuth } from '@/context/AuthContext'
 import { useCheckoutStore } from '@/context/checkoutStore'
 import type { MovieCategory } from '@/types'
@@ -24,11 +24,9 @@ export function HomePage() {
   const { isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState<MovieCategory | 'ALL'>('ALL')
   const { selectedCity, setCity } = useCheckoutStore()
-  const [selectedCinema, setSelectedCinema] = useState<string | null>(null)
   const [page, setPage] = useState(1)
 
   const { data: cities = [] } = useCities()
-  const { data: cinemas = [] } = useCinemas(selectedCity)
 
   const handleTabChange = (tab: MovieCategory | 'ALL') => {
       setActiveTab(tab)
@@ -36,7 +34,6 @@ export function HomePage() {
     }
      const handleCityChange = (cityId: string) => {
     setCity(cityId)
-    setSelectedCinema(null)
     setPage(1)
   }
   
@@ -50,8 +47,6 @@ export function HomePage() {
   const total = paginatedData?.total ?? 0
   
   const selectedCityName = cities.find((c) => c.id === selectedCity)?.name
-  const selectedCinemaName = cinemas.find((c) => c.id === selectedCinema)?.name
-
   return (
     <div className="min-h-screen">
 
@@ -92,61 +87,38 @@ export function HomePage() {
           </div>
         </div>
       </section>
-  {/* ── Selector ciudad → cine ── */}
-      {isAuthenticated && (
-        <section className="border-b border-border shadow-sm" style={{ backgroundColor: '#1B1717' }}>
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary shrink-0" />
-              <div className="flex flex-wrap gap-2">
-                {cities.map((city) => (
-                  <button
-                    key={city.id}
-                    onClick={() => handleCityChange(city.id)}
-                    className={cn(
-                      'rounded-full px-4 py-1.5 text-sm font-medium transition-colors border',
-                      selectedCity === city.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-foreground border-border hover:border-primary hover:text-primary'
-                    )}
-                  >
-                    {city.name}
-                  </button>
-                ))}
-              </div>
-
-              {selectedCity && cinemas.length > 0 && (
-                <>
-                  <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex flex-wrap gap-2">
-                    {cinemas.map((cinema) => (
-                      <button
-                        key={cinema.id}
-                        onClick={() => setSelectedCinema(cinema.id)}
-                        className={cn(
-                          'rounded-full px-4 py-1.5 text-sm font-medium transition-colors border',
-                          selectedCinema === cinema.id
-                            ? 'bg-secondary text-primary-foreground border-secondary'
-                            : 'bg-background text-foreground border-border hover:border-secondary hover:text-secondary'
-                        )}
-                      >
-                        {cinema.name}
-                      </button>
-                    ))}
-                  </div>
-                </>
+ {/* ── Selector de ciudad ── */}
+{isAuthenticated && (
+  <section className="border-b border-border shadow-sm" style={{ backgroundColor: '#1B1717' }}>
+    <div className="container mx-auto px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <MapPin className="h-4 w-4 text-primary shrink-0" />
+        <div className="flex flex-wrap gap-2">
+          {cities.map((city) => (
+            <button
+              key={city.id}
+              onClick={() => handleCityChange(city.id)}
+              className={cn(
+                'rounded-full px-4 py-1.5 text-sm font-medium transition-colors border',
+                selectedCity === city.id
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground border-border hover:border-primary hover:text-primary'
               )}
-            </div>
+            >
+              {city.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {selectedCityName && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Mostrando funciones en <strong>{selectedCityName}</strong>
-                {selectedCinemaName && <> → <strong>{selectedCinemaName}</strong></>}
-              </p>
-            )}
-          </div>
-        </section>
+      {selectedCityName && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Mostrando funciones en <strong>{selectedCityName}</strong>
+        </p>
       )}
+    </div>
+  </section>
+)}
 
     {/* ── Cartelera ── */}
       <section className="container mx-auto px-4 py-10">

@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom'
 import { Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -14,34 +15,36 @@ const CATEGORY_CONFIG = {
   RE_ESTRENO: { label: 'Re-estreno', variant: 'reestreno' as const },
 }
 
-// Imagen de poster genérica cinematográfica para todas las películas
 const POSTER_FALLBACK = 'https://i.pinimg.com/736x/b4/c1/ae/b4c1ae6ddc3849e442c52da5f9adb12e.jpg'
 
 export function MovieCard({ movie }: MovieCardProps) {
   const category = CATEGORY_CONFIG[movie.category]
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-48 shrink-0">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+      style={{ backgroundColor: '#1a1a1a' }}>
 
       {/* Poster */}
-      <div className="relative overflow-hidden bg-muted" style={{ height: '288px' }}>
+      <div className="relative overflow-hidden" style={{ aspectRatio: '2/3', maxHeight: '280px' }}>
         <img
-          src={POSTER_FALLBACK}
+          src={movie.posterUrl || POSTER_FALLBACK}
           alt={`Poster de ${movie.title}`}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          onError={(e) => { (e.target as HTMLImageElement).src = POSTER_FALLBACK }}
         />
-        {/* Gradiente sobre el poster */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-        {/* Badge de categoría */}
+        {/* Gradiente inferior */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+
+        {/* Badge categoría */}
         <div className="absolute left-2 top-2">
           <Badge variant={category.variant}>{category.label}</Badge>
         </div>
 
         {/* Rating */}
         <div className="absolute right-2 top-2">
-          <span className="rounded bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white">
+          <span className="rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
             {movie.rating}
           </span>
         </div>
@@ -52,23 +55,22 @@ export function MovieCard({ movie }: MovieCardProps) {
             style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
             {movie.title}
           </h3>
+          <div className="mt-1 flex items-center gap-2">
+            <div className="flex items-center gap-1 text-white/60 text-xs">
+              <Clock className="h-3 w-3" />
+              <span>{movie.duration} min</span>
+            </div>
+            <span className="text-white/40 text-xs">·</span>
+            <span className="text-white/60 text-xs truncate">
+              {movie.genre.slice(0, 1).join('')}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Info debajo del poster */}
-      <div className="flex flex-col gap-2 p-3">
-        <div className="flex flex-wrap gap-1">
-          {movie.genre.slice(0, 2).map((g) => (
-            <span key={g} className="text-xs text-muted-foreground">{g}</span>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          <span>{movie.duration} min</span>
-        </div>
-
-        <Button asChild size="sm" className="mt-1 w-full text-xs">
+      {/* Botón */}
+      <div className="p-3">
+        <Button asChild size="sm" className="w-full text-xs">
           <Link to={`/movies/${movie.id}`}>
             {movie.category === 'PRE_VENTA' ? 'Pre-comprar' : 'Ver funciones'}
           </Link>

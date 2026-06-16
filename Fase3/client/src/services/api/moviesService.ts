@@ -87,21 +87,24 @@ export async function getMoviesPaginated(filters: MovieFilters): Promise<Paginat
 
   const { data } = await api.get<{
     data: RawMovie[]
-    total: number
-    page: number
-    limit: number
-    totalPages: number
+    pagination: {
+      page: number
+      limit: number
+      totalItems: number
+      totalPages: number
+      hasNextPage: boolean
+      hasPreviousPage: boolean
+    }
   }>('/api/movies/pages', { params })
 
   return {
     data: data.data.map(mapMovie),
-    total: data.total,
-    page: data.page,
-    limit: data.limit,
-    totalPages: data.totalPages,
+    total: data.pagination.totalItems,
+    page: data.pagination.page,
+    limit: data.pagination.limit,
+    totalPages: data.pagination.totalPages,
   }
 }
-
 // ─── Películas sin paginación (compatibilidad con ShowtimeSelector) ───────────
 export async function getMovies(category?: MovieCategory): Promise<Movie[]> {
   const params = category ? { category } : {}
