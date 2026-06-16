@@ -1,5 +1,3 @@
-import { useRef } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { MovieCard } from './MovieCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Movie } from '@/types'
@@ -11,7 +9,7 @@ interface MovieGridProps {
 
 function MovieCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border w-48 shrink-0">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border" style={{ backgroundColor: '#1e1e1e' }}>
       <Skeleton className="h-72 w-full" />
       <div className="p-3 space-y-2">
         <Skeleton className="h-3 w-3/4" />
@@ -23,21 +21,10 @@ function MovieCardSkeleton() {
 }
 
 export function MovieGrid({ movies, isLoading = false }: MovieGridProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    const amount = 220
-    scrollRef.current.scrollBy({
-      left: direction === 'left' ? -amount : amount,
-      behavior: 'smooth',
-    })
-  }
-
   if (isLoading) {
     return (
-      <div className="flex gap-4 overflow-hidden">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {Array.from({ length: 10 }).map((_, i) => (
           <MovieCardSkeleton key={i} />
         ))}
       </div>
@@ -46,40 +33,17 @@ export function MovieGrid({ movies, isLoading = false }: MovieGridProps) {
 
   if (movies.length === 0) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        No hay películas disponibles en esta categoría.
+      <div className="py-16 text-center text-muted-foreground">
+        <p className="text-lg">No hay películas disponibles.</p>
       </div>
     )
   }
 
   return (
-    <div className="relative">
-      {/* Botón izquierda */}
-      <button
-        onClick={() => scroll('left')}
-        className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-secondary transition-colors"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-
-      {/* Carrusel */}
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-4"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
-
-      {/* Botón derecha */}
-      <button
-        onClick={() => scroll('right')}
-        className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-secondary transition-colors"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
+    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      {movies.map((movie) => (
+        <MovieCard key={movie.id} movie={movie} />
+      ))}
     </div>
   )
 }
