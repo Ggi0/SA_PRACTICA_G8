@@ -1,10 +1,11 @@
 
 # Casos de uso
 ## Diagrama de casos de uso de alto nivel
+## Diagrama de casos de uso de alto nivel
 ![Altonivel](imgs/Altonivel.png)
 
 ## Primera descomposición
-![Primeradescomposicion](imgs/Primeradescomposicion.png)
+![Primeradescomposicion](imgs/Primera_descomposicion.png)
 
 
 ---

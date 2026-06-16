@@ -1,35 +1,14 @@
 titulo,sinopsis,duracion_min,clasificacion,poster_url,fecha_estreno,tipo,activa,generos
-Superman 3,Nueva película editadooo,180,PG-13,https://example.com/posters/superman.jpg,2026-12-15,ESTRENO,true,Acción|Aventura
-Toy Story 5,Animación familiar,110,PG,https://example.com/posters/toystory5.jpg,2026-11-01,PREVENTA,true,Animación|Comedia
-Titanic Re-Release,Clásico reestrenado,195,PG-13,https://example.com/posters/titanic.jpg,2026-09-10,REESTRENO,true,Drama
-Avatar 3,Nueva entrega épica,170,PG-13,https://example.com/posters/avatar3.jpg,2026-10-20,ESTRENO,true,Aventura|Acción
-Shrek 5,Regreso de Shrek,100,PG,https://example.com/posters/shrek5.jpg,2026-08-01,PREVENTA,true,Animación|Comedia
-Avengers: Doomsday,Evento épico del UCM con Doctor Doom,150,PG-13,https://example.com/posters/avengersdoomsday.jpg,2026-12-17,ESTRENO,true,Acción|Superhéroes
-Spider-Man: Brand New Day,Peter Parker enfrenta un nuevo enemigo,150,PG-13,https://example.com/posters/spiderman.jpg,2026-07-31,ESTRENO,true,Acción|Aventura
-Supergirl,Kara Zor-El busca justicia intergaláctica,107,PG-13,https://example.com/posters/supergirl.jpg,2026-06-26,ESTRENO,true,Acción|Aventura
-The Odyssey,Adaptación épica de Homero por Nolan,172,R,https://example.com/posters/odyssey.jpg,2026-07-17,ESTRENO,true,Aventura|Drama
-Moana Live Action,Versión real del clásico animado,120,PG,https://example.com/posters/moana.jpg,2026-07-10,ESTRENO,true,Aventura|Comedia
-The Hunger Games: Sunrise on the Reaping,Precuela del segundo Quarter Quell,150,PG-13,https://example.com/posters/hungergames.jpg,2026-11-20,ESTRENO,true,Ciencia Ficción|Drama
-Star Wars: The Mandalorian & Grogu,Nueva aventura galáctica,132,PG-13,https://example.com/posters/mandalorian.jpg,2026-05-22,ESTRENO,true,Ciencia Ficción|Acción
-Street Fighter,Torneo mundial con Ryu y Ken,125,PG-13,https://example.com/posters/streetfighter.jpg,2026-10-16,ESTRENO,true,Acción|Aventura
-Terrifier 4,Regreso del payaso Art,110,R,https://example.com/posters/terrifier4.jpg,2026-10-01,ESTRENO,true,Terror
-Michael,Biopic de Michael Jackson,127,PG-13,https://example.com/posters/michael.jpg,2026-09-15,ESTRENO,true,Biografía|Drama
-Coyote vs. Acme,Comedia con personajes Looney Tunes,100,PG,https://example.com/posters/coyoteacme.jpg,2026-08-28,ESTRENO,true,Comedia|Animación
-Mortal Kombat II,Secuela sangrienta del torneo,116,R,https://example.com/posters/mortalkombat.jpg,2026-09-05,ESTRENO,true,Acción|Fantástico
-Super Mario Bros. 2,Regreso de Mario y Luigi,115,PG,https://example.com/posters/mario2.jpg,2026-04-03,ESTRENO,true,Animación|Aventura
-Trainspotting 30th Anniversary,Reestreno del clásico de Danny Boyle,94,R,https://example.com/posters/trainspotting.jpg,2026-06-05,REESTRENO,true,Drama
-Amores Perros,Reestreno del clásico mexicano,154,R,https://example.com/posters/amoresperros.jpg,2026-06-12,REESTRENO,true,Drama
-Ocean’s Eleven 25th Anniversary,Reestreno del clásico de atracos,118,PG-13,https://example.com/posters/oceans11.jpg,2026-06-21,REESTRENO,true,Crimen|Comedia
-Citizen Kane 85th Anniversary,Reestreno del clásico de Orson Welles,119,PG,https://example.com/posters/citizenkane.jpg,2026-07-05,REESTRENO,true,Drama
-The Fifth Element,Reestreno del clásico sci-fi,126,PG-13,https://example.com/posters/fifthelement.jpg,2026-07-26,REESTRENO,true,Ciencia Ficción
-Willy Wonka & the Chocolate Factory,Reestreno del clásico familiar,100,G,https://example.com/posters/willywonka.jpg,2026-08-02,REESTRENO,true,Fantasía|Familia
-Train to Busan 10th Anniversary,Reestreno del éxito coreano,118,R,https://example.com/posters/trainbusan.jpg,2026-08-14,REESTRENO,true,Terror|Acción
-The Fast and the Furious 25th,Reestreno del clásico de carreras,106,PG-13,https://example.com/posters/fastfurious.jpg,2026-09-01,REESTRENO,true,Acción|Aventura
-Frozen 3,Secuela animada de Disney,115,PG,https://example.com/posters/frozen3.jpg,2026-11-25,PREVENTA,true,Animación|Fantasía
-Inside Out 2,Secuela de Pixar sobre emociones,100,PG,https://example.com/posters/insideout2.jpg,2026-06-14,PREVENTA,true,Animación|Comedia
-Zootopia 2,Regreso de Judy Hopps y Nick Wilde,108,PG,https://example.com/posters/zootopia2.jpg,2026-12-20,PREVENTA,true,Animación|Comedia
-Kung Fu Panda 4,Nueva aventura de Po,104,PG,https://example.com/posters/kungfupanda4.jpg,2026-03-15,PREVENTA,true,Animación|Acción
-Deadpool 3,Regreso del antihéroe irreverente,125,R,https://example.com/posters/deadpool3.jpg,2026-05-03,PREVENTA,true,Acción|Comedia
-Captain America: Brave New World,Nueva entrega del Capitán América,135,PG-13,https://example.com/posters/captainamerica.jpg,2026-05-15,PREVENTA,true,Acción|Superhéroes
-Thunderbolts,Equipo de antihéroes del UCM,140,PG-13,https://example.com/posters/thunderbolts.jpg,2026-07-25,PREVENTA,true,Acción|Superhéroes
-Blade,Reinicio del cazador de vampiros,130,R,https://example.com/posters/blade.jpg,2026-09-12,PREVENTA,true,Acción|Terror
+Superman 3,Nueva película editadooo,180,PG-13,"https://m.media-amazon.com/images/I/818xFyWmm9L._AC_UF894,1000_QL80_.jpg",2026-12-15,ESTRENO,true,Acción|Aventura
+Toy Story 5,Animación familiar,110,PG,https://www.aceprensa.com/wp-content/uploads/2019/12/263115-0-683x1024.jpg,2026-11-01,PREVENTA,true,Animación|Comedia
+Titanic Re-Release,Clásico reestrenado,195,PG-13,https://upload.wikimedia.org/wikipedia/en/f/ff/The_Batman_%28film%29_poster.jpg,2026-09-10,REESTRENO,true,Drama
+Avatar 3,Nueva entrega épica,170,PG-13,https://upload.wikimedia.org/wikipedia/en/0/02/Iron_Man_%282008_film%29_poster.jpg,2026-10-20,ESTRENO,true,Aventura|Acción
+Shrek 5,Regreso de Shrek,100,PG,https://static.posters.cz/image/350/posters/rocky-balboa-pelicula-de-rocky-i167759.jpg,2026-08-01,PREVENTA,true,Animación|Comedia
+Avengers: Doomsday,Evento épico del UCM con Doctor Doom,150,PG-13,https://i.pinimg.com/236x/4c/cf/26/4ccf261146adb4f5b23ee199e678b659.jpg,2026-12-17,ESTRENO,true,Acción|Drama
+Spider-Man: Brand New Day,Peter Parker enfrenta un nuevo enemigo,150,PG-13,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQIBXtWNqnRfDIa9rBiYPDPocBWnoSKA5KEGQ&s,2026-07-31,ESTRENO,true,Acción|Aventura
+Supergirl,Kara Zor-El busca justicia intergaláctica,107,PG-13,https://i.pinimg.com/236x/5b/01/ef/5b01effa238b3cf348f8a4d37a54423c.jpg,2026-06-26,ESTRENO,true,Acción|Aventura
+The Odyssey,Adaptación épica de Homero por Nolan,172,R,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSe844dCffXPTVKyGf-kQuZVjnaQBvWlw7y6w&s,2026-07-17,ESTRENO,true,Aventura|Drama
+Moana Live Action,Versión real del clásico animado,120,PG,https://upload.wikimedia.org/wikipedia/en/0/02/Iron_Man_%282008_film%29_poster.jpg,2026-07-10,ESTRENO,true,Aventura|Animación
+The Hunger Games: Sunrise on the Reaping,Precuela del segundo Quarter Quell,150,PG-13,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGoJzr8SpmYvuwTQ4JQvRKFy2LwYjPjVyn9g&s,2026-11-20,ESTRENO,true,Drama
+Star Wars: The Mandalorian & Grogu,Nueva aventura galáctica,132,PG-13,https://upload.wikimedia.org/wikipedia/en/f/ff/The_Batman_%28film%29_poster.jpg,2026-05-22,ESTRENO,true,Acción
+Street Fighter,Torneo mundial con Ryu y Ken,125,PG-13,https://www.aceprensa.com/wp-content/uploads/2019/12/263115-0-683x1024.jpg,2026-10-16,ESTRENO,true,Acción|Aventura
