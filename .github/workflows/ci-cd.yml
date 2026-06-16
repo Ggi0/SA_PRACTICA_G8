@@ -72,47 +72,68 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set release tag
+        id: meta
+        run: |
+          if [ "${{ github.ref_name }}" = "release" ]; then
+            echo "tag=release-${{ github.run_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build & Push reservas-service
         uses: docker/build-push-action@v5
         with:
           context: Fase3/FilmStars/reservas-service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:${{ steps.meta.outputs.tag }}
 
       - name: Build & Push payments-service
         uses: docker/build-push-action@v5
         with:
           context: Fase3/FilmStars/payments-service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-payments-service:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-payments-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-payments-service:${{ steps.meta.outputs.tag }}
 
       - name: Build & Push users-service
         uses: docker/build-push-action@v5
         with:
           context: Fase3/FilmStars/users-service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-users-service:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-users-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-users-service:${{ steps.meta.outputs.tag }}
 
       - name: Build & Push movies-service
         uses: docker/build-push-action@v5
         with:
           context: Fase3/FilmStars/movies-service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-movies-service:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-movies-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-movies-service:${{ steps.meta.outputs.tag }}
 
       - name: Build & Push api-gateway
         uses: docker/build-push-action@v5
         with:
           context: Fase3/FilmStars/api-gateway
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:${{ steps.meta.outputs.tag }}
 
       - name: Build & Push frontend
         uses: docker/build-push-action@v5
         with:
           context: Fase3/client
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:${{ steps.meta.outputs.tag }}
           build-args: |
             VITE_API_URL=http://${{ secrets.AWS_EC2_HOST }}:8080
 
