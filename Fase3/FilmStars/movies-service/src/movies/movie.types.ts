@@ -33,3 +33,42 @@ export interface PublicMovie {
 export interface MovieFilters {
   category?: MovieCategory;
 }
+
+
+
+
+
+/**
+ * filtros del endpoint paginado
+ */
+export interface MoviePageFilters {
+  category?: MovieCategory;
+  cityId?: string;
+  page: number;
+  limit: number;
+}
+
+/**
+ * resultado crudo del repositorio para paginación
+ */
+export interface MoviePageQueryResult {
+  items: MovieRecord[];
+  totalItems: number;
+  page: number;
+  limit: number;
+}
+
+/**
+ * respuesta pública del endpoint paginado
+ */
+export interface PaginatedMoviesResult {
+  data: PublicMovie[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}

@@ -6,6 +6,8 @@ import {
   getMovieById,
   getShowtimes,
   getShowtimeById,
+  getMoviesPaginated,
+  type MovieFilters,
 } from '@/services/api/moviesService'
 import {
   getSeatsByShowtime,
@@ -17,6 +19,7 @@ export const queryKeys = {
   cities: ['cities'] as const,
   cinemas: (cityId: string) => ['cinemas', cityId] as const,
   movies: (category?: MovieCategory) => ['movies', category] as const,
+  moviesPaginated: (filters: MovieFilters) => ['movies-paginated', filters] as const,
   movie: (id: string) => ['movie', id] as const,
   showtimes: (movieId: string, cityId?: string) => ['showtimes', movieId, cityId] as const,
   showtime: (id: string) => ['showtime', id] as const,
@@ -46,6 +49,18 @@ export function useMovies(category?: MovieCategory) {
     queryKey: queryKeys.movies(category),
     queryFn: () => getMovies(category),
     staleTime: 1000 * 60 * 5,
+  })
+}
+
+// ─── Hook de paginación del servidor ─────────────────────────────────────────
+// Cada combinación de filtros tiene su propia entrada en caché
+// placeholderData mantiene los datos anteriores al cambiar página (no parpadea)
+export function useMoviesPaginated(filters: MovieFilters) {
+  return useQuery({
+    queryKey: queryKeys.moviesPaginated(filters),
+    queryFn: () => getMoviesPaginated(filters),
+    staleTime: 1000 * 60 * 2,
+    placeholderData: (prev) => prev,
   })
 }
 
