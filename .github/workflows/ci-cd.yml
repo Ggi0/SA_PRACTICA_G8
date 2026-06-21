@@ -304,6 +304,16 @@ jobs:
         run: |
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+
+          # The lab VM is resource-constrained. Free app pods from previous rollouts
+          # before recreating RabbitMQ, otherwise the RabbitMQ pod can remain Pending.
+          for d in users-service movies-service reservations-service payments-service api-gateway frontend; do
+            kubectl -n $NS scale deployment/$d --replicas=0 2>/dev/null || true
+          done
+          for app in users-service movies-service reservations-service payments-service api-gateway frontend; do
+            kubectl -n $NS wait --for=delete pod -l app=$app --timeout=120s 2>/dev/null || true
+          done
+
           kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
           kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
@@ -337,5 +347,6 @@ jobs:
         if: always()
         run: |
           kubectl -n $NS get pods,svc,ingress
+          kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
           kubectl -n $NS logs deployment/reservations-service --tail=80 || true
           kubectl -n $NS logs deployment/payments-service --tail=80 || true
