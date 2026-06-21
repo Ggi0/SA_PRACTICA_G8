@@ -5,6 +5,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: rabbitmq
@@ -24,6 +29,8 @@ spec:
                 secretKeyRef:
                   name: filmstars-secrets
                   key: RABBITMQ_PASS
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: /
           ports:
             - containerPort: 5672
             - containerPort: 15672
@@ -32,23 +39,9 @@ spec:
               command: ["rabbitmq-diagnostics", "ping"]
             initialDelaySeconds: 20
             periodSeconds: 10
-          volumeMounts:
-            - name: rabbitmq-definitions
-              mountPath: /etc/rabbitmq/definitions.json
-              subPath: definitions.json
-            - name: rabbitmq-config
-              mountPath: /etc/rabbitmq/conf.d/filmstars.conf
-              subPath: rabbitmq.conf
           resources:
-            requests: { cpu: "100m", memory: "256Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
-      volumes:
-        - name: rabbitmq-definitions
-          configMap:
-            name: rabbitmq-definitions
-        - name: rabbitmq-config
-          configMap:
-            name: rabbitmq-config
+            requests: { memory: "128Mi" }
+            limits: { memory: "384Mi" }
 ---
 apiVersion: v1
 kind: Service

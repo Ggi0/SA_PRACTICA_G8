@@ -4,12 +4,12 @@ metadata:
   name: users-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: users-service
@@ -30,8 +30,8 @@ spec:
           readinessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            requests: { memory: "128Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -51,12 +51,12 @@ metadata:
   name: movies-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: movies-service
@@ -77,8 +77,8 @@ spec:
           readinessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            requests: { memory: "128Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -98,12 +98,12 @@ metadata:
   name: reservations-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: reservations-service
@@ -124,8 +124,8 @@ spec:
           readinessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            requests: { memory: "128Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -145,12 +145,12 @@ metadata:
   name: payments-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: payments-service
@@ -171,8 +171,8 @@ spec:
           readinessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            requests: { memory: "128Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -192,12 +192,12 @@ metadata:
   name: api-gateway
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: api-gateway
@@ -218,8 +218,8 @@ spec:
           readinessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            requests: { memory: "128Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -239,12 +239,12 @@ metadata:
   name: frontend
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: frontend
@@ -261,8 +261,8 @@ spec:
           readinessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 5, periodSeconds: 5 }
           livenessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 15, periodSeconds: 10 }
           resources:
-            requests: { cpu: "50m", memory: "64Mi" }
-            limits: { cpu: "300m", memory: "128Mi" }
+            requests: { memory: "64Mi" }
+            limits: { memory: "128Mi" }
 ---
 apiVersion: v1
 kind: Service
