@@ -2,6 +2,8 @@
 
 # Secretos / info sensible — NUNCA subir al repo
 secrets.env
+secrets/
+**/secrets/
 *.env
 .env
 *.pem

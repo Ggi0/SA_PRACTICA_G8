@@ -146,17 +146,34 @@ jobs:
 
       - name: Pull and restart compose stack
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.DEVELOP_HOST }}
           username: ubuntu
           key: ${{ secrets.DEVELOP_SSH_KEY }}
+          envs: DOCKERHUB_USERNAME,DB_PASS,JWT_SECRET,RABBITMQ_PASS,ADMIN_PASSWORD
           script: |
             cd ~/filmstars
             mkdir -p database/sql/reservations
             cp -n reservas-service/src/docker/init.sql database/sql/reservations/init.sql 2>/dev/null || true
             cp -n reservas-service/src/docker/seed.sql database/sql/reservations/seed.sql 2>/dev/null || true
-            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            test -n "$DB_PASS" || { echo "Missing DB_PASS"; exit 1; }
+            test -n "$JWT_SECRET" || { echo "Missing JWT_SECRET"; exit 1; }
+            test -n "$RABBITMQ_PASS" || { echo "Missing RABBITMQ_PASS"; exit 1; }
+            test -n "$ADMIN_PASSWORD" || { echo "Missing ADMIN_PASSWORD"; exit 1; }
+            echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" > .env
+            mkdir -p secrets
+            chmod 700 secrets
+            printf '%s' "$DB_PASS" > secrets/db_password.txt
+            printf '%s' "$JWT_SECRET" > secrets/jwt_secret.txt
+            printf '%s' "$RABBITMQ_PASS" > secrets/rabbitmq_password.txt
+            printf '%s' "$ADMIN_PASSWORD" > secrets/admin_password.txt
+            chmod 600 secrets/*.txt
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f

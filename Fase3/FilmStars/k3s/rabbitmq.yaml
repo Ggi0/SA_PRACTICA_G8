@@ -23,7 +23,10 @@ spec:
           image: rabbitmq:3-management
           env:
             - name: RABBITMQ_DEFAULT_USER
-              value: admin
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-common
+                  key: RABBITMQ_USER
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
