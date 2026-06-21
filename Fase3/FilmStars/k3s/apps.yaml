@@ -30,7 +30,7 @@ spec:
           readinessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "500m", memory: "256Mi" }
 ---
 apiVersion: v1
@@ -77,7 +77,7 @@ spec:
           readinessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "500m", memory: "256Mi" }
 ---
 apiVersion: v1
@@ -124,7 +124,7 @@ spec:
           readinessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "500m", memory: "256Mi" }
 ---
 apiVersion: v1
@@ -171,7 +171,7 @@ spec:
           readinessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "500m", memory: "256Mi" }
 ---
 apiVersion: v1
@@ -218,7 +218,7 @@ spec:
           readinessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 10, periodSeconds: 5 }
           livenessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
-            requests: { cpu: "100m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "500m", memory: "256Mi" }
 ---
 apiVersion: v1
@@ -261,7 +261,7 @@ spec:
           readinessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 5, periodSeconds: 5 }
           livenessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 15, periodSeconds: 10 }
           resources:
-            requests: { cpu: "50m", memory: "64Mi" }
+            requests: { memory: "64Mi" }
             limits: { cpu: "300m", memory: "128Mi" }
 ---
 apiVersion: v1

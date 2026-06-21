@@ -40,7 +40,7 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 10
           resources:
-            requests: { cpu: "50m", memory: "128Mi" }
+            requests: { memory: "128Mi" }
             limits: { cpu: "300m", memory: "384Mi" }
 ---
 apiVersion: v1
