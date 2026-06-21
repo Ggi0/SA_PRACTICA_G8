@@ -168,56 +168,62 @@ jobs:
     if: github.ref == 'refs/heads/release' && github.event_name == 'push'
     env:
       TAG: release-${{ github.run_number }}
+      ZOT_HOST: ${{ secrets.ZOT_HOST }}
+      ZOT_USER: ${{ secrets.ZOT_USER }}
+      ZOT_PASSWORD: ${{ secrets.ZOT_PASSWORD }}
       REG: ${{ secrets.ZOT_HOST }}/filmstars
       DOCKER_BUILDKIT: 0
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate Zot configuration
-        env:
-          ZOT_HOST: ${{ secrets.ZOT_HOST }}
-          ZOT_USER: ${{ secrets.ZOT_USER }}
-          ZOT_PASSWORD: ${{ secrets.ZOT_PASSWORD }}
         run: |
           test -n "$ZOT_HOST" || { echo "::error::Missing GitHub secret ZOT_HOST"; exit 1; }
           test -n "$ZOT_USER" || { echo "::error::Missing GitHub secret ZOT_USER"; exit 1; }
           test -n "$ZOT_PASSWORD" || { echo "::error::Missing GitHub secret ZOT_PASSWORD"; exit 1; }
 
+      - name: Install Skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
       - name: Allow insecure Zot registry on runner
         run: |
-          echo '{"insecure-registries":["${{ secrets.ZOT_HOST }}"]}' | sudo tee /etc/docker/daemon.json
+          echo '{"insecure-registries":["'"$ZOT_HOST"'"]}' | sudo tee /etc/docker/daemon.json
           sudo systemctl restart docker
 
       - name: Login to Zot
-        run: echo "${{ secrets.ZOT_PASSWORD }}" | docker login ${{ secrets.ZOT_HOST }} -u ${{ secrets.ZOT_USER }} --password-stdin
+        run: echo "$ZOT_PASSWORD" | docker login "$ZOT_HOST" -u "$ZOT_USER" --password-stdin
 
       - name: Build and push backend images
         run: |
-          docker build -t $REG/users-service:$TAG -t $REG/users-service:latest Fase3/FilmStars/users-service
-          docker push $REG/users-service:$TAG
-          docker push $REG/users-service:latest
+          push_image() {
+            image="$1"
+            context="$2"
 
-          docker build -t $REG/movies-service:$TAG -t $REG/movies-service:latest Fase3/FilmStars/movies-service
-          docker push $REG/movies-service:$TAG
-          docker push $REG/movies-service:latest
+            docker build -t "$REG/$image:$TAG" -t "$REG/$image:latest" "$context"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:$TAG" "docker://$REG/$image:$TAG"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:latest" "docker://$REG/$image:latest"
+          }
 
-          docker build -t $REG/reservations-service:$TAG -t $REG/reservations-service:latest Fase3/FilmStars/reservas-service
-          docker push $REG/reservations-service:$TAG
-          docker push $REG/reservations-service:latest
-
-          docker build -t $REG/payments-service:$TAG -t $REG/payments-service:latest Fase3/FilmStars/payments-service
-          docker push $REG/payments-service:$TAG
-          docker push $REG/payments-service:latest
-
-          docker build -t $REG/api-gateway:$TAG -t $REG/api-gateway:latest Fase3/FilmStars/api-gateway
-          docker push $REG/api-gateway:$TAG
-          docker push $REG/api-gateway:latest
+          push_image users-service Fase3/FilmStars/users-service
+          push_image movies-service Fase3/FilmStars/movies-service
+          push_image reservations-service Fase3/FilmStars/reservas-service
+          push_image payments-service Fase3/FilmStars/payments-service
+          push_image api-gateway Fase3/FilmStars/api-gateway
 
       - name: Build and push frontend image
         run: |
-          docker build -t $REG/frontend:$TAG -t $REG/frontend:latest Fase3/client
-          docker push $REG/frontend:$TAG
-          docker push $REG/frontend:latest
+          push_image() {
+            image="$1"
+            context="$2"
+
+            docker build -t "$REG/$image:$TAG" -t "$REG/$image:latest" "$context"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:$TAG" "docker://$REG/$image:$TAG"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:latest" "docker://$REG/$image:latest"
+          }
+
+          push_image frontend Fase3/client
 
   deploy-k3s-release:
     name: "Release - Deploy K3s on AWS"
