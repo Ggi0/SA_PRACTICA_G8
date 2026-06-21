@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filmstars-common
+  namespace: filmstars
+data:
+  NODE_ENV: "production"
+  DB_USER: "postgres"
+  DB_PORT: "5432"
+  JWT_EXPIRES_IN: "7d"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: "admin"
+  USERS_SERVICE_URL: "http://users-service:3001"
+  MOVIES_SERVICE_URL: "http://movies-service:3002"
+  RESERVAS_SERVICE_URL: "http://reservations-service:3003"
+  PAYMENTS_SERVICE_URL: "http://payments-service:3004"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: users-config
+  namespace: filmstars
+data:
+  PORT: "3001"
+  DB_HOST: "db-users"
+  DB_NAME: "filmstars_users"
+  DEFAULT_ADMIN_NAME: "FilmStars Admin"
+  DEFAULT_ADMIN_EMAIL: "admin@filmstars.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: movies-config
+  namespace: filmstars
+data:
+  PORT: "3002"
+  DB_HOST: "db-movies"
+  DB_NAME: "filmstars_movies"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reservations-config
+  namespace: filmstars
+data:
+  PORT: "3003"
+  DB_HOST: "db-reservations"
+  DB_NAME: "filmstars_reservations"
+  RESERVATION_TIMEOUT_MINUTES: "10"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-config
+  namespace: filmstars
+data:
+  PORT: "3004"
+  DB_HOST: "db-payments"
+  DB_NAME: "filmstars_payments"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: filmstars
+data:
+  PORT: "8080"

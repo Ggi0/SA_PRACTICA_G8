@@ -1,1 +1,16 @@
 .vscode/
+
+# Secretos / info sensible — NUNCA subir al repo
+secrets.env
+*.env
+.env
+*.pem
+
+CAMBIOS_YAML_PARA_GUIA_HTML.md
+
+guia-cicd-k3s-filmstars.html
+
+# Build artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
