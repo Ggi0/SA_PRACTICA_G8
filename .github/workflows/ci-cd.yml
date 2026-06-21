@@ -295,7 +295,7 @@ jobs:
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
           kubectl -n $NS rollout restart deployment/rabbitmq
-          kubectl -n $NS rollout status deployment/rabbitmq --timeout=180s
+          kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s
 
       - name: Apply applications and Ingress
         run: |
