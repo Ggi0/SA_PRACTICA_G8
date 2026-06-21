@@ -11,6 +11,7 @@ import { CheckoutPage } from '@/pages/Checkoutpage'
 import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
+
 import { ReservationsPage } from '@/pages/ReservationsPage'
 
 // admin
