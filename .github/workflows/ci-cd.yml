@@ -10,6 +10,11 @@ jobs:
   ci-tests:
     name: "CI - Build & Tests [${{ matrix.service }}]"
     runs-on: ubuntu-latest
+    env:
+      DB_PASS: ci-db-password
+      JWT_SECRET: ci-jwt-secret
+      RABBITMQ_PASS: ci-rabbitmq-password
+      DEFAULT_ADMIN_PASSWORD: ci-admin-password
     strategy:
       fail-fast: true
       matrix:
