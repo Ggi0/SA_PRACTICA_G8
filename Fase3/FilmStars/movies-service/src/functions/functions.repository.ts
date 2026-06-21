@@ -3,7 +3,6 @@ import { Pool, QueryResultRow } from 'pg';
 import { PG_POOL } from '../common/tokens';
 import { FunctionFilters, FunctionRecord } from './function.types';
 
-// ISP: solo los métodos necesarios para el dominio de funciones
 export interface IFunctionsRepository {
   findAll(filters: FunctionFilters): Promise<FunctionRecord[]>;
   findById(id: string): Promise<FunctionRecord | null>;
@@ -13,7 +12,9 @@ const BASE_QUERY = `
   SELECT
     f.id, f.pelicula_id, f.sala_id, f.fecha_hora, f.precio_base, f.activa,
     s.tipo_sala,
+    s.nombre AS sala_nombre,
     c.id AS cinema_id,
+    c.nombre AS cine_nombre,
     ci.id AS city_id
   FROM funcion f
   INNER JOIN sala s ON s.id = f.sala_id
@@ -67,5 +68,7 @@ function mapFunction(row: QueryResultRow): FunctionRecord {
     precioBase: parseFloat(row.precio_base),
     tipoSala: row.tipo_sala,
     activa: row.activa,
+    salaNombre: row.sala_nombre,
+    cineNombre: row.cine_nombre,
   };
 }

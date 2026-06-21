@@ -123,6 +123,7 @@ export async function getMovieById(id: string): Promise<Movie | undefined> {
 }
 
 // ─── Funciones por película y ciudad ─────────────────────────────────────────
+// ─── Funciones por película y ciudad ─────────────────────────────────────────
 export async function getShowtimes(movieId: string, cityId?: string): Promise<Showtime[]> {
   const params = cityId ? { cityId } : {}
   const { data } = await api.get<{
@@ -134,6 +135,8 @@ export async function getShowtimes(movieId: string, cityId?: string): Promise<Sh
     startTime: string
     projectionType: string
     price: number
+    roomName: string
+    cinemaName: string
   }[]>(`/api/movies/${movieId}/functions`, { params })
 
   return data.map((f) => ({
@@ -145,9 +148,10 @@ export async function getShowtimes(movieId: string, cityId?: string): Promise<Sh
     startTime: f.startTime,
     projectionType: (f.projectionType as Showtime['projectionType']) ?? 'STANDARD',
     price: f.price,
+    roomName: f.roomName,
+    cinemaName: f.cinemaName,
   }))
 }
-
 // ─── Función por ID ───────────────────────────────────────────────────────────
 export async function getShowtimeById(id: string): Promise<Showtime | undefined> {
   try {
@@ -160,6 +164,8 @@ export async function getShowtimeById(id: string): Promise<Showtime | undefined>
       startTime: string
       projectionType: string
       price: number
+      roomName: string
+      cinemaName: string
     }>(`/api/movies/functions/${id}`)
     return {
       id: data.id,
@@ -170,6 +176,8 @@ export async function getShowtimeById(id: string): Promise<Showtime | undefined>
       startTime: data.startTime,
       projectionType: (data.projectionType as Showtime['projectionType']) ?? 'STANDARD',
       price: data.price,
+      roomName: data.roomName,
+      cinemaName: data.cinemaName,
     }
   } catch {
     return undefined

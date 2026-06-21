@@ -61,6 +61,8 @@ export interface Showtime {
   startTime: string
   projectionType: ProjectionType
   price: number
+  roomName: string
+  cinemaName: string
 }
 
 // ─── Asientos ────────────────────────────────────────────────────────────────
