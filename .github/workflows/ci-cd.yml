@@ -311,13 +311,19 @@ jobs:
             kubectl -n $NS scale deployment/$d --replicas=0 2>/dev/null || true
           done
           for app in users-service movies-service reservations-service payments-service api-gateway frontend; do
-            kubectl -n $NS wait --for=delete pod -l app=$app --timeout=120s 2>/dev/null || true
+            kubectl -n $NS delete pod -l app=$app --grace-period=0 --force 2>/dev/null || true
           done
+          kubectl -n $NS delete pod --field-selector=status.phase=Pending --grace-period=0 --force 2>/dev/null || true
 
           kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
           kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
-          kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s
+          if ! kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s; then
+            kubectl -n $NS get pods -o wide
+            kubectl describe nodes
+            kubectl -n $NS describe pod -l app=rabbitmq
+            exit 1
+          fi
 
       - name: Reconcile RabbitMQ credentials
         run: |
