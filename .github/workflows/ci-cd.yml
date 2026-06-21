@@ -10,6 +10,11 @@ jobs:
   ci-tests:
     name: "CI - Build & Tests [${{ matrix.service }}]"
     runs-on: ubuntu-latest
+    env:
+      DB_PASS: ci-db-password
+      JWT_SECRET: ci-jwt-secret
+      RABBITMQ_PASS: ci-rabbitmq-password
+      DEFAULT_ADMIN_PASSWORD: ci-admin-password
     strategy:
       fail-fast: true
       matrix:
@@ -160,17 +165,34 @@ jobs:
 
       - name: Pull and restart compose stack
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.DEVELOP_HOST }}
           username: ubuntu
           key: ${{ secrets.DEVELOP_SSH_KEY }}
+          envs: DOCKERHUB_USERNAME,DB_PASS,JWT_SECRET,RABBITMQ_PASS,ADMIN_PASSWORD
           script: |
             cd ~/filmstars
             mkdir -p database/sql/reservations
             cp -n reservas-service/src/docker/init.sql database/sql/reservations/init.sql 2>/dev/null || true
             cp -n reservas-service/src/docker/seed.sql database/sql/reservations/seed.sql 2>/dev/null || true
-            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            test -n "$DB_PASS" || { echo "Missing DB_PASS"; exit 1; }
+            test -n "$JWT_SECRET" || { echo "Missing JWT_SECRET"; exit 1; }
+            test -n "$RABBITMQ_PASS" || { echo "Missing RABBITMQ_PASS"; exit 1; }
+            test -n "$ADMIN_PASSWORD" || { echo "Missing ADMIN_PASSWORD"; exit 1; }
+            echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" > .env
+            mkdir -p secrets
+            chmod 700 secrets
+            printf '%s' "$DB_PASS" > secrets/db_password.txt
+            printf '%s' "$JWT_SECRET" > secrets/jwt_secret.txt
+            printf '%s' "$RABBITMQ_PASS" > secrets/rabbitmq_password.txt
+            printf '%s' "$ADMIN_PASSWORD" > secrets/admin_password.txt
+            chmod 600 secrets/*.txt
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
@@ -182,45 +204,62 @@ jobs:
     if: github.ref == 'refs/heads/release' && github.event_name == 'push'
     env:
       TAG: release-${{ github.run_number }}
+      ZOT_HOST: ${{ secrets.ZOT_HOST }}
+      ZOT_USER: ${{ secrets.ZOT_USER }}
+      ZOT_PASSWORD: ${{ secrets.ZOT_PASSWORD }}
       REG: ${{ secrets.ZOT_HOST }}/filmstars
+      DOCKER_BUILDKIT: 0
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate Zot configuration
+        run: |
+          test -n "$ZOT_HOST" || { echo "::error::Missing GitHub secret ZOT_HOST"; exit 1; }
+          test -n "$ZOT_USER" || { echo "::error::Missing GitHub secret ZOT_USER"; exit 1; }
+          test -n "$ZOT_PASSWORD" || { echo "::error::Missing GitHub secret ZOT_PASSWORD"; exit 1; }
+
+      - name: Install Skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
       - name: Allow insecure Zot registry on runner
         run: |
-          echo '{"insecure-registries":["${{ secrets.ZOT_HOST }}"]}' | sudo tee /etc/docker/daemon.json
+          echo '{"insecure-registries":["'"$ZOT_HOST"'"]}' | sudo tee /etc/docker/daemon.json
           sudo systemctl restart docker
 
       - name: Login to Zot
-        run: echo "${{ secrets.ZOT_PASSWORD }}" | docker login ${{ secrets.ZOT_HOST }} -u ${{ secrets.ZOT_USER }} --password-stdin
+        run: echo "$ZOT_PASSWORD" | docker login "$ZOT_HOST" -u "$ZOT_USER" --password-stdin
 
       - name: Build and push backend images
         run: |
-          docker build -t $REG/users-service:$TAG -t $REG/users-service:latest Fase3/FilmStars/users-service
-          docker push $REG/users-service:$TAG
-          docker push $REG/users-service:latest
+          push_image() {
+            image="$1"
+            context="$2"
 
-          docker build -t $REG/movies-service:$TAG -t $REG/movies-service:latest Fase3/FilmStars/movies-service
-          docker push $REG/movies-service:$TAG
-          docker push $REG/movies-service:latest
+            docker build -t "$REG/$image:$TAG" -t "$REG/$image:latest" "$context"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:$TAG" "docker://$REG/$image:$TAG"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:latest" "docker://$REG/$image:latest"
+          }
 
-          docker build -t $REG/reservations-service:$TAG -t $REG/reservations-service:latest Fase3/FilmStars/reservas-service
-          docker push $REG/reservations-service:$TAG
-          docker push $REG/reservations-service:latest
-
-          docker build -t $REG/payments-service:$TAG -t $REG/payments-service:latest Fase3/FilmStars/payments-service
-          docker push $REG/payments-service:$TAG
-          docker push $REG/payments-service:latest
-
-          docker build -t $REG/api-gateway:$TAG -t $REG/api-gateway:latest Fase3/FilmStars/api-gateway
-          docker push $REG/api-gateway:$TAG
-          docker push $REG/api-gateway:latest
+          push_image users-service Fase3/FilmStars/users-service
+          push_image movies-service Fase3/FilmStars/movies-service
+          push_image reservations-service Fase3/FilmStars/reservas-service
+          push_image payments-service Fase3/FilmStars/payments-service
+          push_image api-gateway Fase3/FilmStars/api-gateway
 
       - name: Build and push frontend image
         run: |
-          docker build -t $REG/frontend:$TAG -t $REG/frontend:latest Fase3/client
-          docker push $REG/frontend:$TAG
-          docker push $REG/frontend:latest
+          push_image() {
+            image="$1"
+            context="$2"
+
+            docker build -t "$REG/$image:$TAG" -t "$REG/$image:latest" "$context"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:$TAG" "docker://$REG/$image:$TAG"
+            skopeo copy --format oci --dest-tls-verify=false --dest-creds "$ZOT_USER:$ZOT_PASSWORD" "docker-daemon:$REG/$image:latest" "docker://$REG/$image:latest"
+          }
+
+          push_image frontend Fase3/client
 
   deploy-k3s-release:
     name: "Release - Deploy K3s on AWS"
@@ -232,6 +271,10 @@ jobs:
       TAG: release-${{ github.run_number }}
       ZOT_HOST: ${{ secrets.ZOT_HOST }}
       K3S_IP: ${{ secrets.K3S_IP }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -249,13 +292,20 @@ jobs:
       - name: Apply namespace
         run: kubectl apply -f Fase3/FilmStars/k3s/namespace.yaml
 
+      - name: Validate release runtime secrets
+        run: |
+          test -n "$DB_PASS" || { echo "::error::Missing GitHub secret DB_PASS"; exit 1; }
+          test -n "$JWT_SECRET" || { echo "::error::Missing GitHub secret JWT_SECRET"; exit 1; }
+          test -n "$RABBITMQ_PASS" || { echo "::error::Missing GitHub secret RABBITMQ_PASS"; exit 1; }
+          test -n "$ADMIN_PASSWORD" || { echo "::error::Missing GitHub secret ADMIN_PASSWORD"; exit 1; }
+
       - name: Create Kubernetes Secret from GitHub Secrets
         run: |
           kubectl -n $NS create secret generic filmstars-secrets \
-            --from-literal=DB_PASS='${{ secrets.DB_PASS }}' \
-            --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-            --from-literal=RABBITMQ_PASS='${{ secrets.RABBITMQ_PASS }}' \
-            --from-literal=DEFAULT_ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            --from-literal=DB_PASS="$DB_PASS" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --from-literal=RABBITMQ_PASS="$RABBITMQ_PASS" \
+            --from-literal=DEFAULT_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create init SQL ConfigMaps
@@ -289,8 +339,35 @@ jobs:
       - name: Apply ConfigMaps, databases and RabbitMQ
         run: |
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
+
+          # The lab VM is resource-constrained. Free all existing FilmStars pods before
+          # applying updated Deployments, otherwise new pods can remain Pending on CPU.
+          for d in $(kubectl -n $NS get deployment -o name); do
+            kubectl -n $NS scale $d --replicas=0 2>/dev/null || true
+          done
+          kubectl -n $NS delete pod --all --grace-period=0 --force 2>/dev/null || true
+
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+          for d in db-users db-movies db-reservations db-payments; do
+            kubectl -n $NS rollout status deployment/$d --timeout=300s
+          done
+
+          kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
+          kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
+          if ! kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s; then
+            kubectl -n $NS get pods -o wide
+            kubectl describe nodes
+            kubectl -n $NS describe pod -l app=rabbitmq
+            exit 1
+          fi
+
+      - name: Reconcile RabbitMQ credentials
+        run: |
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl add_user admin "$RABBITMQ_PASS" 2>/dev/null || \
+            kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl change_password admin "$RABBITMQ_PASS"
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl set_user_tags admin administrator
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl set_permissions -p / admin ".*" ".*" ".*"
 
       - name: Apply applications and Ingress
         run: |
@@ -311,4 +388,8 @@ jobs:
 
       - name: Show cluster status
         if: always()
-        run: kubectl -n $NS get pods,svc,ingress
+        run: |
+          kubectl -n $NS get pods,svc,ingress
+          kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
+          kubectl -n $NS logs deployment/reservations-service --tail=80 || true
+          kubectl -n $NS logs deployment/payments-service --tail=80 || true

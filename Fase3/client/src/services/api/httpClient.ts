@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL
   : '/api'
 
 const httpClient = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api',
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },

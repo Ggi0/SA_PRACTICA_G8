@@ -16,6 +16,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-users
@@ -29,9 +34,15 @@ spec:
           image: postgres:15-alpine
           env:
             - name: POSTGRES_DB
-              value: filmstars_users
+              valueFrom:
+                configMapKeyRef:
+                  name: users-config
+                  key: DB_NAME
             - name: POSTGRES_USER
-              value: postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-common
+                  key: DB_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -50,8 +61,8 @@ spec:
             - name: initsql
               mountPath: /docker-entrypoint-initdb.d
           resources:
-            requests: { cpu: "100m", memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            requests: { memory: "192Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -90,6 +101,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-movies
@@ -103,9 +119,15 @@ spec:
           image: postgres:15-alpine
           env:
             - name: POSTGRES_DB
-              value: filmstars_movies
+              valueFrom:
+                configMapKeyRef:
+                  name: movies-config
+                  key: DB_NAME
             - name: POSTGRES_USER
-              value: postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-common
+                  key: DB_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -124,8 +146,8 @@ spec:
             - name: initsql
               mountPath: /docker-entrypoint-initdb.d
           resources:
-            requests: { cpu: "100m", memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            requests: { memory: "192Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -164,6 +186,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-reservations
@@ -177,9 +204,15 @@ spec:
           image: postgres:15-alpine
           env:
             - name: POSTGRES_DB
-              value: filmstars_reservations
+              valueFrom:
+                configMapKeyRef:
+                  name: reservations-config
+                  key: DB_NAME
             - name: POSTGRES_USER
-              value: postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-common
+                  key: DB_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -198,8 +231,8 @@ spec:
             - name: initsql
               mountPath: /docker-entrypoint-initdb.d
           resources:
-            requests: { cpu: "100m", memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            requests: { memory: "192Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -238,6 +271,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-payments
@@ -251,9 +289,15 @@ spec:
           image: postgres:15-alpine
           env:
             - name: POSTGRES_DB
-              value: filmstars_payments
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-config
+                  key: DB_NAME
             - name: POSTGRES_USER
-              value: postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-common
+                  key: DB_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -272,8 +316,8 @@ spec:
             - name: initsql
               mountPath: /docker-entrypoint-initdb.d
           resources:
-            requests: { cpu: "100m", memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            requests: { memory: "192Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
