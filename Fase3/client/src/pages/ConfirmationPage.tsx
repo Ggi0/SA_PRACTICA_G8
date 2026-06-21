@@ -19,7 +19,9 @@ export function ConfirmationPage() {
     navigate('/')
   }
 
-  if (!ticket) return null
+if (!ticket) {
+  return <p>No hay información de reserva</p>
+}
 
   return (
     <div className="container mx-auto px-4 py-12">

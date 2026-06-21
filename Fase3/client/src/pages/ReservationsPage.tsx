@@ -3,262 +3,141 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   Ticket,
-  Calendar,
-  CheckCircle2,
+  Clock,
   XCircle,
+  CreditCard,
+  Film,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/components/ui/toaster'
 
-import {
-  getMyReservations,
-  confirmReservation,
-  cancelReservation,
-  type MyReservationItem,
-} from '@/services/api/reservationService'
+import { cancelReservation } from '@/services/api/reservationService'
+import { useCartStore } from '@/context/cartStore'
 
-const STATUS_CONFIG = {
-  PENDIENTE: {
-    label: 'Pendiente',
-    variant: 'outline' as const,
-  },
-  CONFIRMADA: {
-    label: 'Confirmada',
-    variant: 'default' as const,
-  },
-  CANCELADA: {
-    label: 'Cancelada',
-    variant: 'destructive' as const,
-  },
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleString('es-GT', {
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function formatCountdown(expiresAt: Date): string {
+  const ms = expiresAt.getTime() - Date.now()
+  if (ms <= 0) return 'Expirado'
+  const minutes = Math.floor(ms / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 export function ReservationsPage() {
   const navigate = useNavigate()
+  const { items, removeItem } = useCartStore()
 
-  const [reservations, setReservations] = useState<MyReservationItem[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const fetchReservations = async () => {
-    try {
-      const data = await getMyReservations()
-      setReservations(data)
-    } catch (err: unknown) {
-      const message = (err as { message?: string })?.message
-
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          message || 'No se pudieron cargar las reservaciones',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Fuerza un re-render cada segundo para que el contador de 10 min avance en pantalla
+  const [, tick] = useState(0)
   useEffect(() => {
-    fetchReservations()
+    const interval = setInterval(() => tick((n) => n + 1), 1000)
+    return () => clearInterval(interval)
   }, [])
-
-  const handleConfirm = async (id: string) => {
-    try {
-      await confirmReservation(id)
-
-      toast({
-        title: 'Reserva confirmada ✅',
-      })
-
-      fetchReservations()
-    } catch (err: unknown) {
-      const message = (err as { message?: string })?.message
-
-      toast({
-        variant: 'destructive',
-        title: 'Error al confirmar',
-        description:
-          message || 'No se pudo confirmar la reserva',
-      })
-    }
-  }
 
   const handleCancel = async (id: string) => {
     try {
       await cancelReservation(id)
-
-      toast({
-        title: 'Reserva cancelada ❌',
-      })
-
-      fetchReservations()
+      removeItem(id)
+      toast({ title: 'Reserva cancelada ❌' })
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message
-
       toast({
         variant: 'destructive',
         title: 'Error al cancelar',
-        description:
-          message || 'No se pudo cancelar la reserva',
+        description: message || 'No se pudo cancelar la reserva',
       })
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <Skeleton className="mb-6 h-8 w-32" />
-
-        <div className="space-y-4">
-          {[1, 2, 3].map((item) => (
-            <Skeleton
-              key={item}
-              className="h-32 w-full rounded-lg"
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto px-4 py-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate(-1)}
-        className="mb-6 -ml-2"
-      >
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6 -ml-2">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver
       </Button>
 
-      <div className="mb-8">
-        <h1
-          className="text-2xl font-bold"
-          style={{
-            fontFamily:
-              'Playfair Display, Georgia, serif',
-          }}
-        >
-          Mis Reservaciones
-        </h1>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
+            Tu carrito
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {items.length} {items.length === 1 ? 'reservación pendiente de pago' : 'reservaciones pendientes de pago'}
+          </p>
+        </div>
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          {reservations.length}{' '}
-          {reservations.length === 1
-            ? 'reservación encontrada'
-            : 'reservaciones encontradas'}
-        </p>
+        {items.length > 0 && (
+          <Button onClick={() => navigate('/checkout')}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Proceder al pago
+          </Button>
+        )}
       </div>
 
-      {reservations.length === 0 && (
+      {items.length === 0 && (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
           <Ticket className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-
-          <h2 className="text-lg font-semibold">
-            No tienes reservaciones
-          </h2>
-
+          <h2 className="text-lg font-semibold">Tu carrito está vacío</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Cuando realices una compra aparecerá aquí.
+            Selecciona asientos en una función para agregarlos aquí.
           </p>
-
-          <Button
-            className="mt-6"
-            onClick={() => navigate('/')}
-          >
+          <Button className="mt-6" onClick={() => navigate('/')}>
             Ir a cartelera
           </Button>
         </div>
       )}
 
       <div className="space-y-4">
-        {reservations.map((reservation) => {
-          const status =
-            STATUS_CONFIG[
-              reservation.estado as keyof typeof STATUS_CONFIG
-            ]
+        {items.map((item) => (
+          <div key={item.id} className="rounded-lg border border-border bg-card p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Film className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold">{item.movie.title}</h3>
+                </div>
 
-          return (
-            <div
-              key={reservation.id}
-              className="rounded-lg border border-border bg-card p-5"
-            >
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex-1 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={status?.variant}>
-                      {status?.label ??
-                        reservation.estado}
-                    </Badge>
+                <p className="text-sm text-muted-foreground">
+                  {item.cinemaName} — {item.roomName}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {formatTime(item.showtime.startTime)}
+                </p>
 
-                    <span className="text-xs text-muted-foreground">
-                      #{reservation.id}
-                    </span>
+                <Separator />
+
+                <div className="grid gap-3 text-sm md:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="h-4 w-4 text-muted-foreground" />
+                    <span>Asientos: {item.seats.map((s) => `${s.row}${s.column}`).join(', ')}</span>
                   </div>
 
-                  <div>
-                    <h3 className="font-semibold">
-                      Reserva #{reservation.id}
-                    </h3>
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid gap-3 text-sm md:grid-cols-2">
-                    <div className="flex items-center gap-2">
-                      <Ticket className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        Total: Q
-                        {Number(
-                          reservation.precioTotal,
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-
-                    {reservation.fechaCreacion && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-
-                        <span>
-                          {new Date(
-                            reservation.fechaCreacion,
-                          ).toLocaleString('es-GT')}
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>Expira en: {formatCountdown(item.expiresAt)}</span>
                   </div>
                 </div>
 
-                {reservation.estado === 'PENDIENTE' && (
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button
-                      onClick={() =>
-                        handleConfirm(reservation.id)
-                      }
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Confirmar
-                    </Button>
+                <p className="text-sm font-medium">Total: Q{item.totalAmount.toFixed(2)}</p>
+              </div>
 
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        handleCancel(reservation.id)
-                      }
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Cancelar
-                    </Button>
-                  </div>
-                )}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button variant="destructive" onClick={() => handleCancel(item.id)}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Cancelar
+                </Button>
               </div>
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
     </div>
   )
