@@ -7,8 +7,11 @@ export class RabbitMQPublisher implements OnModuleInit {
   private channel: amqp.Channel;
 
   async onModuleInit() {
+    const user = encodeURIComponent(envConfig.rabbit.user ?? '');
+    const pass = encodeURIComponent(envConfig.rabbit.pass ?? '');
+
     const connection = await amqp.connect(
-      `amqp://${envConfig.rabbit.user}:${envConfig.rabbit.pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}`,
+      `amqp://${user}:${pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}`,
     );
 
     this.channel = await connection.createChannel();

@@ -235,6 +235,10 @@ jobs:
       TAG: release-${{ github.run_number }}
       ZOT_HOST: ${{ secrets.ZOT_HOST }}
       K3S_IP: ${{ secrets.K3S_IP }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -252,13 +256,20 @@ jobs:
       - name: Apply namespace
         run: kubectl apply -f Fase3/FilmStars/k3s/namespace.yaml
 
+      - name: Validate release runtime secrets
+        run: |
+          test -n "$DB_PASS" || { echo "::error::Missing GitHub secret DB_PASS"; exit 1; }
+          test -n "$JWT_SECRET" || { echo "::error::Missing GitHub secret JWT_SECRET"; exit 1; }
+          test -n "$RABBITMQ_PASS" || { echo "::error::Missing GitHub secret RABBITMQ_PASS"; exit 1; }
+          test -n "$ADMIN_PASSWORD" || { echo "::error::Missing GitHub secret ADMIN_PASSWORD"; exit 1; }
+
       - name: Create Kubernetes Secret from GitHub Secrets
         run: |
           kubectl -n $NS create secret generic filmstars-secrets \
-            --from-literal=DB_PASS='${{ secrets.DB_PASS }}' \
-            --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-            --from-literal=RABBITMQ_PASS='${{ secrets.RABBITMQ_PASS }}' \
-            --from-literal=DEFAULT_ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            --from-literal=DB_PASS="$DB_PASS" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --from-literal=RABBITMQ_PASS="$RABBITMQ_PASS" \
+            --from-literal=DEFAULT_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create init SQL ConfigMaps
@@ -296,6 +307,13 @@ jobs:
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
           kubectl -n $NS rollout restart deployment/rabbitmq
           kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s
+
+      - name: Reconcile RabbitMQ credentials
+        run: |
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl add_user admin "$RABBITMQ_PASS" 2>/dev/null || \
+            kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl change_password admin "$RABBITMQ_PASS"
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl set_user_tags admin administrator
+          kubectl -n $NS exec deployment/rabbitmq -- rabbitmqctl set_permissions -p / admin ".*" ".*" ".*"
 
       - name: Apply applications and Ingress
         run: |
