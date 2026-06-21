@@ -303,17 +303,18 @@ jobs:
       - name: Apply ConfigMaps, databases and RabbitMQ
         run: |
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
-          kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
 
-          # The lab VM is resource-constrained. Free app pods from previous rollouts
-          # before recreating RabbitMQ, otherwise the RabbitMQ pod can remain Pending.
-          for d in users-service movies-service reservations-service payments-service api-gateway frontend; do
-            kubectl -n $NS scale deployment/$d --replicas=0 2>/dev/null || true
+          # The lab VM is resource-constrained. Free all existing FilmStars pods before
+          # applying updated Deployments, otherwise new pods can remain Pending on CPU.
+          for d in $(kubectl -n $NS get deployment -o name); do
+            kubectl -n $NS scale $d --replicas=0 2>/dev/null || true
           done
-          for app in users-service movies-service reservations-service payments-service api-gateway frontend; do
-            kubectl -n $NS delete pod -l app=$app --grace-period=0 --force 2>/dev/null || true
+          kubectl -n $NS delete pod --all --grace-period=0 --force 2>/dev/null || true
+
+          kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+          for d in db-users db-movies db-reservations db-payments; do
+            kubectl -n $NS rollout status deployment/$d --timeout=300s
           done
-          kubectl -n $NS delete pod --field-selector=status.phase=Pending --grace-period=0 --force 2>/dev/null || true
 
           kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
           kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true

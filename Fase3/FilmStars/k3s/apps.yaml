@@ -31,7 +31,7 @@ spec:
           livenessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
             requests: { memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -78,7 +78,7 @@ spec:
           livenessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
             requests: { memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -125,7 +125,7 @@ spec:
           livenessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
             requests: { memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -172,7 +172,7 @@ spec:
           livenessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
             requests: { memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -219,7 +219,7 @@ spec:
           livenessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 25, periodSeconds: 10 }
           resources:
             requests: { memory: "128Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
 ---
 apiVersion: v1
 kind: Service
@@ -262,7 +262,7 @@ spec:
           livenessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 15, periodSeconds: 10 }
           resources:
             requests: { memory: "64Mi" }
-            limits: { cpu: "300m", memory: "128Mi" }
+            limits: { memory: "128Mi" }
 ---
 apiVersion: v1
 kind: Service

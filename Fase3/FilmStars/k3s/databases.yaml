@@ -16,6 +16,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-users
@@ -51,7 +56,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
           resources:
             requests: { memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -90,6 +95,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-movies
@@ -125,7 +135,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
           resources:
             requests: { memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -164,6 +174,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-reservations
@@ -199,7 +214,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
           resources:
             requests: { memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -238,6 +253,11 @@ metadata:
   namespace: filmstars
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: db-payments
@@ -273,7 +293,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
           resources:
             requests: { memory: "192Mi" }
-            limits: { cpu: "500m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: data
           persistentVolumeClaim:
