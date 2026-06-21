@@ -169,8 +169,19 @@ jobs:
     env:
       TAG: release-${{ github.run_number }}
       REG: ${{ secrets.ZOT_HOST }}/filmstars
+      DOCKER_BUILDKIT: 0
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate Zot configuration
+        env:
+          ZOT_HOST: ${{ secrets.ZOT_HOST }}
+          ZOT_USER: ${{ secrets.ZOT_USER }}
+          ZOT_PASSWORD: ${{ secrets.ZOT_PASSWORD }}
+        run: |
+          test -n "$ZOT_HOST" || { echo "::error::Missing GitHub secret ZOT_HOST"; exit 1; }
+          test -n "$ZOT_USER" || { echo "::error::Missing GitHub secret ZOT_USER"; exit 1; }
+          test -n "$ZOT_PASSWORD" || { echo "::error::Missing GitHub secret ZOT_PASSWORD"; exit 1; }
 
       - name: Allow insecure Zot registry on runner
         run: |
