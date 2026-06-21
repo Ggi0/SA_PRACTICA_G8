@@ -1,58 +1,4 @@
-Perfecto 🔥 ahora ya entramos a la parte visible del sistema: **los controllers + health**.  
-Esto convierte tu servicio en una API usable por frontend y por pruebas.
 
-Te voy a dar TODO:
-
-✅ archivos completos  
-✅ explicación clara de cada uno  
-✅ cómo encajan en el flujo  
-✅ ajustes necesarios para que funcione
-
-***
-
-# ✅ 📁 ARCHIVOS QUE VAMOS A CREAR
-
-```text
-src/payments/controllers/payments.controller.ts
-src/health/health.controller.ts
-src/health/health.module.ts
-```
-
-***
-
-# ✅ 1) 📄 `src/payments/controllers/payments.controller.ts`
-
-***
-
-## ✅ ¿Qué hace?
-
-Es la capa HTTP del dominio pagos.
-
-👉 Recibe requests  
-👉 llama al service  
-👉 devuelve respuesta
-
-***
-
-## ✅ ¿Qué representa?
-
-El **entry point externo del microservicio de pagos**.
-
-***
-
-## ✅ ¿Por qué es importante?
-
-Porque conecta:
-
-```text
-Frontend / API Gateway
-        ↓
-payments.controller
-        ↓
-payments.service
-```
-
-***
 
 ## ✅ ENPOINTS que implementa
 
@@ -63,71 +9,7 @@ payments.service
 
 ***
 
-## ✅ Código
 
-```ts
-// src/payments/controllers/payments.controller.ts
-
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-} from '@nestjs/common';
-
-import { PaymentsService } from '../services/payments.service';
-import { CreatePaymentDto } from '../dto/create-payment.dto';
-
-@Controller('payments')
-export class PaymentsController {
-  constructor(
-    private readonly paymentsService: PaymentsService,
-  ) {}
-
-  /**
-   * POST /payments
-   * Procesa un pago manual (útil para pruebas o integración inicial)
-   */
-  @Post()
-  async crearPago(@Body() dto: CreatePaymentDto) {
-    const pago = await this.paymentsService.crearYProcesarPago(dto);
-
-    return {
-      id: pago.id,
-      estado: pago.estado,
-      monto: pago.monto,
-      moneda: pago.moneda,
-      reservaId: pago.reservaIdRef,
-      usuarioId: pago.usuarioIdRef,
-      metodoPago: pago.metodoPago,
-      proveedorRef: pago.proveedorRef,
-      procesadoEn: pago.procesadoEn,
-    };
-  }
-
-  /**
-   * GET /payments/:id
-   * Obtiene un pago por su ID
-   */
-  @Get(':id')
-  async getPago(@Param('id') id: string) {
-    const pago = await this.paymentsService.getPagoById(id);
-
-    return {
-      id: pago.id,
-      estado: pago.estado,
-      monto: pago.monto,
-      moneda: pago.moneda,
-      reservaId: pago.reservaIdRef,
-      usuarioId: pago.usuarioIdRef,
-      metodoPago: pago.metodoPago,
-      proveedorRef: pago.proveedorRef,
-      procesadoEn: pago.procesadoEn,
-    };
-  }
-}
-```
 
 ***
 
@@ -166,43 +48,6 @@ Expone endpoint de salud:
 ```http
 GET /health
 ```
-
-***
-
-## ✅ ¿Qué representa?
-
-Un endpoint usado para:
-
-* Docker healthchecks
-* monitoreo
-* pruebas rápidas
-
-***
-
-## ✅ Código
-
-```ts
-// src/health/health.controller.ts
-
-import { Controller, Get } from '@nestjs/common';
-
-@Controller('health')
-export class HealthController {
-  /**
-   * GET /health
-   * Verifica que el servicio esté funcionando
-   */
-  @Get()
-  check() {
-    return {
-      status: 'ok',
-      service: 'payments-service',
-      timestamp: new Date().toISOString(),
-    };
-  }
-}
-```
-
 ***
 
 ## ✅ ¿Por qué es importante?
@@ -225,69 +70,7 @@ salida:
 
 ***
 
-# ✅ 3) 📄 `src/health/health.module.ts`
-
-***
-
-## ✅ ¿Qué hace?
-
-Registra el controller de health.
-
-***
-
-## ✅ Código
-
-```ts
-// src/health/health.module.ts
-
-import { Module } from '@nestjs/common';
-import { HealthController } from './health.controller';
-
-@Module({
-  controllers: [HealthController],
-})
-export class HealthModule {}
-```
-
-***
-
-# ✅ 4) 🔧 ACTUALIZAR `app.module.ts`
-
-Necesitas registrar el módulo de health.
-
-***
-
-## ✅ Código actualizado
-
-```ts
-// src/app.module.ts
-
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
-
-import { databaseConfig } from './config/database.config';
-import { PaymentsModule } from './payments/payments.module';
-import { HealthModule } from './health/health.module';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-
-    TypeOrmModule.forRoot(databaseConfig),
-
-    PaymentsModule,
-    HealthModule,
-  ],
-})
-export class AppModule {}
-```
-
-***
-
-# ✅ 5) 🚀 YA PUEDES PROBAR EL SERVICIO
+# ✅ 3)  YA PUEDES PROBAR EL SERVICIO
 
 ***
 
@@ -458,7 +241,7 @@ sin tocar controller ni service.
 
 ***
 
-# ✅ 7) 🔥 ESTADO ACTUAL DEL PROYECTO
+# 7) ESTADO ACTUAL DEL PROYECTO
 
 Ya tienes:
 
@@ -472,7 +255,7 @@ Ya tienes:
 
 ***
 
-# ✅ 8) 🚀 SIGUIENTE PASO (YA FINAL)
+# 8) SIGUIENTE PASO (YA FINAL)
 
 Ahora viene lo que conecta todo:
 

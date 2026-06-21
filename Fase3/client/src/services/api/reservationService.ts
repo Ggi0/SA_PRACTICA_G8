@@ -57,7 +57,7 @@ interface ApiMyReservationItem {
 }
 
 interface ApiConfirmReservationResponse {
-  estado: 'CONFIRMADA'
+  estado: 'EN_PROCESO_PAGO'
 }
 
 
@@ -255,13 +255,10 @@ export async function cancelReservation(id: string): Promise<{ message: string }
 // 7. Confirmar reserva
 export async function confirmReservation(
   reservationId: string,
-  referenciaPago?: string
 ): Promise<ApiConfirmReservationResponse> {
   try {
     const { data } = await httpClient.post<ApiConfirmReservationResponse>(
-      `/reservas/${reservationId}/confirmar`,
-      referenciaPago ? { referenciaPago } : {}
-    )
+      `/reservas/${reservationId}/confirmar`    )
 
     return data
   } catch (error) {

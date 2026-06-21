@@ -85,6 +85,9 @@ export function ReservationsPage() {
     }
   }
 
+  // #444130a6-b222-4c62-a4fa-f0ca09495989
+ /// Reserva #444130a6-b222-4c62-a4fa-f0ca09495989
+
   const handleCancel = async (id: string) => {
     try {
       await cancelReservation(id)

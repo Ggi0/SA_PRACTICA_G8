@@ -27,14 +27,14 @@ export class PaymentConsumer implements OnModuleInit {
 
       console.log('📥 Evento recibido:', content);
 
-      if (content.status === 'APPROVED') {
-        await this.reservasService.confirmarReserva(
-          content.reservaId,
-          content.referenciaPago,
-        );
-      } else {
-        await this.reservasService.cancelarReserva(content.reservaId);
-      }
+      if (content.estado === 'APROBADO') {
+  await this.reservasService.confirmarReservaInterna(
+    content.reservaId,
+    content.pagoId,
+  );
+} else {
+  await this.reservasService.cancelarReserva(content.reservaId);
+}
 
       channel.ack(msg);
     });
