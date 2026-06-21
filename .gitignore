@@ -2,13 +2,15 @@
 
 # Secretos / info sensible — NUNCA subir al repo
 secrets.env
+secrets/
+**/secrets/
 *.env
 .env
 *.pem
 
 CAMBIOS_YAML_PARA_GUIA_HTML.md
-
 guia-cicd-k3s-filmstars.html
+CORRECCIONES_CICD_K3S_ZOT.md
 
 # Build artifacts
 *.tsbuildinfo
