@@ -64,29 +64,59 @@ export function ReservationsPage() {
     fetchReservations()
   }, [])
 
-  const handleConfirm = async (id: string) => {
-    try {
-      await confirmReservation(id)
+const handleConfirm = async (id: string) => {
+  try {
+    await confirmReservation(id)
 
-      toast({
-        title: 'Reserva confirmada ✅',
-      })
+    toast({
+      title: 'Procesando pago...',
+    })
 
-      fetchReservations()
-    } catch (err: unknown) {
-      const message = (err as { message?: string })?.message
+    await waitForConfirmation(id)
 
-      toast({
-        variant: 'destructive',
-        title: 'Error al confirmar',
-        description:
-          message || 'No se pudo confirmar la reserva',
-      })
-    }
+  } catch (err: unknown) {
+    const message = (err as { message?: string })?.message
+
+    toast({
+      variant: 'destructive',
+      title: 'Error al confirmar',
+      description: message || 'No se pudo confirmar la reserva',
+    })
   }
-
+}
   // #444130a6-b222-4c62-a4fa-f0ca09495989
  /// Reserva #444130a6-b222-4c62-a4fa-f0ca09495989
+
+
+ const waitForConfirmation = async (id: string) => {
+  let intentos = 0
+
+  while (intentos < 10) {
+    await new Promise((r) => setTimeout(r, 1000)) // esperar 1s
+
+    const data = await getMyReservations()
+
+    setReservations(data)
+
+    const reserva = data.find((r) => r.id === id)
+
+    if (reserva?.estado === 'CONFIRMADA') {
+      toast({
+        title: '✅ Pago aprobado y reserva confirmada',
+      })
+      return
+    }
+
+    intentos++
+  }
+
+  toast({
+    variant: 'destructive',
+    title: 'Tiempo de espera agotado',
+  })
+}
+
+
 
   const handleCancel = async (id: string) => {
     try {

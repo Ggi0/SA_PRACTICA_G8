@@ -233,7 +233,14 @@ export async function getReservation(id: string): Promise<ReservationDetails> {
 export async function getMyReservations(): Promise<MyReservationItem[]> {
   try {
     const { data } = await httpClient.get<ApiMyReservationItem[]>(
-      '/reservas/mis-reservas'
+      '/reservas/mis-reservas',{
+
+params: {
+        t: Date.now(), // 🔥 evita cache (304)
+      },
+
+
+      }
     )
 
     return data
