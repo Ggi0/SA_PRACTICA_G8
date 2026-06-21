@@ -7,39 +7,41 @@ on:
     branches: [develop, release]
 
 jobs:
-  # ─────────────────────────────────────────────────────────────────────────────
-  # FASE 1: CI — Pruebas Unitarias con gate de 75% de cobertura
-  # Matriz paralela: si un servicio falla, se cancela todo (fail-fast)
-  # ─────────────────────────────────────────────────────────────────────────────
   ci-tests:
-    name: "CI - Tests [${{ matrix.service }}]"
+    name: "CI - Build & Tests [${{ matrix.service }}]"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        service: [reservas-service, payments-service, users-service, movies-service]
-
+        service:
+          - api-gateway
+          - users-service
+          - movies-service
+          - reservas-service
+          - payments-service
     defaults:
       run:
         working-directory: Fase3/FilmStars/${{ matrix.service }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install
 
       - name: Build
         run: npm run build
 
-      - name: Run unit tests with coverage (threshold >= 75%)
-        run: npm run test:cov
+      - name: Run tests with coverage when available
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts['test:cov'] ? 0 : 1)"; then
+            npm run test:cov
+          else
+            echo "No test:cov script in ${{ matrix.service }}; build gate already passed."
+          fi
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -47,39 +49,26 @@ jobs:
         with:
           name: coverage-${{ matrix.service }}
           path: Fase3/FilmStars/${{ matrix.service }}/coverage/
+          if-no-files-found: ignore
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # FASE 2: Build & Push — Construcción de imágenes y push a DockerHub
-  # Solo se ejecuta si TODOS los tests pasan y es un push directo (no PR)
-  # Se ejecuta tanto en develop como en release
-  # ─────────────────────────────────────────────────────────────────────────────
-  cd-docker:
-    name: "CD - Build & Push Images to DockerHub"
+  build-push-dockerhub-develop:
+    name: "Develop - Build & Push DockerHub"
     runs-on: ubuntu-latest
     needs: [ci-tests]
-    if: github.event_name == 'push'
-
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set release tag
+      - name: Set image tag
         id: meta
-        run: |
-          if [ "${{ github.ref_name }}" = "release" ]; then
-            echo "tag=release-${{ github.run_number }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.ref_name }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
-          fi
+        run: echo "tag=develop-${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Build & Push reservas-service
         uses: docker/build-push-action@v5
@@ -135,77 +124,32 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:${{ steps.meta.outputs.tag }}
           build-args: |
-            VITE_API_URL=http://${{ secrets.AWS_EC2_HOST }}:8080
+            VITE_API_URL=http://${{ secrets.DEVELOP_HOST }}:8080
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # FASE 3A: CD — Deploy en máquina local del grupo (rama develop)
-  # Usa runner self-hosted instalado en la computadora del integrante.
-  # Restricción: SOLO hace pull de imágenes desde DockerHub, nunca build local.
-  # ─────────────────────────────────────────────────────────────────────────────
-  deploy-local:
-    name: "CD - Deploy to Local Machine (develop)"
-    runs-on: self-hosted
-    needs: [cd-docker]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Prepare SQL init files
-        run: |
-          mkdir -p Fase3/FilmStars/database/sql/reservations
-          cp -n Fase3/FilmStars/reservas-service/src/docker/init.sql Fase3/FilmStars/database/sql/reservations/init.sql 2>/dev/null || true
-          cp -n Fase3/FilmStars/reservas-service/src/docker/seed.sql Fase3/FilmStars/database/sql/reservations/seed.sql 2>/dev/null || true
-
-      - name: Write environment file
-        working-directory: Fase3/FilmStars
-        run: |
-          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-
-      - name: Pull latest images from DockerHub
-        working-directory: Fase3/FilmStars
-        run: docker compose -f docker-compose.prod.yml pull
-
-      - name: Start services with Docker Compose
-        working-directory: Fase3/FilmStars
-        run: docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-      - name: Clean up unused images
-        run: docker image prune -f
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # FASE 3B: CD — Deploy en AWS EC2 (rama release)
-  # Se conecta por SSH, descarga las imágenes nuevas y reinicia los contenedores.
-  # Restricción: docker-compose.prod.yml usa solo image: (sin build: .)
-  # ─────────────────────────────────────────────────────────────────────────────
-  deploy-aws:
-    name: "CD - Deploy to AWS EC2 (release)"
+  deploy-develop:
+    name: "Develop - Deploy Docker Compose on VM"
     runs-on: ubuntu-latest
-    needs: [cd-docker]
-    if: github.ref == 'refs/heads/release' && github.event_name == 'push'
-
+    needs: [build-push-dockerhub-develop]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Copy deployment files to AWS EC2
+      - name: Copy compose files to develop VM
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.AWS_EC2_HOST }}
+          host: ${{ secrets.DEVELOP_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_SSH_KEY }}
+          key: ${{ secrets.DEVELOP_SSH_KEY }}
           source: "Fase3/FilmStars/docker-compose.prod.yml,Fase3/FilmStars/database,Fase3/FilmStars/rabbitmq,Fase3/FilmStars/reservas-service/src/docker"
           target: ~/filmstars/
           strip_components: 2
 
-      - name: Execute deployment on EC2
+      - name: Pull and restart compose stack
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_EC2_HOST }}
+          host: ${{ secrets.DEVELOP_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_SSH_KEY }}
+          key: ${{ secrets.DEVELOP_SSH_KEY }}
           script: |
             cd ~/filmstars
             mkdir -p database/sql/reservations
@@ -216,3 +160,141 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
+
+  build-push-zot-release:
+    name: "Release - Build & Push Zot"
+    runs-on: ubuntu-latest
+    needs: [ci-tests]
+    if: github.ref == 'refs/heads/release' && github.event_name == 'push'
+    env:
+      TAG: release-${{ github.run_number }}
+      REG: ${{ secrets.ZOT_HOST }}/filmstars
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Allow insecure Zot registry on runner
+        run: |
+          echo '{"insecure-registries":["${{ secrets.ZOT_HOST }}"]}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
+      - name: Login to Zot
+        run: echo "${{ secrets.ZOT_PASSWORD }}" | docker login ${{ secrets.ZOT_HOST }} -u ${{ secrets.ZOT_USER }} --password-stdin
+
+      - name: Build and push backend images
+        run: |
+          docker build -t $REG/users-service:$TAG -t $REG/users-service:latest Fase3/FilmStars/users-service
+          docker push $REG/users-service:$TAG
+          docker push $REG/users-service:latest
+
+          docker build -t $REG/movies-service:$TAG -t $REG/movies-service:latest Fase3/FilmStars/movies-service
+          docker push $REG/movies-service:$TAG
+          docker push $REG/movies-service:latest
+
+          docker build -t $REG/reservations-service:$TAG -t $REG/reservations-service:latest Fase3/FilmStars/reservas-service
+          docker push $REG/reservations-service:$TAG
+          docker push $REG/reservations-service:latest
+
+          docker build -t $REG/payments-service:$TAG -t $REG/payments-service:latest Fase3/FilmStars/payments-service
+          docker push $REG/payments-service:$TAG
+          docker push $REG/payments-service:latest
+
+          docker build -t $REG/api-gateway:$TAG -t $REG/api-gateway:latest Fase3/FilmStars/api-gateway
+          docker push $REG/api-gateway:$TAG
+          docker push $REG/api-gateway:latest
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t $REG/frontend:$TAG -t $REG/frontend:latest Fase3/client
+          docker push $REG/frontend:$TAG
+          docker push $REG/frontend:latest
+
+  deploy-k3s-release:
+    name: "Release - Deploy K3s on AWS"
+    runs-on: ubuntu-latest
+    needs: [build-push-zot-release]
+    if: github.ref == 'refs/heads/release' && github.event_name == 'push'
+    env:
+      NS: filmstars
+      TAG: release-${{ github.run_number }}
+      ZOT_HOST: ${{ secrets.ZOT_HOST }}
+      K3S_IP: ${{ secrets.K3S_IP }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-kubectl@v4
+
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext-base
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply namespace
+        run: kubectl apply -f Fase3/FilmStars/k3s/namespace.yaml
+
+      - name: Create Kubernetes Secret from GitHub Secrets
+        run: |
+          kubectl -n $NS create secret generic filmstars-secrets \
+            --from-literal=DB_PASS='${{ secrets.DB_PASS }}' \
+            --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+            --from-literal=RABBITMQ_PASS='${{ secrets.RABBITMQ_PASS }}' \
+            --from-literal=DEFAULT_ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create init SQL ConfigMaps
+        working-directory: Fase3/FilmStars
+        run: |
+          kubectl -n $NS create configmap users-initsql \
+            --from-file=init.sql=database/sql/users/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $NS create configmap movies-initsql \
+            --from-file=init.sql=database/sql/movies/init.sql \
+            --from-file=seed.sql=database/sql/movies/seed.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $NS create configmap reservations-initsql \
+            --from-file=init.sql=database/sql/reservations/init.sql \
+            --from-file=seed.sql=database/sql/reservations/seed.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $NS create configmap payments-initsql \
+            --from-file=init.sql=database/sql/payments/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create RabbitMQ ConfigMaps
+        working-directory: Fase3/FilmStars
+        run: |
+          kubectl -n $NS create configmap rabbitmq-definitions \
+            --from-file=definitions.json=rabbitmq/definitions.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $NS create configmap rabbitmq-config \
+            --from-file=rabbitmq.conf=rabbitmq/rabbitmq.conf \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply ConfigMaps, databases and RabbitMQ
+        run: |
+          kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
+          kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+          kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
+
+      - name: Apply applications and Ingress
+        run: |
+          envsubst '${ZOT_HOST} ${TAG}' < Fase3/FilmStars/k3s/apps.yaml | kubectl apply -f -
+          envsubst '${K3S_IP}' < Fase3/FilmStars/k3s/ingress.yaml | kubectl apply -f -
+
+      - name: Wait rollout and rollback automatically on failure
+        run: |
+          set -e
+          for d in users-service movies-service reservations-service payments-service api-gateway frontend; do
+            if ! kubectl -n $NS rollout status deployment/$d --timeout=180s; then
+              echo "::error::deployment/$d failed, rolling back"
+              kubectl -n $NS rollout undo deployment/$d || true
+              kubectl -n $NS rollout status deployment/$d --timeout=120s || true
+              exit 1
+            fi
+          done
+
+      - name: Show cluster status
+        if: always()
+        run: kubectl -n $NS get pods,svc,ingress
