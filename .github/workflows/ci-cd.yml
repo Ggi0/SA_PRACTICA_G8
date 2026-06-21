@@ -304,8 +304,9 @@ jobs:
         run: |
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+          kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
+          kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
-          kubectl -n $NS rollout restart deployment/rabbitmq
           kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s
 
       - name: Reconcile RabbitMQ credentials
