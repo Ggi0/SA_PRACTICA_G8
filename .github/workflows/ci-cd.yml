@@ -294,6 +294,8 @@ jobs:
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
+          kubectl -n $NS rollout restart deployment/rabbitmq
+          kubectl -n $NS rollout status deployment/rabbitmq --timeout=180s
 
       - name: Apply applications and Ingress
         run: |
@@ -314,4 +316,7 @@ jobs:
 
       - name: Show cluster status
         if: always()
-        run: kubectl -n $NS get pods,svc,ingress
+        run: |
+          kubectl -n $NS get pods,svc,ingress
+          kubectl -n $NS logs deployment/reservations-service --tail=80 || true
+          kubectl -n $NS logs deployment/payments-service --tail=80 || true
