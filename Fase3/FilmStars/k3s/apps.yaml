@@ -1,0 +1,277 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-service
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: users-service
+  template:
+    metadata:
+      labels:
+        app: users-service
+    spec:
+      containers:
+        - name: users-service
+          image: ${ZOT_HOST}/filmstars/users-service:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: users-config }
+            - secretRef: { name: filmstars-secrets }
+          ports:
+            - containerPort: 3001
+          readinessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 25, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users-service
+  namespace: filmstars
+spec:
+  selector:
+    app: users-service
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies-service
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: movies-service
+  template:
+    metadata:
+      labels:
+        app: movies-service
+    spec:
+      containers:
+        - name: movies-service
+          image: ${ZOT_HOST}/filmstars/movies-service:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: movies-config }
+            - secretRef: { name: filmstars-secrets }
+          ports:
+            - containerPort: 3002
+          readinessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3002 }, initialDelaySeconds: 25, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movies-service
+  namespace: filmstars
+spec:
+  selector:
+    app: movies-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reservations-service
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: reservations-service
+  template:
+    metadata:
+      labels:
+        app: reservations-service
+    spec:
+      containers:
+        - name: reservations-service
+          image: ${ZOT_HOST}/filmstars/reservations-service:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: reservations-config }
+            - secretRef: { name: filmstars-secrets }
+          ports:
+            - containerPort: 3003
+          readinessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3003 }, initialDelaySeconds: 25, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reservations-service
+  namespace: filmstars
+spec:
+  selector:
+    app: reservations-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-service
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: payments-service
+  template:
+    metadata:
+      labels:
+        app: payments-service
+    spec:
+      containers:
+        - name: payments-service
+          image: ${ZOT_HOST}/filmstars/payments-service:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: payments-config }
+            - secretRef: { name: filmstars-secrets }
+          ports:
+            - containerPort: 3004
+          readinessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3004 }, initialDelaySeconds: 25, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-service
+  namespace: filmstars
+spec:
+  selector:
+    app: payments-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: ${ZOT_HOST}/filmstars/api-gateway:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: gateway-config }
+            - secretRef: { name: filmstars-secrets }
+          ports:
+            - containerPort: 8080
+          readinessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 10, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 8080 }, initialDelaySeconds: 25, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: filmstars
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: filmstars
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ${ZOT_HOST}/filmstars/frontend:${TAG}
+          ports:
+            - containerPort: 80
+          readinessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 15, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "300m", memory: "128Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: filmstars
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
