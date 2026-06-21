@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useNavigate } from 'react-router-dom'
+import {useNavigate } from 'react-router-dom'
 import type { Movie, Showtime, Seat } from '@/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export function CartIcon() {
   return (
     <div
       className="relative cursor-pointer"
-      onClick={() => navigate('/reservations')}
+    onClick={() => {navigate('/reservations',)}}
     >
       <span role="img" aria-label="cart">
         🛒
