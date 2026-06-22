@@ -19,6 +19,10 @@ import { PAYMENT_GATEWAY } from '../interfaces/payment-gateway.interface';
 import type { PaymentGatewayInterface } from '../interfaces/payment-gateway.interface';
 
 
+import { DetallePagoRepository } from '../repositories/detalle-pago.repository';
+import { BoletoRepository } from '../repositories/boleto.repository';
+
+
 
 import { MESSAGE_PUBLISHER } from '../../messaging/publisher.interface';
 
@@ -35,6 +39,10 @@ export class PaymentsService {
 
   constructor(
     private readonly pagoRepository: PagoRepository,
+
+private readonly detalleRepo: DetallePagoRepository,
+  private readonly boletoRepo: BoletoRepository,
+
 
     @InjectRepository(MensajeriaEntity)
     private readonly mensajeriaRepo: Repository<MensajeriaEntity>,
@@ -95,6 +103,27 @@ export class PaymentsService {
           procesadoEn: resultado.procesadoEn,
         },
       });
+
+      if (resultado.estado === PagoEstado.APROBADO) {
+  const pagoActual = await this.pagoRepository.findById(pago.id);
+
+  if (!pagoActual) {
+    throw new NotFoundException('Pago no encontrado tras aprobación');
+  }
+
+  // ✅ crear detalle
+  await this.detalleRepo.crearDetallePago(
+    pagoActual,
+    dto.monto,
+  );
+
+  // ✅ crear boletos (por ahora 1)
+  await this.boletoRepo.crearBoletos(
+    pagoActual,
+    dto.reservaId,
+    1,
+  );
+}
 
       await this.publisher.publish(RABBITMQ_QUEUES.PAYMENT_RESULT, {
         reservaId: dto.reservaId,

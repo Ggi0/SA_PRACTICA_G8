@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS detalle_pago (
 
 CREATE TABLE IF NOT EXISTS boleto (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    pago_id UUID NOT NULL,
+    pago_id UUID NULL,
     reserva_id_ref UUID NOT NULL,
     reserva_asiento_id_ref UUID NOT NULL,
     codigo_boleto VARCHAR(100) NOT NULL UNIQUE,
