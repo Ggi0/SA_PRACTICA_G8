@@ -300,10 +300,9 @@ await this.publisher.publish('seat_release_queue', {
    * - reserva PENDIENTE -> CONFIRMADA
    * - asientos BLOQUEADO -> OCUPADO
    */
-async confirmarReserva(id: string, referenciaPagoRef?: string) {
+async confirmarReserva(id: string) {
   return this.dataSource.transaction(async (manager) => {
     const reservaRepoTx = manager.getRepository(ReservaEntity);
-    const asientoRepoTx = manager.getRepository(EstadoAsientoFuncionEntity);
     const mensajeriaRepoTx = manager.getRepository(MensajeriaEntity);
 
     const reserva = await reservaRepoTx
@@ -322,39 +321,21 @@ async confirmarReserva(id: string, referenciaPagoRef?: string) {
       );
     }
 
-    const asientos = await asientoRepoTx
-      .createQueryBuilder('asiento')
-      .setLock('pessimistic_write')
-      .where('asiento.reserva_id = :reservaId', { reservaId: reserva.id })
-      .getMany();
-
-    reserva.estado = ReservaEstado.CONFIRMADA;
-    reserva.modificacion = new Date();
-
-    if (referenciaPagoRef) {
-      reserva.referenciaPagoRef = referenciaPagoRef;
-    }
-
-    await reservaRepoTx.save(reserva);
-
-    for (const asiento of asientos) {
-      asiento.estado = AsientoEstado.OCUPADO;
-      asiento.bloqueadoHasta = undefined;
-      asiento.modificacion = new Date();
-    }
-
-    await asientoRepoTx.save(asientos);
-
-    // Guardar en outbox (MensajeriaEntity)
+    /**
+     * Guardar evento en Outbox
+     */
     await mensajeriaRepoTx.save(
       mensajeriaRepoTx.create({
         servicioOrigen: 'reservas-service',
         agregadoTipo: 'reserva',
         agregadoId: reserva.id,
-        tipoEvento: 'reserva.confirmada',
+        tipoEvento: 'pago.solicitado',
         payloadJson: {
           reservaId: reserva.id,
-          total: reserva.precioTotal,
+          usuarioId: reserva.usuarioIdRef,
+          monto: Number(reserva.precioTotal),
+          moneda: 'GTQ',
+          metodoPago: 'TEST_APROBADO',
         },
         estado: MensajeriaEstado.PENDIENTE,
         fechaCreacion: new Date(),
@@ -362,24 +343,53 @@ async confirmarReserva(id: string, referenciaPagoRef?: string) {
     );
 
     /**
-     *  Publicar eventos externos
+     * Solo solicitar pago.
+     * No se modifica la reserva ni los asientos.
      */
-
-    // A) Mandar a pago
     await this.publisher.publish('payment_process_queue', {
       reservaId: reserva.id,
-      total: reserva.precioTotal,
-    });
-
-    // B) Ticket emitido
-    await this.publisher.publish('ticket_issued_queue', {
-      reservaId: reserva.id,
+      usuarioId: reserva.usuarioIdRef,
+      monto: Number(reserva.precioTotal),
+      moneda: 'GTQ',
+      metodoPago: 'TEST_APROBADO',
     });
 
     return {
-      estado: reserva.estado,
+      estado: 'EN_PROCESO_PAGO',
+      reservaId: reserva.id,
     };
   });
 }
+
+
+async confirmarReservaInterna(reservaId: string, pagoId?: string) {
+  return this.dataSource.transaction(async (manager) => {
+    const reservaRepoTx = manager.getRepository(ReservaEntity);
+    const asientoRepoTx = manager.getRepository(EstadoAsientoFuncionEntity);
+
+    const reserva = await reservaRepoTx.findOneBy({ id: reservaId });
+
+    if (!reserva) return;
+
+    reserva.estado = ReservaEstado.CONFIRMADA;
+    reserva.referenciaPagoRef = pagoId;
+
+    await reservaRepoTx.save(reserva);
+
+    const asientos = await asientoRepoTx.find({
+      where: { reservaId: reserva.id },
+    });
+
+    for (const asiento of asientos) {
+      asiento.estado = AsientoEstado.OCUPADO;
+      asiento.bloqueadoHasta = undefined;
+    }
+
+    await asientoRepoTx.save(asientos);
+  });
+}
+
+
+
 
 }

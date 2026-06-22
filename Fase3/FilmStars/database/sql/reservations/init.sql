@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS estado_asiento_funcion (
         UNIQUE (funcion_id_ref, asiento_id_ref),
 
     CONSTRAINT chk_estado_asiento
-        CHECK (estado IN ('DISPONIBLE', 'BLOQUEADO', 'OCUPADO'))
+        CHECK (estado IN ('DISPONIBLE', 'BLOQUEADO', 'OCUPADO', 'EN_USO'))
 );
 
 CREATE TABLE IF NOT EXISTS reserva_asiento (

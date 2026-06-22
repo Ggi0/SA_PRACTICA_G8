@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { PaymentsService } from '../services/payments.service';
@@ -12,6 +13,10 @@ import { CreatePaymentDto } from '../dto/create-payment.dto';
 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UserId } from '../../common/decorators/user-id.decorator';
+
+
+import { FilterBoletosDto } from '../dto/filter-boletos.dto';
+
 
 @Controller('payments')
 export class PaymentsController {
@@ -70,4 +75,50 @@ export class PaymentsController {
       procesadoEn: pago.procesadoEn,
     };
   }
+
+
+
+@UseGuards(JwtAuthGuard)
+@Get('boletos/mis-boletos')
+async getMisBoletos(
+  @UserId() usuarioId: string,
+  @Query() filtros: FilterBoletosDto,
+) {
+  const boletos =
+    await this.paymentsService.obtenerBoletosUsuario(
+      usuarioId,
+      filtros,
+    );
+
+  return boletos.map((b) => ({
+    id: b.id,
+    codigo: b.codigoBoleto,
+    estado: b.estado,
+    reservaId: b.reservaIdRef,
+    creado: b.creado,
+  }));
+}
+
+
+@UseGuards(JwtAuthGuard)
+@Get('boletos/codigo/:codigo')
+async buscarPorCodigo(
+  @Param('codigo') codigo: string,
+) {
+  const boleto =
+    await this.paymentsService.obtenerBoletosUsuarioPorCodigo(
+      codigo,
+    );
+
+  return {
+    id: boleto.id,
+    codigo: boleto.codigoBoleto,
+    estado: boleto.estado,
+    reservaId: boleto.reservaIdRef,
+    creado: boleto.creado,
+  };
+}
+
+
+
 }
