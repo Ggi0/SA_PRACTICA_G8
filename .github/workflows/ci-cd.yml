@@ -183,6 +183,7 @@ jobs:
             test -n "$RABBITMQ_PASS" || { echo "Missing RABBITMQ_PASS"; exit 1; }
             test -n "$ADMIN_PASSWORD" || { echo "Missing ADMIN_PASSWORD"; exit 1; }
             echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" > .env
+            printf 'RABBITMQ_PASS=%s\n' "$RABBITMQ_PASS" >> .env
             mkdir -p secrets
             chmod 700 secrets
             printf '%s' "$DB_PASS" > secrets/db_password.txt
