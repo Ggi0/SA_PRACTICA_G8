@@ -1,11 +1,10 @@
 
 # Casos de uso
 ## Diagrama de casos de uso de alto nivel
-## Diagrama de casos de uso de alto nivel
-![Altonivel](imgs/Altonivel.png)
+![Altonivel](imgs/AltonivelP5.png)
 
 ## Primera descomposición
-![Primeradescomposicion](imgs/Primera_descomposicion.png)
+![Primeradescomposicion](imgs/Primeradescom.png)
 
 
 ---
@@ -562,6 +561,75 @@ Sus expandidos serían:
 | **Reglas de negocio**           | - Solo usuarios con rol `Admin` pueden acceder al módulo administrativo.<br>- La validación de permisos debe realizarse en frontend y backend.<br>- El backend no debe confiar únicamente en que el frontend oculte las vistas administrativas.<br>- Los cines, salas, mapas de asientos y funciones solo pueden ser creados, modificados o desactivados por administradores.<br>- No se deben permitir funciones solapadas en la misma sala y horario.<br>- No se debe eliminar físicamente información que tenga historial de funciones, reservas o ventas; en esos casos debe aplicarse baja lógica o desactivación.                                                                                                                                                                                                                                                                                                    |
 | **Flujos de excepción**         | **FE1: Error de conexión con backend**<br>FE1.1 El sistema no puede validar el token o procesar la operación.<br>FE1.2 Se muestra un mensaje de error temporal.<br>FE1.3 El error se registra en logs.<br><br>**FE2: Error al guardar datos**<br>FE2.1 El sistema detecta un error al guardar la información administrativa.<br>FE2.2 El sistema no confirma la operación.<br>FE2.3 Se informa al administrador que debe intentar nuevamente.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **Reglas de calidad**           | - La validación de sesión y rol debe ser rápida y consistente.<br>- El panel administrativo debe ocultarse para usuarios no autorizados.<br>- Los endpoints administrativos deben responder con acceso denegado cuando el usuario no tenga permisos.<br>- Las acciones administrativas deben ser claras, trazables y controladas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Requerimientos relacionados** | RF relacionados con administración de cines, salas, mapa base de asientos, horarios, funciones y control de acceso por rol Admin. RNF relacionados con seguridad, JWT, roles, control de acceso End-to-End y mantenibilidad.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Requerimientos relacionados** | RF relacionados con administración de cines, salas, mapa base de asientos, horarios, funciones y control de acceso por rol Admin. RNF relacionados con seguridad, JWT, roles, control de acceso End-to-End y mantenibilidad.                                                                                                                                                                          ---
+
+## CDU006: Descarga e Historial de Boletos
+
+Sus expandidos serían:
+
+- CDU006.1: Descargar boleto después de compra exitosa
+- CDU006.2: Generar boleto digital con QR o código de barras
+- CDU006.3: Consultar historial de compras
+- CDU006.4: Descargar boleto desde historial
+- CDU006.5: Validar permiso de consulta o descarga de boleto
+
+![CDU006_DescargaHistorialBoletos](imgs/CDU006.png)
+
+---
+
+| Campo | Detalle |
+| ----------------- | ------- |
+| Nombre | Descarga e Historial de Boletos |
+| Código | CDU006 |
+| Actor principal | Usuario |
+| Actores secundarios | API Gateway, Servicio de Pagos, Servicio de Reservas |
+| Descripción | Permite que el usuario descargue su boleto digital inmediatamente después de una compra exitosa y que posteriormente pueda consultar su historial de compras para volver a descargar boletos generados en el pasado. |
+| Precondiciones | - El usuario debe estar autenticado.<br>- Debe existir una compra exitosa asociada al usuario.<br>- El boleto debe haber sido generado correctamente por el sistema. |
+| Post Condiciones | - El usuario obtiene un boleto descargable en formato PDF o imagen legible.<br>- El boleto queda disponible en el historial de compras del usuario.<br>- El boleto contiene un código QR o código de barras único para validación de acceso. |
+| Flujo principal | 1. El usuario finaliza exitosamente el proceso de pago.<br>2. El sistema confirma la compra y emite el boleto.<br>3. El sistema genera un archivo descargable del boleto en formato PDF o imagen.<br>4. El boleto incluye datos de la función, película, sala, asientos y un código QR o código de barras único.<br>5. El sistema muestra la opción "Descargar boleto".<br>6. El usuario descarga el boleto.<br>7. El sistema guarda la referencia del boleto en el historial de compras.<br>8. Posteriormente, el usuario accede a "Historial de Compras".<br>9. El sistema muestra las compras y boletos asociados al usuario.<br>10. El usuario selecciona un boleto y lo descarga nuevamente. |
+| Flujos alternos | **FA1: El boleto no se genera inmediatamente**<br>FA1.1 El pago fue exitoso, pero el sistema no puede generar el archivo del boleto en ese momento.<br>FA1.2 El sistema notifica que el boleto quedará disponible en el historial.<br>FA1.3 El sistema reintenta la generación.<br><br>**FA2: El usuario intenta descargar un boleto que no le pertenece**<br>FA2.1 El sistema valida el JWT y la relación del boleto con el usuario.<br>FA2.2 Si el boleto no pertenece al usuario, se deniega el acceso.<br><br>**FA3: No existen compras previas**<br>FA3.1 El usuario entra al historial de compras.<br>FA3.2 El sistema muestra el mensaje "No tiene compras registradas". |
+| Reglas de negocio | - Solo el propietario del boleto o un administrador autorizado puede consultar o descargar el boleto.<br>- Todo boleto debe tener un identificador único.<br>- El QR o código de barras debe representar de forma segura el ID del boleto o una referencia cifrada.<br>- El historial solo debe mostrar compras asociadas al usuario autenticado.<br>- La descarga del boleto no cambia su estado de validación; únicamente el escaneo o validación de acceso puede marcarlo como usado. |
+| Flujo de excepción | **FE1: Error al generar PDF o imagen**<br>FE1.1 El sistema falla al construir el archivo descargable.<br>FE1.2 El sistema registra el error.<br>FE1.3 Se muestra mensaje temporal al usuario.<br>FE1.4 El usuario puede intentar descargarlo nuevamente desde historial.<br><br>**FE2: Error al consultar historial**<br>FE2.1 El servicio no responde o la base de datos presenta error.<br>FE2.2 El sistema muestra mensaje de error y permite reintentar. |
+| Reglas de calidad | - La descarga debe ser clara y accesible desde la pantalla de compra exitosa.<br>- El historial debe cargar de forma ordenada y permitir identificar película, fecha, función y asientos.<br>- El boleto debe ser legible y verificable por el personal de acceso. |
+| Requerimientos relacionados | RF-82, RF-83, RF-84, RF-85, RF-86, RF-87, RF-88, RF-89, RNF-56, RNF-61, RNF-62, RNF-64. |
+
+---
+
+## CDU007: Escaneo y Control de Accesos
+
+Sus expandidos serían:
+
+- CDU007.1: Escanear y validar ticket
+- CDU007.2: Marcar boleto como usado o inválido
+- CDU007.3: Actualizar asiento a EN_USO
+- CDU007.4: Rechazar boleto inválido, usado o inexistente
+- CDU007.5: Buscar boleto manualmente por contingencia
+- CDU007.6: Forzar validación manual de boleto
+- CDU007.7: Registrar auditoría de acceso
+
+![CDU007_EscaneoControlAccesos](imgs/CDU007.png)
+
+---
+
+| Campo | Detalle |
+| ----------------- | ------- |
+| Nombre | Escaneo y Control de Accesos |
+| Código | CDU007 |
+| Actor principal | Administrador |
+| Actores secundarios | API Gateway, Servicio de Pagos, Servicio de Reservas |
+| Descripción | Permite al administrador validar boletos desde el panel administrativo simulando un escáner de códigos de acceso. Si el boleto es válido, el sistema actualiza el asiento a `EN_USO` y marca el boleto como usado para evitar reutilización. Si el boleto no puede leerse o genera error, el administrador puede buscarlo manualmente y forzar la validación si corresponde. |
+| Precondiciones | - El administrador debe estar autenticado.<br>- El JWT debe ser válido y contener rol `Admin`.<br>- Debe existir un boleto generado por una compra exitosa.<br>- El módulo de validación debe estar disponible. |
+| Post Condiciones | - Si el boleto es válido, queda marcado como `USADO` o `INVÁLIDO` de forma irreversible.<br>- El asiento asociado queda en estado `EN_USO` para esa función.<br>- Se registra una auditoría del intento de acceso.<br>- Si el boleto no es válido, el acceso es rechazado. |
+| Flujo principal | 1. El administrador accede al panel de control de accesos.<br>2. El sistema valida sesión y rol `Admin`.<br>3. El administrador escanea o ingresa el código del boleto.<br>4. El frontend envía el código al API Gateway.<br>5. El API Gateway valida JWT y rol `Admin`.<br>6. El sistema consulta el boleto en el Servicio de Pagos.<br>7. El sistema verifica que el boleto exista, esté vigente y no haya sido usado.<br>8. El sistema actualiza el boleto como usado o inválido para impedir reutilización.<br>9. El sistema actualiza el estado del asiento asociado a `EN_USO` en la función correspondiente.<br>10. El sistema registra la auditoría de acceso.<br>11. El sistema muestra mensaje de validación exitosa al administrador. |
+| Flujos alternos | **FA1: Boleto ya usado**<br>FA1.1 El sistema detecta que el boleto fue validado anteriormente.<br>FA1.2 Se rechaza el acceso.<br>FA1.3 Se muestra alerta al administrador.<br>FA1.4 Se registra el intento de acceso fallido.<br><br>**FA2: Boleto inexistente o inválido**<br>FA2.1 El sistema no encuentra el boleto o detecta formato inválido.<br>FA2.2 Se rechaza el acceso.<br>FA2.3 Se muestra mensaje de error.<br><br>**FA3: Error de lectura del escáner**<br>FA3.1 El administrador no puede leer el código correctamente.<br>FA3.2 El administrador entra al buscador manual de contingencia.<br>FA3.3 El sistema permite buscar por ID de boleto, rango de fechas o película.<br>FA3.4 Si el registro existe y es válido, el administrador puede forzar la validación manual. |
+| Reglas de negocio | - Solo usuarios con rol `Admin` pueden validar boletos o forzar validaciones.<br>- Un boleto usado no puede volver a utilizarse.<br>- La validación exitosa debe cambiar el asiento a `EN_USO`.<br>- Toda validación, exitosa o fallida, debe dejar registro de auditoría.<br>- La validación manual solo puede realizarse si el boleto existe y no ha sido usado. |
+| Flujo de excepción | **FE1: Error al actualizar estado del asiento**<br>FE1.1 El boleto es válido, pero el Servicio de Reservas no responde.<br>FE1.2 El sistema no confirma la validación completa.<br>FE1.3 El intento queda registrado para revisión.<br><br>**FE2: Error de base de datos al marcar boleto usado**<br>FE2.1 El sistema no puede actualizar el estado del boleto.<br>FE2.2 Se rechaza temporalmente la validación para evitar inconsistencias.<br>FE2.3 El administrador recibe mensaje de reintento. |
+| Reglas de calidad | - La validación debe responder de forma rápida para no retrasar el ingreso a sala.<br>- Los mensajes deben diferenciar claramente boleto válido, usado, inexistente o error de lectura.<br>- La búsqueda manual debe permitir filtros combinados para contingencias.<br>- El sistema debe mantener consistencia entre estado de boleto y estado de asiento. |
+| Requerimientos relacionados | RF-90, RF-91, RF-92, RF-93, RF-94, RF-95, RF-96, RF-97, RF-98, RF-99, RF-100, RNF-56, RNF-57, RNF-58, RNF-59, RNF-60, RNF-63, RNF-64. |
+
+---
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 
