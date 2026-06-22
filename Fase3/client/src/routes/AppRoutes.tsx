@@ -10,7 +10,7 @@ import { SeatsPage } from '@/pages/SeatsPage'
 import { CheckoutPage } from '@/pages/Checkoutpage'
 import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-
+import { HistorialPage } from '@/pages/HistorialPage'
 
 import { ReservationsPage } from '@/pages/ReservationsPage'
 
@@ -45,7 +45,7 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
+        <Route path="/historial" element={<HistorialPage />} />
         <Route path="/movies/:movieId" element={
           <ProtectedRoute><MovieDetailPage /></ProtectedRoute>
         } />
