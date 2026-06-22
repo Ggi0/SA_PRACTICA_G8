@@ -159,7 +159,7 @@ jobs:
           host: ${{ secrets.DEVELOP_HOST }}
           username: ubuntu
           key: ${{ secrets.DEVELOP_SSH_KEY }}
-          source: "Fase3/FilmStars/docker-compose.prod.yml,Fase3/FilmStars/database,Fase3/FilmStars/rabbitmq,Fase3/FilmStars/reservas-service/src/docker"
+          source: "Fase3/FilmStars/docker-compose.prod.yml,Fase3/FilmStars/database,Fase3/FilmStars/rabbitmq"
           target: ~/filmstars/
           strip_components: 2
 
@@ -178,9 +178,6 @@ jobs:
           envs: DOCKERHUB_USERNAME,DB_PASS,JWT_SECRET,RABBITMQ_PASS,ADMIN_PASSWORD
           script: |
             cd ~/filmstars
-            mkdir -p database/sql/reservations
-            cp -n reservas-service/src/docker/init.sql database/sql/reservations/init.sql 2>/dev/null || true
-            cp -n reservas-service/src/docker/seed.sql database/sql/reservations/seed.sql 2>/dev/null || true
             test -n "$DB_PASS" || { echo "Missing DB_PASS"; exit 1; }
             test -n "$JWT_SECRET" || { echo "Missing JWT_SECRET"; exit 1; }
             test -n "$RABBITMQ_PASS" || { echo "Missing RABBITMQ_PASS"; exit 1; }

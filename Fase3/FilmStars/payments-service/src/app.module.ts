@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { HealthModule } from './health/health.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { ConsumersModule } from './consumers/consumers.module';
+import {PagosAdmModule} from './admin/pagosAdm.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConsumersModule } from './consumers/consumers.module';
     PaymentsModule,
     ConsumersModule,
     HealthModule,
+    PagosAdmModule,
   ],
 })
 export class AppModule {}
