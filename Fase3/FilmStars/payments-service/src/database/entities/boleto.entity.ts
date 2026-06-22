@@ -19,8 +19,8 @@ export class BoletoEntity {
   @Column({ name: 'reserva_id_ref', type: 'uuid' })
   reservaIdRef: string;
 
-  @Column({ name: 'reserva_asiento_id_ref', type: 'uuid' })
-  reservaAsientoIdRef: string;
+  @Column({ name: 'reserva_asiento_id_ref', type: 'uuid', nullable: true })
+  reservaAsientoIdRef: string| null;
 
   @Column({ name: 'codigo_boleto' })
   codigoBoleto: string;

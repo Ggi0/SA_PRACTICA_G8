@@ -12,9 +12,12 @@ import { MensajeriaEntity } from '../database/entities/mensajeria.entity';
 import { PaymentsController } from './controllers/payments.controller';
 import { PaymentsService } from './services/payments.service';
 import { PagoRepository } from './repositories/pago.repository';
+import { DetallePagoRepository } from './repositories/detalle-pago.repository'
+import { BoletoRepository } from './repositories/boleto.repository'
 
 import { PAYMENT_GATEWAY } from './interfaces/payment-gateway.interface';
 import { FakePaymentGatewayService } from './services/payment-gateway.service';
+
 
 @Module({
   imports: [
@@ -31,6 +34,8 @@ import { FakePaymentGatewayService } from './services/payment-gateway.service';
     PaymentsService,
     PagoRepository,
     FakePaymentGatewayService,
+    DetallePagoRepository,
+    BoletoRepository,
     {
       provide: PAYMENT_GATEWAY,
       useExisting: FakePaymentGatewayService,

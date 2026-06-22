@@ -119,11 +119,10 @@ export class ReservasController {
    * Lo dejamos habilitado para pruebas/manual,
    * pero más adelante podría protegerse con otro mecanismo interno.
    */
-  @Post(':id/confirmar')
-  async confirmarReserva(
-    @Param('id') id: string,
-    @Body() dto: ConfirmarReservaDto,
-  ) {
-    return this.reservasService.confirmarReserva(id, dto.referenciaPago);
-  }
+@Post(':id/confirmar')
+async confirmarReserva(
+  @Param('id') id: string,
+) {
+  return this.reservasService.confirmarReserva(id);
+}
 }
