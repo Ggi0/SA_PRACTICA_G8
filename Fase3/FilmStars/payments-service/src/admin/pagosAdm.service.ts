@@ -2,15 +2,24 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 
 import { PagosAdmRepository } from './pagosAdm.repository';
+
+import { MESSAGE_PUBLISHER } from '../messaging/publisher.interface';
+import type { MessagePublisher } from '../messaging/publisher.interface';
+import { RABBITMQ_QUEUES } from '../messaging/rabbitmq.constants';
 
 @Injectable()
 export class PagosAdmService {
   constructor(
     private readonly repo: PagosAdmRepository,
-  ) {}
+
+    @Inject(MESSAGE_PUBLISHER)
+    private readonly publisher: MessagePublisher,
+
+  ) { }
 
   /**
    *  ESCANEAR QR (flujo ideal)
@@ -46,6 +55,23 @@ export class PagosAdmService {
     });
     */
 
+
+  // ✅ 2. ENVIAR EVENTO A RESERVAS
+  await this.publisher.publish(RABBITMQ_QUEUES.BOLETO_USADO, {
+    evento: 'boleto.usado',
+
+    // ✅ datos clave para reservas
+    boletoId: boleto.id,
+    codigo: boleto.codigoBoleto,
+
+    reservaId: boleto.reservaIdRef,
+    usuarioId: boleto.pago.usuarioIdRef,
+
+    // ⚠️ FUTURO: cuando tengas esto
+    // reservaAsientoId: boleto.reservaAsientoIdRef,
+  });
+
+
     return {
       mensaje: ' Acceso permitido',
       estado: boleto.estado,
@@ -69,28 +95,28 @@ export class PagosAdmService {
   /**
    *  FORZAR VALIDACIÓN (ADMIN)
    */
-  async forzarUso(boletoId: string) {
-    const boleto = await this.repo.buscarPorId(boletoId);
+async forzarUso(boletoId: string) {
+  const boleto = await this.repo.buscarPorId(boletoId);
 
-    if (!boleto) {
-      throw new NotFoundException('Boleto no encontrado');
-    }
-
-    boleto.estado = 'USADO';
-    await this.repo.guardar(boleto);
-
-    //  EVENTO FUTURO
-    /*
-    await this.publisher.publish('boleto_usado_queue', {
-      reservaId: boleto.reservaIdRef,
-      reservaAsientoId: boleto.reservaAsientoIdRef,
-    });
-    */
-
-    return {
-      mensaje: '✅ Validación forzada',
-    };
+  if (!boleto) {
+    throw new NotFoundException('Boleto no encontrado');
   }
+
+  boleto.estado = 'USADO';
+  await this.repo.guardar(boleto);
+
+  await this.publisher.publish(RABBITMQ_QUEUES.BOLETO_USADO, {
+    evento: 'boleto.usado',
+    boletoId: boleto.id,
+    reservaId: boleto.reservaIdRef,
+    usuarioId: boleto.pago.usuarioIdRef,
+    reservaAsientoId: boleto.reservaAsientoIdRef,
+  });
+
+  return {
+    mensaje: '✅ Validación forzada',
+  };
+}
 
   /**
    *  LISTADO ADMIN

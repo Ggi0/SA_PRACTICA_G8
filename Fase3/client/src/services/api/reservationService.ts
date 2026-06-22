@@ -6,7 +6,7 @@ import type { Seat } from '@/types'
 // Tipos del backend real
 
 
-type ApiSeatState = 'DISPONIBLE' | 'BLOQUEADO' | 'OCUPADO'
+type ApiSeatState = 'DISPONIBLE' | 'BLOQUEADO' | 'OCUPADO' | 'EN_USO'
 
 interface ApiSeat {
   id: string
@@ -107,6 +107,9 @@ function mapSeatStatus(apiStatus: ApiSeatState): Seat['status'] {
       return 'OCCUPIED'
     case 'BLOQUEADO':
       return 'BLOCKED_TEMP'
+    case 'EN_USO':
+      return 'EN_USO'
+
     default:
       return 'BLOCKED_TEMP'
   }

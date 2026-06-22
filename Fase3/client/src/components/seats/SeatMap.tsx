@@ -34,6 +34,9 @@ function SeatButton({ seat, isSelected, onToggle }: SeatButtonProps) {
           'bg-[hsl(var(--seat-occupied))] text-white/60 cursor-not-allowed opacity-60',
         seat.status === 'BLOCKED_TEMP' &&
           'bg-[hsl(var(--seat-blocked))] text-white cursor-not-allowed opacity-80',
+          seat.status === 'EN_USO' &&
+  'bg-blue-500 text-white cursor-not-allowed opacity-90',
+
       )}
     >
       {seat.column}
@@ -48,6 +51,7 @@ function SeatLegend() {
     { status: 'OCCUPIED', label: 'Ocupado', color: 'bg-[hsl(var(--seat-occupied))] opacity-60' },
     { status: 'SELECTED', label: 'Seleccionado', color: 'bg-[hsl(var(--seat-selected))]' },
     { status: 'BLOCKED_TEMP', label: 'Reservado temporalmente', color: 'bg-[hsl(var(--seat-blocked))]' },
+    { status: 'EN_USO', label: 'En uso', color: 'bg-blue-500' },
   ]
 
   return (

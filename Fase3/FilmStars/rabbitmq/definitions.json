@@ -1,13 +1,19 @@
 {
   "rabbit_version": "3.12.0",
-  "vhosts": [{ "name": "/" }],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
   "queues": [
     {
       "name": "seat_hold_queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": { "x-message-ttl": 600000 }
+      "arguments": {
+        "x-message-ttl": 600000
+      }
     },
     {
       "name": "seat_release_queue",
@@ -32,6 +38,13 @@
     },
     {
       "name": "ticket_issued_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "boleto_usado_queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,

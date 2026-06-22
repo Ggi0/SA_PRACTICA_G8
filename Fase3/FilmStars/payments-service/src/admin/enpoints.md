@@ -6,8 +6,9 @@
 
 ```
 POST /admin/boletos/scan
+http://localhost:8080/api/admin/boletos/scan
 {
-  "codigo": "BOL-xxx"
+  "codigo": "BOL-1782115691996-0"
 }
 
 
@@ -15,6 +16,13 @@ POST /admin/boletos/scan
     "message": "El boleto ya fue utilizado",
     "error": "Bad Request",
     "statusCode": 400
+}
+
+
+{
+    "mensaje": " Acceso permitido",
+    "estado": "USADO",
+    "boletoId": "5d56a597-af20-4552-9e76-0103b8cfcc7b"
 }
 ```
 
@@ -24,15 +32,33 @@ POST /admin/boletos/scan
 
 ```
 GET /admin/boletos/codigo/BOL-xxx
+
+http://localhost:8080/api/admin/boletos/codigo/BOL-1782115745809-0
 ```
 
 ```
 {
-    "mensaje": " Acceso permitido",
+    "id": "5d56a597-af20-4552-9e76-0103b8cfcc7b",
+    "reservaIdRef": "a002993f-7107-4b98-9621-7b6bc8f34596",
+    "reservaAsientoIdRef": null,
+    "codigoBoleto": "BOL-1782115745809-0",
+    "codigoQr": "QR-1782115745809-0",
     "estado": "USADO",
-    "boletoId": "53479d4c-bacf-4594-91bd-c71a74f57489"
+    "creado": "2026-06-22T08:09:05.810Z",
+    "pago": {
+        "id": "da6f0ac4-2e93-4903-a69a-b546328d4855",
+        "reservaIdRef": "a002993f-7107-4b98-9621-7b6bc8f34596",
+        "usuarioIdRef": "40472ff6-a9a6-4f36-b5f7-d576dd10f1d0",
+        "monto": "45.00",
+        "moneda": "GTQ",
+        "estado": "APROBADO",
+        "metodoPago": "TEST_APROBADO",
+        "proveedorRef": "fake-ok-da6f0ac4-2e93-4903-a69a-b546328d4855",
+        "procesadoEn": "2026-06-22T08:09:05.767Z",
+        "creado": "2026-06-22T08:09:05.459Z",
+        "modificacion": "2026-06-22T08:09:05.770Z"
+    }
 }
-
 
 ```
 

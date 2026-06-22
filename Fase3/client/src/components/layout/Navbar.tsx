@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Film, LogOut, User, ChevronDown, Settings } from 'lucide-react'
+import { Film, LogOut, User, ChevronDown, Settings, Ticket } from 'lucide-react'
 import { CartIcon } from '@/components/shared/CartIcon'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -22,45 +22,61 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border backdrop-blur"
-      style={{ backgroundColor: '#1B1717' }}>
+    <header
+      className="sticky top-0 z-50 w-full border-b border-border backdrop-blur"
+      style={{ backgroundColor: '#1B1717' }}
+    >
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
 
-        {/* Marca */}
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white">
           <Film className="h-5 w-5" style={{ color: '#810100' }} />
           <span style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>CineMax</span>
         </Link>
 
-        {/* Acciones */}
         <nav className="flex items-center gap-3">
           {isAuthenticated ? (
             <>
-          <CartIcon />
-            <DropdownMenu>
-             
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3 text-white hover:bg-white/10 hover:text-white">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full text-white"
-                    style={{ backgroundColor: '#810100' }}>
-                    <User className="h-4 w-4" />
-                  </div>
-                  <span className="hidden font-medium md:inline">{user?.name}</span>
-                  {user?.role === 'ADMIN' && (
-                    <Badge variant="secondary" className="hidden text-xs md:inline-flex">
-                      Admin
-                    </Badge>
-                  )}
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
+              <CartIcon />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 px-3 text-white hover:bg-white/10 hover:text-white"
+                  >
+                    <div
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-white"
+                      style={{ backgroundColor: '#810100' }}
+                    >
+                      <User className="h-4 w-4" />
+                    </div>
+                    <span className="hidden font-medium md:inline">{user?.name}</span>
+                    {user?.role === 'ADMIN' && (
+                      <Badge variant="secondary" className="hidden text-xs md:inline-flex">
+                        Admin
+                      </Badge>
+                    )}
+                    <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
-                </div>
-                <DropdownMenuSeparator />
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Historial — disponible para todos los usuarios */}
+                  <DropdownMenuItem
+                    onClick={() => navigate('/historial')}
+                    className="cursor-pointer"
+                  >
+                    <Ticket className="mr-2 h-4 w-4" />
+                    Historial de compras
+                  </DropdownMenuItem>
+
+                  {/* Panel admin — solo para admins */}
                   {user?.role === 'ADMIN' && (
                     <DropdownMenuItem
                       onClick={() => navigate('/admin')}
@@ -70,7 +86,9 @@ export function Navbar() {
                       Panel Admin
                     </DropdownMenuItem>
                   )}
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="text-destructive cursor-pointer"
@@ -78,9 +96,9 @@ export function Navbar() {
                     <LogOut className="mr-2 h-4 w-4" />
                     Cerrar sesión
                   </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-             </>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <>
               <Button variant="ghost" asChild className="text-white hover:bg-white/10 hover:text-white">
