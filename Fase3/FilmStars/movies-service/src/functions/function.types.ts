@@ -8,6 +8,8 @@ export interface FunctionRecord {
   precioBase: number;
   tipoSala: string;
   activa: boolean;
+  salaNombre: string;
+  cineNombre: string;
 }
 
 export interface PublicFunction {
@@ -19,6 +21,8 @@ export interface PublicFunction {
   startTime: string;
   projectionType: string;
   price: number;
+  roomName: string;
+  cinemaName: string;
 }
 
 export interface FunctionFilters {

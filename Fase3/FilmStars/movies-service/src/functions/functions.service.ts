@@ -4,13 +4,11 @@ import { FUNCTIONS_REPOSITORY } from '../common/tokens';
 import { IFunctionsRepository } from './functions.repository';
 import { FunctionFilters, FunctionRecord, PublicFunction } from './function.types';
 
-// ISP: interfaz con solo lo necesario para el dominio de funciones
 export interface IFunctionsService {
   listByMovie(movieId: string, cityId?: string): Promise<PublicFunction[]>;
   getById(id: string): Promise<PublicFunction>;
 }
 
-// DIP: depende de la abstracción IFunctionsRepository, no de la clase concreta
 @Injectable()
 export class FunctionsService implements IFunctionsService {
   constructor(
@@ -42,5 +40,7 @@ function toPublicFunction(fn: FunctionRecord): PublicFunction {
       : new Date(fn.fechaHora).toISOString(),
     projectionType: fn.tipoSala,
     price: fn.precioBase,
+    roomName: fn.salaNombre,
+    cinemaName: fn.cineNombre,
   };
 }

@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import 'dotenv/config';
+import { readFileSync } from 'fs';
 import { NestFactory } from '@nestjs/core';
 import { NextFunction, Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -15,8 +16,20 @@ interface RequestWithUser extends Request {
   };
 }
 
+function readSecret(name: string): string | undefined {
+  const file = process.env[`${name}_FILE`];
+  if (file) return readFileSync(file, 'utf8').trim();
+  return process.env[name];
+}
+
+function requiredSecret(name: string): string {
+  const value = readSecret(name);
+  if (!value) throw new Error(`Missing required secret ${name} or ${name}_FILE`);
+  return value;
+}
+
 const port = Number(process.env.PORT || process.env.API_GATEWAY_PORT || 8080);
-const jwtSecret = process.env.JWT_SECRET || 'filmstars_jwt_secret_key_2026';
+const jwtSecret = requiredSecret('JWT_SECRET');
 const usersServiceUrl = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
 const moviesServiceUrl = process.env.MOVIES_SERVICE_URL || 'http://localhost:3002';
 const reservasServiceUrl = process.env.RESERVAS_SERVICE_URL || 'http://localhost:3003';

@@ -14,6 +14,8 @@ const makeFunctionRecord = (overrides: any = {}): FunctionRecord => ({
   tipoSala: '2D',
   precioBase: 45,
   activa: true,
+  salaNombre: 'Sala 1',
+  cineNombre: 'CineMax Centro',
   ...overrides,
 });
 
@@ -72,7 +74,20 @@ describe('FunctionsService', () => {
         cityId: 'city-1',
         projectionType: '2D',
         price: 45,
+        roomName: 'Sala 1',
+        cinemaName: 'CineMax Centro',
       });
+    });
+
+    it('mapea el nombre de la sala y del cine correctamente', async () => {
+      repo.findAll.mockResolvedValue([
+        makeFunctionRecord({ salaNombre: 'Sala IMAX 1', cineNombre: 'FilmStars Oakland Mall' }),
+      ]);
+
+      const [fn] = await service.listByMovie('movie-1');
+
+      expect(fn.roomName).toBe('Sala IMAX 1');
+      expect(fn.cinemaName).toBe('FilmStars Oakland Mall');
     });
 
     it('convierte la fecha a ISO string cuando es un objeto Date', async () => {
@@ -127,6 +142,17 @@ describe('FunctionsService', () => {
       const result = await service.getById('fn-1');
 
       expect(result.price).toBe(80);
+    });
+
+    it('incluye el nombre de la sala y del cine en el resultado', async () => {
+      repo.findById.mockResolvedValue(
+        makeFunctionRecord({ salaNombre: 'Sala 4DX', cineNombre: 'FilmStars Pradera' }),
+      );
+
+      const result = await service.getById('fn-1');
+
+      expect(result.roomName).toBe('Sala 4DX');
+      expect(result.cinemaName).toBe('FilmStars Pradera');
     });
   });
 });

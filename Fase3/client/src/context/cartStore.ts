@@ -7,6 +7,8 @@ export interface CartItem {
   id: string              // reservationId del bloqueo temporal
   movie: Movie
   showtime: Showtime
+  cinemaName: string
+  roomName: string
   seats: Seat[]
   totalAmount: number
   blockedAt: Date         // momento en que se bloqueó — para el countdown
@@ -27,33 +29,35 @@ interface CartState {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
-  addItem: ({ reservationId, movie, showtime, seats, totalAmount, expiraEn }) => {
-  const now = new Date()
+  addItem: ({ reservationId, movie, showtime, cinemaName, roomName, seats, totalAmount, expiraEn }) => {
+    const now = new Date()
 
-  const expiresAt = expiraEn
-    ? new Date(expiraEn)
-    : new Date(now.getTime() + 10 * 60 * 1000)
+    const expiresAt = expiraEn
+      ? new Date(expiraEn)
+      : new Date(now.getTime() + 10 * 60 * 1000)
 
-  const newItem: CartItem = {
-    id: reservationId,
-    movie,
-    showtime,
-    seats,
-    totalAmount,
-    blockedAt: now,
-    expiresAt,
-  }
+    const newItem: CartItem = {
+      id: reservationId,
+      movie,
+      showtime,
+      cinemaName,
+      roomName,
+      seats,
+      totalAmount,
+      blockedAt: now,
+      expiresAt,
+    }
 
-  set((state) => ({ items: [...state.items, newItem] }))
+    set((state) => ({ items: [...state.items, newItem] }))
 
-  const timeout = expiresAt.getTime() - now.getTime()
+    const timeout = expiresAt.getTime() - now.getTime()
 
-  setTimeout(() => {
-    set((state) => ({
-      items: state.items.filter((i) => i.id !== reservationId),
-    }))
-  }, timeout)
-},
+    setTimeout(() => {
+      set((state) => ({
+        items: state.items.filter((i) => i.id !== reservationId),
+      }))
+    }, timeout)
+  },
 
   removeItem: (reservationId) =>
     set((state) => ({
