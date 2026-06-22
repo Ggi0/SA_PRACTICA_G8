@@ -179,6 +179,11 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
+            sleep 10
+            docker exec filmstars-rabbitmq rabbitmqctl add_user admin "$RABBITMQ_PASS" 2>/dev/null || \
+              docker exec filmstars-rabbitmq rabbitmqctl change_password admin "$RABBITMQ_PASS"
+            docker exec filmstars-rabbitmq rabbitmqctl set_user_tags admin administrator
+            docker exec filmstars-rabbitmq rabbitmqctl set_permissions -p / admin ".*" ".*" ".*"
 
   build-push-zot-release:
     name: "Release - Build & Push Zot"
