@@ -1,3 +1,5 @@
+# Diagrama de Actividades – Administrador
+![](./img/actividadesadmin.png)
 # Diagrama de Actividades – Flujo de Compra de Boletos
 
 ![](./img/diagrama-actividades-jwt.png)
