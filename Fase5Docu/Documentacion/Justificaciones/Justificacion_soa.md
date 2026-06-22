@@ -1,302 +1,360 @@
 # Justificación de Arquitectura Orientada a Servicios (SOA) - FilmStars
 
-FilmStars utiliza una Arquitectura Orientada a Servicios (SOA) porque el sistema está compuesto por dominios de negocio con responsabilidades claramente separadas: autenticación y usuarios, cartelera, reservas, pagos, comunicación asíncrona y despliegue. Esta separación permite que cada servicio evolucione, se pruebe, se mantenga y se despliegue de manera independiente.
+FilmStars utiliza una Arquitectura Orientada a Servicios porque el sistema está formado por dominios de negocio con responsabilidades distintas: autenticación y usuarios, cartelera, reservas/asientos, pagos/boletos, comunicación asíncrona y despliegue. Esta separación permite que cada servicio pueda evolucionar, probarse, mantenerse y desplegarse de forma independiente.
 
-Desde las fases iniciales, la arquitectura se diseñó para resolver problemas críticos del negocio: consulta de cartelera, selección de funciones, reserva de asientos, procesamiento de pagos y emisión de boletos. Posteriormente, se incorporaron autenticación con JWT, API Gateway, bases de datos separadas por servicio, RabbitMQ y contenedores con Docker Compose.
-
-En la Fase 4, la arquitectura se amplía sin romper la separación original. Se agregan nuevas capacidades relacionadas con la administración de cartelera, la eficiencia en datos y la infraestructura de despliegue: carga masiva de películas desde CSV, paginación del lado del servidor, Docker Hub como registry de imágenes, GitHub Actions como pipeline CI/CD y despliegue inmutable hacia VM/AWS EC2.
+La arquitectura se mantiene consistente aunque el sistema crezca. Las funcionalidades agregadas en las últimas fases no se colocan como módulos aislados sin relación, sino dentro del servicio que corresponde por dominio: la carga CSV y la paginación pertenecen al Movies Service; la descarga, historial y validación de boletos pertenecen principalmente al Payments Service; el estado físico del asiento pertenece al Reservations Service; y el acceso externo sigue pasando por el API Gateway. A nivel operativo, Docker Compose, GitHub Actions, Docker Hub/Zot y K3s soportan la arquitectura sin cambiar la separación lógica de servicios.
 
 ---
 
-## 1. Servicios y responsabilidades actualizadas
+## Servicios, responsabilidades y evolución integrada
 
-| Servicio / Componente | Responsabilidad principal | Base de datos / soporte | Cambios incorporados hasta Fase 4 |
+| Servicio / Componente | Responsabilidad principal | Base de datos / soporte | Funcionalidades integradas |
 |---|---|---|---|
-| API Gateway | Punto de entrada único, enrutamiento y validación JWT. | No aplica. | Enruta peticiones del frontend hacia los servicios internos. En Fase 4 también debe enrutar endpoints de carga CSV y consultas paginadas, preservando parámetros como `page`, `limit`, `city`, `category` y `search`. Además, valida JWT y rol `Admin` en rutas administrativas. |
-| Users Service | Autenticación, registro, login, emisión de JWT, roles y gestión de usuarios. | `filmstars_users` | Mantiene la responsabilidad de emitir JWT con claims esenciales como id, nombre, correo y rol. |
-| Movies Service | Gestión de ciudades, cines, salas, cartelera, películas y funciones. | `filmstars_movies` | En Fase 4 asume la carga masiva de películas desde CSV, validación de registros, control de duplicados y paginación del lado del servidor. |
-| Reservations Service | Reservas, bloqueo temporal de asientos, disponibilidad y estado de asientos por función. | `filmstars_reservations` | Se mantiene como servicio crítico para controlar concurrencia y evitar doble asignación de asientos. |
-| Payments Service | Pagos simulados, detalle de pagos, boletos, reembolsos y trazabilidad de transacciones. | `filmstars_payments` | Se mantiene separado para aislar transacciones financieras y emisión de boletos. |
-| RabbitMQ | Broker de mensajería para procesos críticos. | No aplica. | Desacopla reservas, pagos y emisión de boletos, permitiendo reprocesamiento ante fallos. |
-| Docker Compose | Orquestación de contenedores. | Archivos `docker-compose.yml` / `docker-compose.prod.yml` | Permite levantar el entorno local y productivo. En Fase 4, el compose de producción debe usar imágenes precompiladas, no `build: .`. |
-| GitHub Actions | Pipeline CI/CD. | Workflow del repositorio. | Ejecuta pruebas, valida cobertura mínima, construye imágenes Docker, publica en Docker Hub y despliega hacia VM. |
-| Docker Hub | Registry público de artefactos Docker. | Imágenes versionadas por servicio. | Nuevo componente de soporte DevOps para almacenar imágenes precompiladas e inmutables. |
-| VM / AWS EC2 | Entorno de despliegue. | Servidor con Docker y Docker Compose. | Ejecuta el sistema descargando imágenes desde Docker Hub mediante `docker compose pull`. |
+| API Gateway | Punto de entrada único, validación de JWT, validación de rol y enrutamiento. | No aplica. | Enruta login, cartelera, reservas, pagos, carga CSV, consultas paginadas, historial, descarga y validación de boletos. |
+| Users Service | Registro, login, gestión de usuarios, roles y emisión de JWT. | `filmstars_users` | Provee identidad y rol para usuario común y administrador. |
+| Movies Service | Ciudades, cines, salas, películas, géneros, funciones y cartelera. | `filmstars_movies` | Incluye carga masiva CSV, validación de películas y paginación server-side. |
+| Reservations Service | Reservas, bloqueo temporal, disponibilidad y estado de asientos por función. | `filmstars_reservations` | Controla concurrencia y estados de asientos, incluyendo preparación para `EN_USO` al validar ingreso. |
+| Payments Service | Pagos simulados, detalles de pago, boletos, QR, estados de boleto y trazabilidad. | `filmstars_payments` | Soporta emisión, historial, descarga y validación de boletos. |
+| RabbitMQ | Comunicación asíncrona entre procesos críticos. | Broker AMQP. | Desacopla reserva, pago, emisión de boleto y eventos de resultado. |
+| Docker Compose | Orquestación local/staging. | `docker-compose.yml` / `docker-compose.prod.yml`. | Replica el entorno completo y consume imágenes precompiladas. |
+| GitHub Actions | CI/CD. | `.github/workflows/ci-cd.yml`. | Ejecuta pruebas, cobertura, build, push y despliegue multi-entorno. |
+| Docker Hub / Zot | Registry de imágenes. | Artefactos Docker. | Docker Hub para `develop`; Zot/Harbor para entorno `release`. |
+| K3s | Orquestación cloud native. | Clúster sobre AWS. | Despliega servicios con Deployments, Services, ConfigMaps, Secrets, Ingress y RollingUpdate. |
 
 ---
 
-## 2. ¿Por qué se eligió SOA?
+## ¿Por qué SOA es adecuada para FilmStars?
 
-Se eligió SOA porque FilmStars combina procesos con responsabilidades distintas y niveles de criticidad diferentes. La autenticación, la cartelera, las reservas y los pagos no deben mezclarse en un único bloque de código, ya que cada dominio cambia por motivos diferentes.
+Se eligió SOA porque FilmStars combina procesos con necesidades diferentes. La autenticación no cambia por las mismas razones que la cartelera; la cartelera no tiene la misma criticidad de concurrencia que las reservas; los pagos y boletos requieren trazabilidad; y la infraestructura necesita desplegar servicios de forma independiente.
 
-La separación por servicios permite:
+SOA permite:
 
-- Modificar la lógica de cartelera sin afectar autenticación.
-- Cambiar reglas de reserva sin alterar pagos.
-- Escalar el servicio de películas cuando aumenten las consultas.
-- Escalar reservas cuando existan picos de selección de asientos.
-- Mantener trazabilidad independiente para pagos y boletos.
-- Proteger rutas desde un punto central usando API Gateway y JWT.
-- Procesar operaciones críticas con RabbitMQ sin bloquear el flujo principal.
-
-La Fase 4 confirma esta decisión, porque las nuevas funcionalidades se integran al dominio correcto sin afectar el resto de servicios. La carga CSV y la paginación pertenecen al **Movies Service**, por lo que no se colocan en Users, Reservations ni Payments.
+- Modificar cartelera sin alterar autenticación.
+- Agregar carga CSV sin tocar pagos o reservas.
+- Agregar paginación en Movies Service sin cambiar Users Service.
+- Agregar historial y descarga de boletos sin acoplarlo a Movies Service.
+- Validar boletos desde el panel administrador sin convertir el sistema en un monolito.
+- Mantener reservas y pagos desacoplados mediante RabbitMQ.
+- Desplegar cada servicio como imagen independiente en Docker Compose o K3s.
 
 ---
 
-## 3. Justificación por servicio
+## API Gateway del sistema
 
-### 3.1 API Gateway
+El frontend no consume directamente cada servicio interno. El API Gateway centraliza entrada, seguridad y enrutamiento.
 
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Recibe las peticiones del frontend y las redirige hacia los servicios internos. |
-| ¿Por qué existe? | Evita que el frontend conozca directamente la ubicación interna de cada servicio. |
-| ¿Para qué sirve? | Centraliza CORS, validación JWT, validación de rol y enrutamiento. |
-| Ejemplos | `/api/auth/login` se redirige a Users Service; `/api/movies` se redirige a Movies Service; `/api/movies/import-csv` se redirige al motor de carga del Movies Service. |
-| Fase 4 | Debe preservar parámetros de paginación y filtros, además de validar rol `Admin` para la carga masiva CSV. |
+```ts
+// api-gateway/src/main.ts
+app.use('/api/auth', createUsersProxy());
+app.use('/api/clientes', jwtMiddleware, createUsersProxy());
+app.use('/api/users', jwtMiddleware, createUsersProxy({ '^/api/users': '/api/clientes' }));
 
-### 3.2 Users Service
+app.use('/api/movies', createMoviesProxy());
+app.use('/api/admin/movies', createMoviesProxy());
+app.use('/api/admin/cinemas', createMoviesProxy());
+app.use('/api/admin/salas', createMoviesProxy());
+app.use('/api/admin/funciones', createMoviesProxy());
 
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Gestiona registro, login, usuarios, roles y JWT. |
-| ¿Por qué está separado? | La autenticación es una responsabilidad transversal y sensible que no debe mezclarse con cartelera, reservas o pagos. |
-| ¿Para qué sirve? | Permite proteger rutas, controlar identidad del usuario y diferenciar usuarios comunes de administradores. |
-| Base de datos | `filmstars_users` |
-| Fase 4 | Mantiene la emisión de JWT con claims de identidad y rol, necesarios para validar que solo administradores puedan cargar archivos CSV. |
-
-### 3.3 Movies Service
-
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Gestiona ciudades, cines, salas, películas, funciones, géneros y cartelera. |
-| ¿Por qué está separado? | La cartelera se consulta frecuentemente y puede escalar de forma independiente. |
-| ¿Para qué sirve? | Permite que el usuario seleccione ubicación, cine, película y función. |
-| Base de datos | `filmstars_movies` |
-| Fase 4 | Incorpora carga masiva CSV, validación de estructura y registros, control de duplicados y paginación server-side. |
-
-### 3.4 Reservations Service
-
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Gestiona reservas, bloqueo temporal de asientos y estado de asientos por función. |
-| ¿Por qué está separado? | Es el dominio más crítico en concurrencia, porque varios usuarios pueden intentar reservar el mismo asiento. |
-| ¿Para qué sirve? | Evita doble asignación de asientos y permite liberar asientos vencidos. |
-| Base de datos | `filmstars_reservations` |
-| Comunicación | Debe publicar y consumir eventos de RabbitMQ para procesar reservas de forma asíncrona. |
-| Fase 4 | No se modifica directamente, lo cual demuestra bajo acoplamiento: la mejora de catálogo no afecta la lógica de reserva. |
-
-### 3.5 Payments Service
-
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Gestiona pagos simulados, detalles de pago, boletos y reembolsos. |
-| ¿Por qué está separado? | Las transacciones financieras deben aislarse para mejorar seguridad, trazabilidad y tolerancia a fallos. |
-| ¿Para qué sirve? | Permite confirmar compras y emitir boletos después de un pago exitoso. |
-| Base de datos | `filmstars_payments` |
-| Comunicación | Consume eventos relacionados con reservas y publica resultados de pago o emisión de boleto. |
-| Fase 4 | No se modifica directamente; el despliegue inmutable permite publicar también su imagen de forma controlada. |
-
-### 3.6 RabbitMQ
-
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hace? | Actúa como middleware de mensajería basado en colas. |
-| ¿Por qué se usa? | Desacopla procesos críticos y evita bloquear el hilo principal de la aplicación. |
-| ¿Para qué sirve? | Permite procesar reservas, pagos y emisión de boletos de forma asíncrona. |
-| Fase 4 | Se mantiene como componente crítico de comunicación asíncrona, aunque CSV y paginación se manejan por HTTP por requerir respuesta inmediata. |
-
-### 3.7 Docker Hub, GitHub Actions y VM/AWS EC2
-
-| Aspecto | Justificación |
-|---|---|
-| ¿Qué hacen? | Soportan el flujo de CI/CD, construcción de imágenes, publicación de artefactos y despliegue. |
-| ¿Por qué se agregan? | La Fase 4 exige infraestructura inmutable: la VM no debe construir imágenes, solo descargarlas. |
-| ¿Para qué sirven? | Garantizan que la imagen probada en el pipeline sea la misma que se despliega en la VM. |
-| Relación con SOA | Cada servicio SOA se empaqueta como imagen independiente y se publica en Docker Hub. |
-
----
-
-## 4. Comunicación síncrona, asíncrona y despliegue
-
-| Tipo de comunicación | Uso en el sistema | Justificación |
-|---|---|---|
-| HTTP/REST síncrono | Login, registro, consulta de cartelera, consulta de ciudades, cines, funciones, carga CSV y catálogo paginado. | Son operaciones que requieren respuesta inmediata al usuario o administrador. |
-| RabbitMQ asíncrono | Reserva de asientos, procesamiento de pago y emisión de boleto. | Son operaciones críticas que pueden tardar o requerir reproceso ante fallos. |
-| Docker Hub pull | Despliegue de imágenes en VM. | Evita compilar en producción y garantiza que se despliegue un artefacto probado. |
-
-La carga CSV y la paginación no se envían a RabbitMQ porque el administrador y el usuario necesitan una respuesta directa: errores de archivo, filas rechazadas, metadatos de paginación y resultados visibles en pantalla.
-
----
-
-## 5. Base de datos por servicio
-
-Se mantiene el patrón **Database per Service**. Cada servicio conserva su propio almacenamiento o lógica de acceso a datos.
-
-| Servicio | Base de datos | Motivo |
-|---|---|---|
-| Users Service | `filmstars_users` | Aísla credenciales, roles, sesiones y datos personales. |
-| Movies Service | `filmstars_movies` | Aísla cartelera, ciudades, cines, salas, películas, géneros, funciones, carga CSV y consultas paginadas. |
-| Reservations Service | `filmstars_reservations` | Aísla reservas, disponibilidad, bloqueo temporal y estado de asientos por función. |
-| Payments Service | `filmstars_payments` | Aísla transacciones, boletos, detalle de pagos y reembolsos. |
-
-Las relaciones entre servicios no se implementan con llaves foráneas físicas entre bases de datos distintas. En su lugar, se usan referencias externas o identificadores lógicos:
-
-| Campo | Significado |
-|---|---|
-| `usuario_id_ref` | Referencia lógica a un usuario del Users Service. |
-| `funcion_id_ref` | Referencia lógica a una función del Movies Service. |
-| `asiento_id_ref` | Referencia lógica a un asiento del Movies Service. |
-| `reserva_id_ref` | Referencia lógica a una reserva del Reservations Service. |
-| `reserva_asiento_id_ref` | Referencia lógica a un asiento reservado. |
-
-Esta decisión mantiene la independencia de datos y evita acoplar físicamente las bases de datos de distintos dominios.
-
----
-
-## 6. Carga CSV dentro de SOA
-
-La carga masiva de películas se ubica en el **Movies Service** porque pertenece al dominio de cartelera.
-
-### Justificación
-
-1. El archivo contiene información de películas.
-2. El Movies Service conoce la estructura de `pelicula`, `genero` y `pelicula_genero`.
-3. La validación de tipo de función (`ESTRENO`, `PREVENTA`, `REESTRENO`) pertenece al dominio de cartelera.
-4. La base de datos afectada es únicamente `filmstars_movies`.
-5. El administrador accede por API Gateway, pero la lógica de negocio queda en el servicio dueño del dominio.
-6. El Users Service solo emite el JWT; no procesa películas.
-7. Reservations y Payments no se ven afectados por la forma en que se cargan películas.
-
-### Flujo esperado
-
-```txt
-Administrador → Frontend Admin → API Gateway → Movies Service → filmstars_movies
+app.use('/api/reservas', jwtMiddleware, createReservasProxy());
+app.use('/api/payments', jwtMiddleware, createPaymentsProxy());
 ```
 
-### Responsabilidades por componente
-
-| Componente | Responsabilidad en carga CSV |
-|---|---|
-| Frontend Admin | Permite seleccionar y enviar el archivo CSV. |
-| API Gateway | Valida JWT y rol `Admin`, y enruta la solicitud. |
-| Movies Service | Valida extensión, estructura, columnas, tipos de datos, duplicados y reglas de negocio. |
-| `filmstars_movies` | Persiste las películas válidas, géneros y relaciones necesarias. |
+**Explicación:** el API Gateway funciona como puerta de entrada. Las rutas públicas, protegidas y administrativas pasan por el mismo punto de control. Para rutas administrativas o de control de accesos, se debe validar JWT y rol `Admin`.
 
 ---
 
-## 7. Paginación dentro de SOA
+## Users Service: identidad y roles
 
-La paginación del catálogo pertenece al **Movies Service** porque este servicio consulta y administra la cartelera.
+El Users Service se mantiene como dueño de la autenticación y emisión del JWT. Esto permite que otros servicios no tengan que manejar credenciales directamente.
 
-### Justificación
+```ts
+// users-service/src/auth/auth.service.ts
+sign(user: UserRecord): string {
+  const payload = {
+    sub: user.id,
+    email: user.email,
+    nombre: user.nombre,
+    rol: user.rol,
+  };
 
-1. El frontend no debe traer todo el catálogo.
-2. El Movies Service es dueño de la información de películas y funciones.
-3. Los filtros deben aplicarse antes de paginar.
-4. El backend debe retornar máximo 10 películas por página.
-5. La respuesta debe incluir metadatos: página actual, límite, total de registros y total de páginas.
-6. La paginación mejora rendimiento sin modificar reservas ni pagos.
-
-### Flujo esperado
-
-```txt
-Usuario → Frontend → API Gateway → Movies Service → filmstars_movies
+  return jwt.sign(payload, env.jwtSecret, {
+    expiresIn: env.jwtExpiresIn,
+  } as SignOptions);
+}
 ```
 
-### Ejemplo de consulta
+**Explicación:** el token transporta identidad y rol. Esto permite que el API Gateway y los endpoints administrativos identifiquen si el usuario es cliente o administrador.
 
-```http
-GET /api/movies?page=1&limit=10&category=ESTRENO&city=guatemala&search=guardianes
-```
+---
 
-### Ejemplo de respuesta esperada
+## Movies Service: cartelera, CSV y paginación
 
-```json
-{
-  "data": [],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "totalItems": 36,
-    "totalPages": 4
+La carga CSV y la paginación se integran al Movies Service porque afectan directamente la administración y consulta de cartelera.
+
+### Carga CSV
+
+```ts
+// movies-service/src/movies/admin/bulk-ingest/bulk.controller.ts
+@Controller('api/admin/movies/bulk')
+export class BulkController {
+  constructor(private readonly bulkService: BulkService) {}
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.bulkService.uploadCsv(file);
   }
 }
 ```
 
+**Justificación SOA:** el administrador entra por frontend/API Gateway, pero la lógica del CSV queda en el servicio dueño del dominio de películas.
+
+### Paginación server-side
+
+```ts
+// movies-service/src/movies/movies.repository.ts
+const sql = `
+  SELECT
+    p.id, p.titulo, p.sinopsis, p.duracion_min, p.clasificacion,
+    p.poster_url, p.fecha_estreno, p.tipo, p.activa,
+    COALESCE(
+      ARRAY_AGG(g.nombre ORDER BY g.nombre) FILTER (WHERE g.nombre IS NOT NULL),
+      '{}'
+    ) AS generos
+  FROM pelicula p
+  LEFT JOIN pelicula_genero pg ON pg.pelicula_id = p.id
+  LEFT JOIN genero g ON g.id = pg.genero_id
+  WHERE ${whereClause}
+  GROUP BY p.id
+  ORDER BY p.fecha_estreno DESC, p.creado DESC
+  LIMIT $${paginatedValues.length - 1}
+  OFFSET $${paginatedValues.length}
+`;
+```
+
+**Justificación SOA:** la paginación se ejecuta en el backend porque el Movies Service es dueño del catálogo. El frontend no necesita recibir todo el catálogo para paginarlo.
+
 ---
 
-## 8. Infraestructura inmutable como soporte de SOA
+## Reservations Service: reservas y estado de asientos
 
-En Fase 4, Docker Hub y GitHub Actions no son servicios de negocio, pero sí componentes de soporte para la arquitectura.
+El Reservations Service controla el estado de los asientos por función. Esto es crítico porque dos usuarios pueden intentar comprar el mismo asiento.
 
-El pipeline garantiza que cada servicio SOA tenga una imagen construida, probada y publicada:
+```ts
+// reservas-service/src/reservas/services/reservas.service.ts
+const asientos = await asientoRepoTx
+  .createQueryBuilder('asiento')
+  .setLock('pessimistic_write')
+  .where('asiento.funcion_id_ref = :funcionId', { funcionId })
+  .andWhere('asiento.id IN (:...ids)', { ids: asientosUnicos })
+  .getMany();
+```
 
-| Imagen esperada | Componente |
-|---|---|
-| `filmstars-api-gateway:latest` | API Gateway |
-| `filmstars-users-service:latest` | Users Service |
-| `filmstars-movies-service:latest` | Movies Service |
-| `filmstars-reservas-service:latest` | Reservations Service |
-| `filmstars-payments-service:latest` | Payments Service |
-| `filmstars-frontend:latest` | Frontend |
+**Justificación SOA:** el control de disponibilidad y concurrencia pertenece a Reservas/Asientos. En el control de accesos, cuando un boleto sea validado, el asiento puede pasar a `EN_USO`, pero esa responsabilidad sigue perteneciendo a este dominio.
 
-La VM no construye imágenes. Solo descarga versiones publicadas desde Docker Hub:
+---
+
+## Payments Service: pagos, boletos e historial
+
+El boleto digital se mantiene dentro del dominio de pagos porque nace como consecuencia de una compra exitosa y debe asociarse con reserva, asiento y pago.
+
+```ts
+// payments-service/src/database/entities/boleto.entity.ts
+@Entity('boleto')
+export class BoletoEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'reserva_id_ref', type: 'uuid' })
+  reservaIdRef: string;
+
+  @Column({ name: 'reserva_asiento_id_ref', type: 'uuid' })
+  reservaAsientoIdRef: string;
+
+  @Column({ name: 'codigo_boleto' })
+  codigoBoleto: string;
+
+  @Column({ name: 'codigo_qr', nullable: true })
+  codigoQr?: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'EMITIDO' })
+  estado: string;
+}
+```
+
+**Justificación SOA:** el boleto usa referencias lógicas hacia reserva/asiento, pero no rompe la separación de bases de datos. Esto permite implementar historial, descarga y escaneo sin acoplar físicamente las bases de datos.
+
+---
+
+## RabbitMQ como comunicación crítica
+
+RabbitMQ se mantiene para procesos de reserva, pago y emisión de boleto porque son operaciones que pueden tardar, fallar o requerir reproceso.
+
+```ts
+// reservas-service/src/reservas/services/reservas.service.ts
+await this.publisher.publish('payment_process_queue', {
+  reservaId: reserva.id,
+  total: reserva.precioTotal,
+});
+
+await this.publisher.publish('ticket_issued_queue', {
+  reservaId: reserva.id,
+});
+```
+
+```ts
+// payments-service/src/consumers/payment.consumer.ts
+await this.channel.consume(
+  RABBITMQ_QUEUES.PAYMENT_PROCESS,
+  async (msg) => {
+    const payload = JSON.parse(msg.content.toString()) as PaymentProcessMessage;
+
+    await this.paymentsService.procesarPagoDesdeEvento({
+      reservaId: payload.reservaId,
+      usuarioId: payload.usuarioId,
+      monto: payload.monto,
+      moneda: payload.moneda ?? 'GTQ',
+      metodoPago: payload.metodoPago,
+    });
+
+    this.channel?.ack(msg);
+  },
+  { noAck: false },
+);
+```
+
+**Justificación SOA:** RabbitMQ reduce acoplamiento temporal. Reservas no necesita esperar directamente al servicio de pagos; publica un evento y el consumidor procesa el pago.
+
+---
+
+## Comunicación síncrona, asíncrona e infraestructura
+
+| Tipo | Uso | Justificación |
+|---|---|---|
+| HTTP/REST | Login, cartelera, CSV, paginación, historial, descarga y escaneo. | Requiere respuesta inmediata al usuario o administrador. |
+| RabbitMQ | Reserva, pago, resultado de pago y emisión de boleto. | Procesos críticos desacoplados y tolerantes a fallos. |
+| Docker Compose | Entorno local/staging. | Permite levantar servicios coordinados. |
+| K3s | Entorno release/cloud. | Orquesta servicios como unidades independientes. |
+| Ingress | Entrada externa en K3s. | Expone frontend y API Gateway sin exponer servicios internos. |
+
+---
+
+## K3s del despliegue SOA
+
+En el entorno release, cada servicio se despliega como Deployment independiente. Esto respeta la separación física de servicios.
 
 ```yaml
-movies-service:
-  image: dockerhub_usuario/filmstars-movies-service:latest
+# Fase3/FilmStars/k3s/apps.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies-service
+  namespace: filmstars
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    spec:
+      containers:
+        - name: movies-service
+          image: ${ZOT_HOST}/filmstars/movies-service:${TAG}
+          envFrom:
+            - configMapRef: { name: filmstars-common }
+            - configMapRef: { name: movies-config }
+            - secretRef: { name: filmstars-secrets }
 ```
 
-El despliegue esperado en VM es:
-
-```bash
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d --remove-orphans
+```yaml
+# Fase3/FilmStars/k3s/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: filmstars-ingress
+  namespace: filmstars
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: filmstars.${K3S_IP}.nip.io
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
 ```
 
-Esto evita inconsistencias entre ambientes y cumple con la restricción de no hacer builds en producción.
+**Justificación SOA:** el Ingress expone únicamente frontend y API Gateway. Los demás servicios se mantienen internos dentro del clúster.
 
 ---
 
-## 9. Beneficios de la arquitectura
+## 11. ConfigMaps y Secrets
+
+```yaml
+# Fase3/FilmStars/k3s/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filmstars-common
+  namespace: filmstars
+data:
+  NODE_ENV: "production"
+  DB_USER: "postgres"
+  DB_PORT: "5432"
+  JWT_EXPIRES_IN: "7d"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  USERS_SERVICE_URL: "http://users-service:3001"
+  MOVIES_SERVICE_URL: "http://movies-service:3002"
+  RESERVAS_SERVICE_URL: "http://reservations-service:3003"
+  PAYMENTS_SERVICE_URL: "http://payments-service:3004"
+```
+
+```yaml
+# Fase3/FilmStars/k3s/databases.yaml
+- name: POSTGRES_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: filmstars-secrets
+      key: DB_PASS
+```
+
+**Justificación SOA:** la configuración queda fuera del código. Los servicios reciben configuración por ConfigMaps y credenciales por Secrets, lo cual permite mantener el mismo código para varios entornos.
+
+---
+
+## Beneficios de la arquitectura 
 
 | Beneficio | Explicación |
 |---|---|
-| Bajo acoplamiento | Cada servicio puede modificarse sin afectar directamente a los demás. |
-| Escalabilidad | Servicios con mayor carga, como cartelera o reservas, pueden escalarse por separado. |
-| Mantenibilidad | La lógica está separada por dominio de negocio. |
-| Seguridad | El acceso está centralizado en el API Gateway y se protege con JWT y roles. |
-| Tolerancia a fallos | RabbitMQ permite mantener mensajes en cola y reprocesar eventos críticos. |
-| Trazabilidad | Las tablas de mensajería y eventos permiten registrar operaciones importantes. |
+| Bajo acoplamiento | Cada servicio cambia por motivos propios. |
+| Escalabilidad | Cartelera, reservas y pagos pueden escalarse de forma independiente. |
+| Seguridad | API Gateway, JWT, roles y Secrets protegen rutas y credenciales. |
 | Rendimiento | La paginación evita enviar todo el catálogo al frontend. |
-| Administración eficiente | La carga CSV permite registrar catálogos masivos sin hacerlo manualmente. |
-| Despliegue estable | Docker Hub permite desplegar artefactos precompilados. |
-| Consistencia operativa | La misma imagen probada en CI/CD es la que se despliega en la VM. |
-
----
-
-## 10. Resultados esperados
-
-Con esta arquitectura, FilmStars logra:
-
-1. Separar responsabilidades por dominio.
-2. Mantener independencia de datos por servicio.
-3. Controlar concurrencia en reservas mediante mensajería asíncrona.
-4. Proteger rutas con JWT y roles.
-5. Optimizar consultas de cartelera mediante paginación server-side.
-6. Facilitar administración de películas mediante CSV.
-7. Construir y publicar imágenes desde CI/CD.
-8. Desplegar en VM mediante imágenes precompiladas.
-9. Evitar builds en producción.
-10. Mantener una arquitectura preparada para crecer.
+| Administración eficiente | CSV permite carga masiva sin afectar otros servicios. |
+| Trazabilidad | Pagos, boletos y eventos quedan registrados. |
+| Tolerancia a fallos | RabbitMQ permite reproceso y desacoplamiento. |
+| Despliegue controlado | Docker Hub/Zot y K3s despliegan artefactos probados. |
+| Continuidad operativa | RollingUpdate y rollback reducen riesgo en release. |
 
 ---
 
 ## Conclusión
 
-SOA sigue siendo adecuada para FilmStars porque el sistema combina autenticación, cartelera, reservas concurrentes, pagos, administración y despliegue por servicios. Estos dominios tienen necesidades distintas y pueden evolucionar de forma independiente.
+SOA sigue siendo adecuada para FilmStars porque permite agregar nuevas capacidades sin romper la arquitectura existente. La carga CSV y la paginación se integran en Movies Service; el historial, descarga y escaneo de boletos se apoyan en Payments Service; el estado de asientos permanece en Reservations Service; y el API Gateway mantiene seguridad y enrutamiento.
 
-La Fase 4 confirma la utilidad de esta arquitectura: la carga CSV y la paginación se agregan al Movies Service sin afectar Users, Reservations ni Payments. Además, Docker Hub y GitHub Actions fortalecen la arquitectura desde la parte operativa, permitiendo empaquetar cada servicio de forma independiente y desplegar imágenes precompiladas en la VM.
-
-En conclusión, la combinación de API Gateway, servicios separados, bases de datos independientes, RabbitMQ, Docker Hub y CI/CD permite construir una solución más mantenible, escalable, segura y alineada con los requerimientos actuales de FilmStars.
+K3s fortalece esta arquitectura porque cada servicio se despliega como unidad independiente, con configuración externa, secretos protegidos, entrada controlada mediante Ingress y despliegues con RollingUpdate. Así, FilmStars conserva una solución modular, mantenible, escalable y preparada para crecimiento.
