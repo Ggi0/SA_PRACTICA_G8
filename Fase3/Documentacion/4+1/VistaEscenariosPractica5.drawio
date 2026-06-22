@@ -1,0 +1,115 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="6qAYMnDOMfjGaW7ledFB" name="Página-2">
+    <mxGraphModel dx="1804" dy="901" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="5200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=28;fontStyle=1;fontColor=#000000;fontFamily=Arial;" value="Vista de Escenarios" vertex="1">
+          <mxGeometry height="45" width="2048" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontStyle=1;align=left;verticalAlign=middle;spacingLeft=4;" value="1— Diagrama de casos de uso de alto nivel actualizado" vertex="1">
+          <mxGeometry height="42" width="390" x="115" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-3" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;" value="Usuario" vertex="1">
+          <mxGeometry height="95" width="50" x="95" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-4" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;" value="Sistema de pago" vertex="1">
+          <mxGeometry height="95" width="50" x="95" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-5" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;" value="Administrador" vertex="1">
+          <mxGeometry height="95" width="50" x="865" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=18;fontColor=#666666;align=center;verticalAlign=top;spacingTop=10;" value="FilmStars" vertex="1">
+          <mxGeometry height="1005" width="610" x="230" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 001 Autenticación y&lt;br&gt;gestión de usuarios" vertex="1">
+          <mxGeometry height="85" width="280" x="360" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 002 Gestión&lt;br&gt;de cartelera" vertex="1">
+          <mxGeometry height="90" width="300" x="350" y="375" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 003 Búsqueda y&lt;br&gt;visualización&lt;br&gt;de cartelera" vertex="1">
+          <mxGeometry height="100" width="300" x="340" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 004 Reserva y&lt;br&gt;compra de boletos" vertex="1">
+          <mxGeometry height="85" width="280" x="350" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-11" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 005 Módulo&lt;br&gt;administrativo" vertex="1">
+          <mxGeometry height="70" width="280" x="350" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-12" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-3" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="R0wtVXsqgFRmbySFWfQi-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-13" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-3" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;entryX=0.079;entryY=0.223;entryDx=0;entryDy=0;entryPerimeter=0;" target="R0wtVXsqgFRmbySFWfQi-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-14" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-3" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;entryX=0.032;entryY=0.352;entryDx=0;entryDy=0;entryPerimeter=0;" target="R0wtVXsqgFRmbySFWfQi-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-15" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-4" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="R0wtVXsqgFRmbySFWfQi-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-16" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-5" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="R0wtVXsqgFRmbySFWfQi-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-17" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-5" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="R0wtVXsqgFRmbySFWfQi-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-18" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-5" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;entryX=0.94;entryY=0.258;entryDx=0;entryDy=0;entryPerimeter=0;" target="R0wtVXsqgFRmbySFWfQi-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-19" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=26;fontStyle=1;align=center;verticalAlign=middle;" value="FilmStars - UML Scenario Views (CU-04 / CU-05 / CDU002 / CDU003 / CI-CD / CDU006 / CDU007 / K3s)" vertex="1">
+          <mxGeometry height="55" width="1750" x="980" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-20" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;opacity=70;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;2 — Escenario crítico CU-04 · Compra exitosa concurrente (flujo principal)&lt;/b&gt;&lt;br&gt;• Usuario autenticado → POST /seats/lock → API Gateway&lt;br&gt;• API Gateway → valida JWT + ruta protegida → Seat Svc&lt;br&gt;• Seat Svc → ejecuta SELECT FOR UPDATE en BD&lt;br&gt;• Seat Svc → responde LOCKED 10 min → Usuario&lt;br&gt;• Usuario → POST confirmar compra → API Gateway&lt;br&gt;• API Gateway → JWT ok + proxy → Seat Svc&lt;br&gt;• Seat Svc → publica seat.reservation → RabbitMQ&lt;br&gt;• RabbitMQ → consume evento → Reservation Worker&lt;br&gt;• Reservation Worker → publica pago → Payment Worker&lt;br&gt;• Payment Worker → publica payment.completed → Ticket Worker&lt;br&gt;• Ticket Worker → emite boleto + QR&lt;br&gt;• Ticket Worker → registra boleto e historial → Usuario&lt;/div&gt;" vertex="1">
+          <mxGeometry height="250" width="1750" x="980" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;3 — Escenario crítico · Compra concurrente (condición de carrera)&lt;/b&gt;&lt;br&gt;• Flujo alternativo Precondición: Usuario A y Usuario B seleccionan el mismo asiento F7 simultáneamente.&lt;br&gt;• Usuario A → llega primero → adquiere lock en BD.&lt;br&gt;• Usuario B → llega casi simultáneo → espera lock.&lt;br&gt;• Seat Service → SELECT FOR UPDATE (PostgreSQL row-level lock). El primero bloquea la fila.&lt;br&gt;• Seat Service → A: asiento LOCKED → avanza a flujo normal.&lt;br&gt;• Seat Service → B: lee estado LOCKED → rechaza con 409 Conflict.&lt;br&gt;• Validación adicional: Reservation Worker verifica estado final antes de confirmar; si por error pasan dos mensajes, el segundo se rechaza y publica seat.lock.expired.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="1750" x="980" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;4 — Escenario crítico · Pago rechazado · flujo de excepción&lt;/b&gt;&lt;br&gt;Precondición: reserva confirmada en cola, pago simulado falla.&lt;br&gt;• Payment Worker → retorna REJECTED.&lt;br&gt;• Payment Worker → publica evento seat.lock.expired → RabbitMQ.&lt;br&gt;• RabbitMQ → consume evento → Seat Service.&lt;br&gt;• Seat Service → libera asiento en BD → vuelve a DISPONIBLE.&lt;br&gt;• Seat Service → notifica al usuario “pago fallido”.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="175" width="1750" x="980" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;5 — Escenario crítico · Expiración de bloqueo (TTL) · proceso autónomo&lt;/b&gt;&lt;br&gt;Precondición: usuario bloqueó asiento pero cerró navegador sin confirmar. TTL = 10 minutos.&lt;br&gt;• Scheduler → publica evento cada 60 s → RabbitMQ.&lt;br&gt;• RabbitMQ → consume expired → Seat Service.&lt;br&gt;• Seat Service → consulta WHERE blocked_until &amp;lt; NOW().&lt;br&gt;• reservations_db → ejecuta UPDATE status=AVAILABLE.&lt;br&gt;• Seat Service → el asiento vuelve a estar DISPONIBLE para todos los usuarios.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="165" width="1750" x="980" y="895" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-24" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;6 — Escenario crítico CDU002 · Carga masiva CSV exitosa (extensión de CDU002.1)&lt;/b&gt;&lt;br&gt;Precondición: administrador autenticado con rol Admin y acceso a Gestión de Cartelera.&lt;br&gt;• Administrador → selecciona “Cargar película(s) por CSV” dentro de Gestión de Cartelera.&lt;br&gt;• Frontend Admin → envía archivo .csv + JWT → API Gateway.&lt;br&gt;• API Gateway → valida firma, expiración y rol Admin.&lt;br&gt;• API Gateway → enruta archivo → Movies Service.&lt;br&gt;• Movies Service → valida extensión, encabezados y columnas obligatorias.&lt;br&gt;• Movies Service → procesa filas válidas y normaliza datos de cartelera.&lt;br&gt;• Movies Service → registra películas válidas en filmstars_movies.&lt;br&gt;• Sistema → muestra resumen: total procesadas, exitosas y rechazadas.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="1750" x="980" y="1085" as="geometry" />
+        </mxCell>
+        <mxCell id="R0wtVXsqgFRmbySFWfQi-25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;7 — Escenario alterno CDU002 · CSV inválido o registros rechazados&lt;/b&gt;&lt;br&gt;Precondición: archivo CSV incompleto, vacío, duplicado o con datos inválidos.&lt;br&gt;• Administrador → carga archivo CSV → API Gateway.&lt;br&gt;• API Gateway → valida JWT + rol Admin → Movies Service.&lt;br&gt;• Movies Service → detecta columnas faltantes, tipos de dato inválidos o película duplicada.&lt;br&gt;• Movies Service → separa filas válidas e inválidas sin romper el flujo completo.&lt;br&gt;• Movies Service → evita insertar registros que no cumplen reglas de negocio.&lt;br&gt;• Sistema → devuelve detalle de errores por fila.&lt;br&gt;• Administrador → corrige archivo o decide continuar con la carga manual.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="210" width="1750" x="980" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="uc6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 006 Descarga e&lt;br&gt;historial de boletos" vertex="1">
+          <mxGeometry height="80" width="300" x="240" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="uc7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=16;fontColor=#333333;align=center;verticalAlign=middle;" value="CDU 007 Escaneo y&lt;br&gt;control de accesos" vertex="1">
+          <mxGeometry height="80" width="300" x="530" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_uc6" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-3" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc7" edge="1" parent="1" source="R0wtVXsqgFRmbySFWfQi-5" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sc8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;8 — Escenario crítico CDU003 · Catálogo paginado con filtros&lt;/b&gt;&lt;br&gt;Precondición: existen películas activas registradas y el usuario consulta la cartelera.&lt;br&gt;• Usuario → abre cartelera → Frontend.&lt;br&gt;• Frontend → solicita GET /api/movies/pages?page=1&amp;amp;limit=10&amp;amp;category=ESTRENO → API Gateway.&lt;br&gt;• API Gateway → preserva query params → Movies Service.&lt;br&gt;• Movies Service → aplica filtros en base de datos antes de paginar.&lt;br&gt;• Movies Service → ejecuta consulta con LIMIT 10 + OFFSET.&lt;br&gt;• Movies Service → retorna datos + meta: page, limit, totalItems, totalPages.&lt;br&gt;• Frontend → muestra máximo 10 películas y controles de página.&lt;br&gt;• Usuario → cambia de página conservando ciudad, búsqueda y categoría.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="170" width="1750" x="980" y="1545" as="geometry" />
+        </mxCell>
+        <mxCell id="sc9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;9 — Escenario operativo CI/CD · Inmutabilidad con Docker Hub + VM&lt;/b&gt;&lt;br&gt;Precondición: push/merge hacia rama configurada del pipeline.&lt;br&gt;• GitHub Actions → ejecuta pruebas unitarias + cobertura ≥ 75%.&lt;br&gt;• Si falla cobertura o pruebas → pipeline se cancela.&lt;br&gt;• Si pasa CI → build de imágenes Docker de frontend y backend.&lt;br&gt;• Pipeline → publica imágenes versionadas en Docker Hub.&lt;br&gt;• Pipeline → conexión segura a VM de despliegue.&lt;br&gt;• VM → docker compose pull descarga imágenes precompiladas.&lt;br&gt;• VM → docker compose up -d levanta servicios sin build local.&lt;br&gt;• Resultado → se despliega el mismo artefacto probado por CI.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="180" width="1750" x="980" y="1730" as="geometry" />
+        </mxCell>
+        <mxCell id="sc10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;10 — Escenario crítico CDU006 · Consulta de historial y descarga de boleto&lt;/b&gt;&lt;br&gt;Precondición: usuario autenticado con compras previas registradas.&lt;br&gt;• Usuario → ingresa a módulo “Mis boletos” desde frontend.&lt;br&gt;• Frontend → GET /tickets/history → API Gateway.&lt;br&gt;• API Gateway → valida JWT y reenvía solicitud al servicio correspondiente.&lt;br&gt;• Servicio → consulta compras del usuario y recupera boletos asociados, estado, función y código QR.&lt;br&gt;• Frontend → muestra historial de compras al usuario.&lt;br&gt;• Usuario → selecciona un boleto específico y solicita descarga.&lt;br&gt;• Sistema → devuelve boleto en formato visual / imprimible.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="190" width="1750" x="980" y="1925" as="geometry" />
+        </mxCell>
+        <mxCell id="sc11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;11 — Escenario crítico CDU007 · Escaneo válido de boleto y autorización de ingreso&lt;/b&gt;&lt;br&gt;Precondición: administrador autenticado en módulo de control de accesos y boleto válido emitido.&lt;br&gt;• Administrador → abre módulo de escaneo de boletos.&lt;br&gt;• Administrador → escanea QR o ingresa código del boleto.&lt;br&gt;• Frontend Admin → POST /tickets/scan → API Gateway.&lt;br&gt;• API Gateway → valida JWT + rol Admin y reenvía solicitud.&lt;br&gt;• Servicio → busca boleto, valida existencia, estado y que no haya sido usado antes.&lt;br&gt;• Servicio → marca boleto como USADO / VALIDADO y actualiza asiento a EN_USO si corresponde.&lt;br&gt;• Servicio → registra bitácora de acceso.&lt;br&gt;• Frontend Admin → muestra “Ingreso permitido”.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="190" width="1750" x="980" y="2130" as="geometry" />
+        </mxCell>
+        <mxCell id="sc12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;12 — Escenario crítico CDU007 · Boleto inválido, ya usado o rechazado&lt;/b&gt;&lt;br&gt;Precondición: administrador autenticado en módulo de control de accesos.&lt;br&gt;• Administrador → escanea QR o ingresa código del boleto.&lt;br&gt;• API Gateway → valida JWT + rol Admin.&lt;br&gt;• Servicio → consulta boleto en base de datos.&lt;br&gt;• Servicio → detecta que el boleto no existe, está cancelado o ya fue utilizado.&lt;br&gt;• Servicio → rechaza validación del acceso y registra intento fallido en bitácora.&lt;br&gt;• Frontend Admin → muestra estado “Boleto inválido / usado / rechazado”.&lt;br&gt;• Administrador → niega el acceso o redirige a revisión manual.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="180" width="1750" x="980" y="2335" as="geometry" />
+        </mxCell>
+        <mxCell id="sc13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=15;fontColor=#000000;align=left;verticalAlign=top;spacing=6;spacingLeft=6;spacingTop=4;" value="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;13 — Escenario operativo Release · K3s en AWS con Zero-Downtime&lt;/b&gt;&lt;br&gt;Precondición: rama release actualizada y pipeline configurado correctamente.&lt;br&gt;• Desarrollador → realiza push o merge hacia rama release.&lt;br&gt;• GitHub Actions → inicia pipeline del entorno release.&lt;br&gt;• Pipeline → instala dependencias, ejecuta pruebas y construye imágenes Docker.&lt;br&gt;• Pipeline → publica imágenes en registro y se conecta a infraestructura desplegada en AWS.&lt;br&gt;• Pipeline → aplica manifiestos de Kubernetes sobre clúster K3s.&lt;br&gt;• Kubernetes → actualiza Deployments y Services.&lt;br&gt;• Ingress → mantiene punto de entrada externo del sistema.&lt;br&gt;• ConfigMaps y Secrets → inyectan configuración del entorno.&lt;br&gt;• Kubernetes → ejecuta rolling update sin detener completamente el servicio.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="205" width="1750" x="980" y="2530" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
