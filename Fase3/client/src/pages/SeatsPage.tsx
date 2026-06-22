@@ -49,7 +49,7 @@ export function SeatsPage() {
   const totalAmount = selectedSeats.length * (showtime?.price ?? 0)
 
   const handleAddToCart = async () => {
-    if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie || !cinema || !roomName) return
+    if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
 
     setIsBlocking(true)
     try {
@@ -62,8 +62,8 @@ export function SeatsPage() {
         reservationId: result.reservationId,
         movie,
         showtime,
-        cinemaName: cinema.name,
-        roomName,
+        cinemaName: cinema?.name ?? cinemaName ?? 'Cine',
+        roomName: roomName ?? 'Sala',
         seats: selectedSeats,
         totalAmount,
         expiraEn: result.expiraEn,
