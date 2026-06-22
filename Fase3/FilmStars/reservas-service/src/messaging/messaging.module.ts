@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { RabbitMQPublisher } from './rabbitmq.publisher';
 import { PaymentConsumer } from './payment.consumer';
 import { ReservasModule } from '../reservas/reservas.module';
+import { BoletoConsumer } from './boleto.consumer';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { ReservasModule } from '../reservas/reservas.module';
   providers: [
     RabbitMQPublisher,
     PaymentConsumer,
+    BoletoConsumer,
   ],
 
   exports: [
