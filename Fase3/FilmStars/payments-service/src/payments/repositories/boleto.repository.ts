@@ -9,7 +9,7 @@ import { PagoEntity } from '../../database/entities/pago.entity';
 export class BoletoRepository {
   constructor(
     @InjectRepository(BoletoEntity)
-    private readonly repo: Repository<BoletoEntity>,
+    public readonly repo: Repository<BoletoEntity>,
   ) {}
 
   async crearBoletos(
@@ -37,4 +37,78 @@ export class BoletoRepository {
 
     return this.repo.save(boletos);
   }
+
+
+
+async buscarBoletosPorUsuario(
+  usuarioId: string,
+  filtros: {
+    estado?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    codigo?: string;
+  },
+) {
+  const query = this.repo
+    .createQueryBuilder('boleto')
+    .innerJoinAndSelect('boleto.pago', 'pago')
+    .where('pago.usuario_id_ref = :usuarioId', { usuarioId });
+
+  if (filtros.estado) {
+    query.andWhere('boleto.estado = :estado', {
+      estado: filtros.estado,
+    });
+  }
+
+  if (filtros.fechaInicio) {
+    query.andWhere('boleto.creado >= :fechaInicio', {
+      fechaInicio: filtros.fechaInicio,
+    });
+  }
+
+  if (filtros.fechaFin) {
+    query.andWhere('boleto.creado <= :fechaFin', {
+      fechaFin: filtros.fechaFin,
+    });
+  }
+
+  if (filtros.codigo) {
+    query.andWhere('boleto.codigo_boleto = :codigo', {
+      codigo: filtros.codigo,
+    });
+  }
+
+  return query.getMany();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

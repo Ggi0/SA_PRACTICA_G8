@@ -162,3 +162,240 @@ query: COMMIT
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Perfecto, ya entendí tu flujo 👍 y estás MUY cerca. El problema no es RabbitMQ en sí, sino **qué eventos estás emitiendo y qué datos viajan entre servicios**.
+
+Te lo explico en dos partes como pediste:
+
+***
+
+# 🔴 1. PROBLEMA ACTUAL (por qué no se llena `boleto` y `detalle_pago`)
+
+Hoy tu flujo hace esto:
+
+✅ reservas → crea reserva  
+✅ reservas → envía evento `pago.solicitado`  
+✅ payments → crea `pago`  
+✅ payments → cambia estado a `APROBADO`  
+✅ payments → envía `payment_result_queue`  
+✅ reservas → confirma y pone asientos en `OCUPADO`
+
+❌ PERO:
+
+* NUNCA creas `detalle_pago`
+* NUNCA creas `boleto`
+* El servicio de pagos **no sabe qué asientos compró el usuario**
+
+👉 Ese es el problema clave:
+
+> 💥 **El servicio de pagos NO recibe `reserva_asiento_id` ni info de los asientos**
+
+***
+
+# 🟢 2. SOLUCIÓN: QUÉ DEBES HACER (arquitectura correcta)
+
+## 🔁 Idea clave: incluir más datos en el evento
+
+Cuando envías:
+
+```json
+{
+  "reservaId": "...",
+  "usuarioId": "...",
+  "monto": 135
+}
+```
+
+Eso es insuficiente.
+
+👉 Debes enviar también:
+
+```json
+{
+  "reservaId": "...",
+  "usuarioId": "...",
+  "monto": 135,
+  "asientos": [
+    {
+      "reservaAsientoId": "...",
+      "estadoAsientoFuncionId": "...",
+      "codigo": "A5",
+      "fila": "A",
+      "numero": 5,
+      "precio": 45
+    }
+  ]
+}
+```
+
+💡 Esto sale de tu tabla:
+
+* `reserva_asiento`
+* `estado_asiento_funcion`
+
+***
+
+# 🟢 3. QUÉ HACE EL PAYMENT SERVICE DESPUÉS
+
+Cuando recibe `pago.solicitado`:
+
+## Paso 1: crear pago ✅ (ya lo haces)
+
+## Paso 2: crear detalle\_pago ✅ NUEVO
+
+```ts
+for (const asiento of payload.asientos) {
+  await detalleRepo.save({
+    pago_id: pago.id,
+    tipo: 'ASIENTO',
+    descripcion: `Asiento ${asiento.codigo}`,
+    subtotal: asiento.precio,
+  });
+}
+```
+
+***
+
+## Paso 3: crear boletos 🔥 (CRÍTICO)
+
+```ts
+import { v4 as uuidv4 } from 'uuid';
+
+for (const asiento of payload.asientos) {
+  await boletoRepo.save({
+    pago_id: pago.id,
+    reserva_id_ref: payload.reservaId,
+    reserva_asiento_id_ref: asiento.reservaAsientoId,
+    codigo_boleto: `BOL-${uuidv4()}`,
+    codigo_qr: generarQR(...),
+    estado: 'EMITIDO',
+  });
+}
+```
+
+💡 Aquí generas:
+
+* código único
+* QR
+* vínculo directo con el asiento
+
+***
+
+# 🟢 4. AHORA: ¿CÓMO LLEVAR ESO AL MAPA DE ASIENTOS?
+
+Tienes 2 opciones 👇
+
+***
+
+## ✅ OPCIÓN A (RECOMENDADO): EVENTO DE INTEGRACIÓN
+
+Cuando un boleto cambia a `USADO` en **payments**, emites:
+
+### Evento nuevo:
+
+```json
+{
+  "tipo": "boleto.usado",
+  "payload": {
+    "boletoId": "...",
+    "reservaId": "...",
+    "reservaAsientoId": "...",
+    "funcionId": "..."
+  }
+}
+```
+
+***
+
+### En `reservas-service` haces:
+
+```ts
+@RabbitSubscribe('boleto_used_queue')
+async handleBoletoUsado(event) {
+  await this.estadoAsientoRepository.update(
+    { id: event.reservaAsientoId },
+    { estado: 'EN_USO' }
+  );
+}
+```
+
+***
+
+✅ Resultado:
+
+* UI ya lo verá automáticamente
+* no necesitas “consultar otra DB”
+
+***
+
+## ✅ OPCIÓN B (menos recomendable): JOIN entre servicios
+
+* Cada vez que consultas el mapa, vas a payments 😬
+* haces merge manual
+
+❌ esto rompe la arquitectura de microservicios  
+👉 **NO lo hagas**
+
+***
+
+# 🟢 5. RESUMEN CLARO
+
+## 🔥 Lo que te falta:
+
+### En reservas:
+
+✅ Enviar más datos en `pago.solicitado`
+
+***
+
+### En payments:
+
+✅ Crear:
+
+* `detalle_pago`
+* `boleto`
+
+***
+
+### Nuevo flujo:
+
+```
+pago aprobado →
+    crear boletos →
+        usuario puede descargar →
+            (admin escanea) →
+                boleto → USADO →
+                    evento → reservas →
+                        asiento → EN_USO
+```
+
+***
+
+
+***
+
+# 🟢 7. BONUS (clave para tu proyecto)
+
+Estados finales correctos:
+
+| Entidad | Estados                                    |
+| ------- | ------------------------------------------ |
+| asiento | DISPONIBLE → BLOQUEADO → OCUPADO → EN\_USO |
+| boleto  | EMITIDO → USADO                            |
+

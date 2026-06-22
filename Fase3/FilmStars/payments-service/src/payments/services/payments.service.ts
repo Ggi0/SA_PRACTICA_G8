@@ -228,4 +228,39 @@ private readonly detalleRepo: DetallePagoRepository,
 
     await this.mensajeriaRepo.save(evento);
   }
+
+
+  async obtenerBoletosUsuario(
+  usuarioId: string,
+  filtros: {
+    estado?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    codigo?: string;
+  },
+) {
+  return this.boletoRepo.buscarBoletosPorUsuario(
+    usuarioId,
+    filtros,
+  );
+}
+
+
+
+
+async obtenerBoletosUsuarioPorCodigo(codigo: string) {
+  const boleto = await this.boletoRepo.repo.findOne({
+    where: { codigoBoleto: codigo },
+    relations: {pago:true},
+  });
+
+  if (!boleto) {
+    throw new NotFoundException('Boleto no encontrado');
+  }
+
+  return boleto;
+}
+
+
+  
 }

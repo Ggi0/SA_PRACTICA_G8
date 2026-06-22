@@ -276,3 +276,140 @@ Y conectarás:
 payment_process_queue
 payment_result_queue
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================== Practica 5 ==========================================
+
+## obtener mis boletos
+http://localhost:8080/api/payments/boletos/mis-boletos
+Respuesta:
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+```
+
+
+http://localhost:8080/api/payments/boletos/mis-boletos?estado=EMITIDO
+
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+
+```
+
+
+
+http://localhost:8080/api/payments/boletos/mis-boletos?fechaInicio=2026-06-01
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+
+
+
+```
+
+
+
+# buscar por codigo
+http://localhost:8080/api/payments/boletos/codigo/BOL-1782092510320-0
+
+```
+{
+    "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+    "codigo": "BOL-1782092510320-0",
+    "estado": "EMITIDO",
+    "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+    "creado": "2026-06-22T01:41:50.322Z"
+}
+
+```
+
+http://localhost:8080/api/payments/boletos/codigo/BOL-1782095591933-0:
+```
+{
+    "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+    "codigo": "BOL-1782095591933-0",
+    "estado": "EMITIDO",
+    "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+    "creado": "2026-06-22T02:33:11.936Z"
+}
+
+```
