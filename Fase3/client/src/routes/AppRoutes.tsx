@@ -22,6 +22,8 @@ import { AdminSalasPage } from '@/pages/admin/AdminSalasPage'
 import { AdminBulkMoviesPage } from '@/pages/admin/AdminBulkMoviesPage'
 import { AdminBoletosPage } from '@/pages/admin/AdminBoletosPage'
 
+import { HistorialPage } from '@/pages/HistorialPage'
+
 
 // Protege rutas que requieren login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -46,6 +48,7 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+                <Route path="/historial" element={<HistorialPage />} />
 
         <Route path="/movies/:movieId" element={
           <ProtectedRoute><MovieDetailPage /></ProtectedRoute>
