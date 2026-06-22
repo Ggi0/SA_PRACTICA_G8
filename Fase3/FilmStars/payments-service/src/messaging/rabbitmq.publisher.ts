@@ -35,6 +35,10 @@ export class RabbitMqPublisher
         durable: true,
       });
 
+      await this.channel.assertQueue(RABBITMQ_QUEUES.BOLETO_USADO, {
+          durable: true,
+        });
+
       this.logger.log('RabbitMQ publisher conectado correctamente');
     } catch (error) {
       this.logger.error('No se pudo conectar RabbitMQ publisher', error);
