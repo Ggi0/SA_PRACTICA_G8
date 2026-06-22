@@ -5,7 +5,7 @@ import { SeatMap } from '@/components/seats/SeatMap'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/components/ui/toaster'
-import { useShowtime, useMovie } from '@/hooks/useMovieData'
+import { useShowtime, useMovie, useCinemas } from '@/hooks/useMovieData'
 import { useCheckoutStore } from '@/context/checkoutStore'
 import { useCartStore } from '@/context/cartStore'
 import { useAuth } from '@/context/AuthContext'
@@ -30,57 +30,68 @@ export function SeatsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: showtime } = useShowtime(showtimeId)
-  const { selectedSeats} = useCheckoutStore()
+  const { selectedSeats } = useCheckoutStore()
   const { addItem } = useCartStore()
   const [isBlocking, setIsBlocking] = useState(false)
 
-  // Obtiene la película del store para agregarla al carrito
   const movieId = showtime?.movieId
   const { data: movie } = useMovie(movieId)
+
+  // Resuelve el cine reutilizando la lista de cines de la ciudad
+  const { data: cinemas } = useCinemas(showtime?.cityId ?? null)
+  const cinema = cinemas?.find((c) => c.id === showtime?.cinemaId)
+
+  // TODO: no existe un tipo Room ni endpoint para resolver roomId -> nombre.
+  // Placeholder temporal hasta definir la fuente real.
+  const cinemaName = showtime?.cinemaName
+  const roomName = showtime?.roomName
 
   const totalAmount = selectedSeats.length * (showtime?.price ?? 0)
 
   const handleAddToCart = async () => {
-  if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
+    if (!showtimeId || !user || selectedSeats.length === 0 || !showtime || !movie) return
 
-  setIsBlocking(true)
-  try {
-    const result = await blockSeats(
-      showtimeId,
-      selectedSeats.map((s) => s.id)
-    )
+    setIsBlocking(true)
+    try {
+      const result = await blockSeats(
+        showtimeId,
+        selectedSeats.map((s) => s.id)
+      )
 
-    addItem({
-  reservationId: result.reservationId,
-  movie,
-  showtime,
-  seats: selectedSeats,
-  totalAmount,
-  expiraEn: result.expiraEn,
-})
+      addItem({
+        reservationId: result.reservationId,
+        movie,
+        showtime,
+        cinemaName: cinema?.name ?? cinemaName ?? 'Cine',
+        roomName: roomName ?? 'Sala',
+        seats: selectedSeats,
+        totalAmount,
+        expiraEn: result.expiraEn,
+      })
 
-    toast({
-      title: '¡Agregado al carrito!',
-      description: `${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''} reservado${selectedSeats.length !== 1 ? 's' : ''}. Tienes hasta que expire la reserva para pagar.`,
-    })
+      toast({
+        title: '¡Agregado al carrito!',
+        description: `${selectedSeats.length} asiento${selectedSeats.length !== 1 ? 's' : ''} reservado${selectedSeats.length !== 1 ? 's' : ''}. Tienes hasta que expire la reserva para pagar.`,
+      })
 
-    navigate('/')
+      navigate('/')
 
-  } catch (err: unknown) {
-    const isConflict = (err as { status?: number })?.status === 409
-    const apiMessage = (err as { message?: string })?.message
+    } catch (err: unknown) {
+      const isConflict = (err as { status?: number })?.status === 409
+      const apiMessage = (err as { message?: string })?.message
 
-    toast({
-      variant: 'destructive',
-      title: isConflict ? 'Asiento no disponible' : 'Error',
-      description: isConflict
-        ? apiMessage || 'Uno o más asientos ya están bloqueados u ocupados.'
-        : apiMessage || 'No se pudo reservar los asientos. Intenta de nuevo.',
-    })
-  } finally {
-    setIsBlocking(false)
+      toast({
+        variant: 'destructive',
+        title: isConflict ? 'Asiento no disponible' : 'Error',
+        description: isConflict
+          ? apiMessage || 'Uno o más asientos ya están bloqueados u ocupados.'
+          : apiMessage || 'No se pudo reservar los asientos. Intenta de nuevo.',
+      })
+    } finally {
+      setIsBlocking(false)
+    }
   }
-}
+
   return (
     <div className="container mx-auto px-4 py-6">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6 -ml-2">
@@ -93,18 +104,16 @@ export function SeatsPage() {
       </h1>
 
       {showtime && (
-        <p className="mb-8 text-sm text-muted-foreground">
-          {formatTime(showtime.startTime)} — {PROJECTION_LABELS[showtime.projectionType]} — Q{showtime.price} por asiento
-        </p>
-      )}
+  <p className="mb-8 text-sm text-muted-foreground">
+    {cinemaName} — {formatTime(showtime.startTime)} — {PROJECTION_LABELS[showtime.projectionType]} — Q{showtime.price} por asiento
+  </p>
+)}
 
       <div className="flex flex-col gap-8 lg:flex-row">
-        {/* Mapa de asientos */}
         <div className="flex-1">
           {showtimeId && <SeatMap showtimeId={showtimeId} />}
         </div>
 
-        {/* Resumen */}
         <div className="lg:w-72">
           <div className="sticky top-20 rounded-lg border border-border bg-card p-5">
             <h2 className="mb-4 font-semibold">Resumen</h2>

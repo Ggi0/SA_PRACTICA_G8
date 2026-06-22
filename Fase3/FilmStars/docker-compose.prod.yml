@@ -5,7 +5,9 @@ services:
     environment:
       POSTGRES_DB: filmstars_users
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - db_users_data:/var/lib/postgresql/data
       - ./database/sql/users/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -24,7 +26,9 @@ services:
     environment:
       POSTGRES_DB: filmstars_movies
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - db_movies_data:/var/lib/postgresql/data
       - ./database/sql/movies/init.sql:/docker-entrypoint-initdb.d/01_init.sql
@@ -44,7 +48,9 @@ services:
     environment:
       POSTGRES_DB: filmstars_reservations
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - db_reservations_data:/var/lib/postgresql/data
       - ./database/sql/reservations/init.sql:/docker-entrypoint-initdb.d/01_init.sql
@@ -64,7 +70,9 @@ services:
     environment:
       POSTGRES_DB: filmstars_payments
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - db_payments_data:/var/lib/postgresql/data
       - ./database/sql/payments/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -82,12 +90,16 @@ services:
     container_name: filmstars-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
       RABBITMQ_DEFAULT_VHOST: /
+    secrets:
+      - rabbitmq_password
     ports:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     networks:
       - filmstars-network
     restart: unless-stopped
@@ -107,12 +119,16 @@ services:
       DB_PORT: 5432
       DB_NAME: filmstars_users
       DB_USER: postgres
-      DB_PASS: postgres123
-      JWT_SECRET: ${JWT_SECRET}
+      DB_PASS_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
       JWT_EXPIRES_IN: 7d
       DEFAULT_ADMIN_NAME: Admin
       DEFAULT_ADMIN_EMAIL: admin@filmstars.com
-      DEFAULT_ADMIN_PASSWORD: Admin123!
+      DEFAULT_ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+    secrets:
+      - db_password
+      - jwt_secret
+      - admin_password
     ports:
       - "3001:3001"
     depends_on:
@@ -132,7 +148,9 @@ services:
       DB_PORT: 5432
       DB_NAME: filmstars_movies
       DB_USER: postgres
-      DB_PASS: postgres123
+      DB_PASS_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     ports:
       - "3002:3002"
     depends_on:
@@ -152,12 +170,16 @@ services:
       DB_PORT: 5432
       DB_NAME: filmstars_reservations
       DB_USER: postgres
-      DB_PASS: postgres123
-      JWT_SECRET: ${JWT_SECRET}
+      DB_PASS_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: admin
-      RABBITMQ_PASS: admin123
+      RABBITMQ_PASS_FILE: /run/secrets/rabbitmq_password
+    secrets:
+      - db_password
+      - jwt_secret
+      - rabbitmq_password
     ports:
       - "3003:3003"
     depends_on:
@@ -179,12 +201,16 @@ services:
       DB_PORT: 5432
       DB_NAME: filmstars_payments
       DB_USER: postgres
-      DB_PASS: postgres123
-      JWT_SECRET: ${JWT_SECRET}
+      DB_PASS_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: admin
-      RABBITMQ_PASS: admin123
+      RABBITMQ_PASS_FILE: /run/secrets/rabbitmq_password
+    secrets:
+      - db_password
+      - jwt_secret
+      - rabbitmq_password
     ports:
       - "3004:3004"
     depends_on:
@@ -202,11 +228,13 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8080
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
       USERS_SERVICE_URL: http://users-service:3001
       MOVIES_SERVICE_URL: http://movies-service:3002
       RESERVAS_SERVICE_URL: http://reservations-service:3003
       PAYMENTS_SERVICE_URL: http://payments-service:3004
+    secrets:
+      - jwt_secret
     ports:
       - "8080:8080"
     depends_on:
@@ -233,6 +261,16 @@ volumes:
   db_reservations_data:
   db_payments_data:
   rabbitmq_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  rabbitmq_password:
+    file: ./secrets/rabbitmq_password.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
 
 networks:
   filmstars-network:

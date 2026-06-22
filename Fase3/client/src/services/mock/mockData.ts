@@ -1,4 +1,4 @@
-import type { City, Cinema, Movie, Showtime, Seat, User } from '@/types'
+import type { City, Cinema, Movie,  Seat, User } from '@/types'
 
 // ─── Usuarios de prueba ───────────────────────────────────────────────────────
 export const MOCK_USERS: User[] = [
@@ -103,15 +103,7 @@ export const MOCK_MOVIES: Movie[] = [
 ]
 
 // ─── Funciones ────────────────────────────────────────────────────────────────
-export const MOCK_SHOWTIMES: Showtime[] = [
-  { id: 'st1', movieId: 'm1', roomId: 'r1', cinemaId: 'cin1', cityId: 'city1', startTime: '2026-06-08T14:00:00', projectionType: 'IMAX', price: 85 },
-  { id: 'st2', movieId: 'm1', roomId: 'r2', cinemaId: 'cin1', cityId: 'city1', startTime: '2026-06-08T18:30:00', projectionType: 'STANDARD', price: 60 },
-  { id: 'st3', movieId: 'm1', roomId: 'r3', cinemaId: 'cin2', cityId: 'city1', startTime: '2026-06-08T20:00:00', projectionType: '3D', price: 70 },
-  { id: 'st4', movieId: 'm2', roomId: 'r4', cinemaId: 'cin2', cityId: 'city1', startTime: '2026-06-08T16:00:00', projectionType: 'STANDARD', price: 60 },
-  { id: 'st5', movieId: 'm2', roomId: 'r5', cinemaId: 'cin2', cityId: 'city1', startTime: '2026-06-08T21:00:00', projectionType: '4DX', price: 95 },
-  { id: 'st6', movieId: 'm3', roomId: 'r1', cinemaId: 'cin3', cityId: 'city2', startTime: '2026-06-08T15:00:00', projectionType: 'STANDARD', price: 50 },
-  { id: 'st7', movieId: 'm4', roomId: 'r2', cinemaId: 'cin1', cityId: 'city1', startTime: '2026-06-08T13:00:00', projectionType: 'IMAX', price: 90 },
-]
+
 
 // ─── Generador de asientos ────────────────────────────────────────────────────
 // Genera una sala de 8 filas x 10 columnas con ~30% de asientos ocupados

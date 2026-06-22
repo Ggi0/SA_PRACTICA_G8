@@ -12,8 +12,11 @@ export class PaymentConsumer implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    const user = encodeURIComponent(envConfig.rabbit.user ?? '');
+    const pass = encodeURIComponent(envConfig.rabbit.pass ?? '');
+
     const connection = await amqp.connect(
-      `amqp://${envConfig.rabbit.user}:${envConfig.rabbit.pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}`,
+      `amqp://${user}:${pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}`,
     );
 
     const channel = await connection.createChannel();
@@ -27,14 +30,14 @@ export class PaymentConsumer implements OnModuleInit {
 
       console.log('📥 Evento recibido:', content);
 
-      if (content.status === 'APPROVED') {
-        await this.reservasService.confirmarReserva(
-          content.reservaId,
-          content.referenciaPago,
-        );
-      } else {
-        await this.reservasService.cancelarReserva(content.reservaId);
-      }
+      if (content.estado === 'APROBADO') {
+  await this.reservasService.confirmarReservaInterna(
+    content.reservaId,
+    content.pagoId,
+  );
+} else {
+  await this.reservasService.cancelarReserva(content.reservaId);
+}
 
       channel.ack(msg);
     });

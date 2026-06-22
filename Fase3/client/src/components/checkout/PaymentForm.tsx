@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import { confirmReservation } from '@/services/api/reservationService'
 import { useCartStore } from '@/context/cartStore'
+import { useCheckoutStore } from '@/context/checkoutStore'
+import type { Ticket } from '@/types'
 
 interface PaymentFormProps {
   totalAmount: number
@@ -13,6 +15,7 @@ interface PaymentFormProps {
 
 export function PaymentForm({ totalAmount }: PaymentFormProps) {
   const { items, clearCart } = useCartStore()
+  const { setTicket } = useCheckoutStore()
   const [isProcessing, setIsProcessing] = useState(false)
 
   const [fields, setFields] = useState({
@@ -37,19 +40,15 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
     if (fields.cardNumber.replace(/\s/g, '').length < 16) {
       newErrors.cardNumber = 'Número inválido'
     }
-
     if (fields.cardHolder.trim().length < 3) {
       newErrors.cardHolder = 'Ingresa el nombre del titular'
     }
-
     if (!fields.expiryMonth || +fields.expiryMonth < 1 || +fields.expiryMonth > 12) {
       newErrors.expiryMonth = 'MM inválido'
     }
-
     if (!fields.expiryYear || fields.expiryYear.length < 2) {
       newErrors.expiryYear = 'AA inválido'
     }
-
     if (fields.cvv.length < 3) {
       newErrors.cvv = 'CVV inválido'
     }
@@ -58,37 +57,53 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
     return Object.keys(newErrors).length === 0
   }
 
+  const formatShowtime = (iso: string) =>
+    new Date(iso).toLocaleString('es-GT', {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    })
+
   const handleSubmit = async () => {
     if (!validate() || items.length === 0) return
 
     setIsProcessing(true)
     try {
-      // Aquí puedes generar una referencia de pago frontend si quieres trazabilidad
-      // o dejarla vacía porque el backend la marca como opcional
-      await Promise.all(
-        items.map((item) =>
-          confirmReservation(item.id)
-        )
+      // Confirma en el backend cada reserva del carrito
+      await Promise.all(items.map((item) => confirmReservation(item.id)))
+
+      // Se usa el primer ítem como referencia principal del boleto.
+      // Si más adelante un carrito agrupa varias funciones distintas,
+      // esto debería generar un ticket por función en vez de uno solo.
+      const primaryItem = items[0]
+
+      const allSeatLabels = items.flatMap((item) =>
+        item.seats.map((seat) => `${seat.row}${seat.column}`)
       )
 
+      const ticket: Ticket = {
+        id: `TKT-${primaryItem.id}`,
+        reservationId: primaryItem.id, // se conserva el id real de la reserva, sin transformar, para el QR
+        movieTitle: primaryItem.movie.title,
+        cinemaName: primaryItem.cinemaName,
+        roomName: primaryItem.roomName,    // ⚠️ idem
+        showtime: formatShowtime(primaryItem.showtime.startTime),
+        seats: allSeatLabels,
+        totalAmount,
+      }
+
+      setTicket(ticket) // también mueve checkoutStore.step a 'confirmation'
       clearCart()
 
       toast({
         title: '¡Pago enviado correctamente!',
         description: 'Tus reservaciones fueron confirmadas.',
       })
-
-      // Aquí puedes navegar a /confirmation si tu ruta ya existe
-      // navigate('/confirmation')
-
     } catch (err: unknown) {
       const apiMessage = (err as { message?: string })?.message
-
       toast({
         variant: 'destructive',
         title: 'Error',
-        description:
-          apiMessage || 'Ocurrió un problema al confirmar la reservación.',
+        description: apiMessage || 'Ocurrió un problema al confirmar la reservación.',
       })
     } finally {
       setIsProcessing(false)
@@ -119,9 +134,7 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
           />
           <CreditCard className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
         </div>
-        {errors.cardNumber && (
-          <p className="text-xs text-destructive">{errors.cardNumber}</p>
-        )}
+        {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -134,9 +147,7 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
           onChange={handleChange}
           className={errors.cardHolder ? 'border-destructive' : ''}
         />
-        {errors.cardHolder && (
-          <p className="text-xs text-destructive">{errors.cardHolder}</p>
-        )}
+        {errors.cardHolder && <p className="text-xs text-destructive">{errors.cardHolder}</p>}
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -151,9 +162,7 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
             onChange={handleChange}
             className={errors.expiryMonth ? 'border-destructive' : ''}
           />
-          {errors.expiryMonth && (
-            <p className="text-xs text-destructive">{errors.expiryMonth}</p>
-          )}
+          {errors.expiryMonth && <p className="text-xs text-destructive">{errors.expiryMonth}</p>}
         </div>
 
         <div className="space-y-1.5">
@@ -167,9 +176,7 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
             onChange={handleChange}
             className={errors.expiryYear ? 'border-destructive' : ''}
           />
-          {errors.expiryYear && (
-            <p className="text-xs text-destructive">{errors.expiryYear}</p>
-          )}
+          {errors.expiryYear && <p className="text-xs text-destructive">{errors.expiryYear}</p>}
         </div>
 
         <div className="space-y-1.5">
@@ -183,9 +190,7 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
             onChange={handleChange}
             className={errors.cvv ? 'border-destructive' : ''}
           />
-          {errors.cvv && (
-            <p className="text-xs text-destructive">{errors.cvv}</p>
-          )}
+          {errors.cvv && <p className="text-xs text-destructive">{errors.cvv}</p>}
         </div>
       </div>
 
@@ -211,4 +216,3 @@ export function PaymentForm({ totalAmount }: PaymentFormProps) {
     </div>
   )
 }
-``

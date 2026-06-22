@@ -1,21 +1,8 @@
 {
   "rabbit_version": "3.12.0",
-  "users": [
+  "vhosts": [
     {
-      "name": "admin",
-      "password_hash": "V0KSdWbHqRQiN63T0r0h9yNhCY7mH58FP0aeWmAZhUHTk/oQ",
-      "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": "administrator"
-    }
-  ],
-  "vhosts": [{ "name": "/" }],
-  "permissions": [
-    {
-      "user": "admin",
-      "vhost": "/",
-      "configure": ".*",
-      "write": ".*",
-      "read": ".*"
+      "name": "/"
     }
   ],
   "queues": [
@@ -24,7 +11,9 @@
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": { "x-message-ttl": 600000 }
+      "arguments": {
+        "x-message-ttl": 600000
+      }
     },
     {
       "name": "seat_release_queue",
@@ -49,6 +38,13 @@
     },
     {
       "name": "ticket_issued_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "boleto_usado_queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,

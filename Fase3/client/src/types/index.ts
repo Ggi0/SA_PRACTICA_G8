@@ -61,11 +61,13 @@ export interface Showtime {
   startTime: string
   projectionType: ProjectionType
   price: number
+  roomName: string
+  cinemaName: string
 }
 
 // ─── Asientos ────────────────────────────────────────────────────────────────
 
-export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'SELECTED' | 'BLOCKED_TEMP'
+export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'SELECTED' | 'BLOCKED_TEMP' | 'EN_USO'
 
 export interface Seat {
   id: string

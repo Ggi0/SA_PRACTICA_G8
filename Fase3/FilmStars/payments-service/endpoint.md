@@ -1,58 +1,4 @@
-Perfecto 🔥 ahora ya entramos a la parte visible del sistema: **los controllers + health**.  
-Esto convierte tu servicio en una API usable por frontend y por pruebas.
 
-Te voy a dar TODO:
-
-✅ archivos completos  
-✅ explicación clara de cada uno  
-✅ cómo encajan en el flujo  
-✅ ajustes necesarios para que funcione
-
-***
-
-# ✅ 📁 ARCHIVOS QUE VAMOS A CREAR
-
-```text
-src/payments/controllers/payments.controller.ts
-src/health/health.controller.ts
-src/health/health.module.ts
-```
-
-***
-
-# ✅ 1) 📄 `src/payments/controllers/payments.controller.ts`
-
-***
-
-## ✅ ¿Qué hace?
-
-Es la capa HTTP del dominio pagos.
-
-👉 Recibe requests  
-👉 llama al service  
-👉 devuelve respuesta
-
-***
-
-## ✅ ¿Qué representa?
-
-El **entry point externo del microservicio de pagos**.
-
-***
-
-## ✅ ¿Por qué es importante?
-
-Porque conecta:
-
-```text
-Frontend / API Gateway
-        ↓
-payments.controller
-        ↓
-payments.service
-```
-
-***
 
 ## ✅ ENPOINTS que implementa
 
@@ -63,71 +9,7 @@ payments.service
 
 ***
 
-## ✅ Código
 
-```ts
-// src/payments/controllers/payments.controller.ts
-
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-} from '@nestjs/common';
-
-import { PaymentsService } from '../services/payments.service';
-import { CreatePaymentDto } from '../dto/create-payment.dto';
-
-@Controller('payments')
-export class PaymentsController {
-  constructor(
-    private readonly paymentsService: PaymentsService,
-  ) {}
-
-  /**
-   * POST /payments
-   * Procesa un pago manual (útil para pruebas o integración inicial)
-   */
-  @Post()
-  async crearPago(@Body() dto: CreatePaymentDto) {
-    const pago = await this.paymentsService.crearYProcesarPago(dto);
-
-    return {
-      id: pago.id,
-      estado: pago.estado,
-      monto: pago.monto,
-      moneda: pago.moneda,
-      reservaId: pago.reservaIdRef,
-      usuarioId: pago.usuarioIdRef,
-      metodoPago: pago.metodoPago,
-      proveedorRef: pago.proveedorRef,
-      procesadoEn: pago.procesadoEn,
-    };
-  }
-
-  /**
-   * GET /payments/:id
-   * Obtiene un pago por su ID
-   */
-  @Get(':id')
-  async getPago(@Param('id') id: string) {
-    const pago = await this.paymentsService.getPagoById(id);
-
-    return {
-      id: pago.id,
-      estado: pago.estado,
-      monto: pago.monto,
-      moneda: pago.moneda,
-      reservaId: pago.reservaIdRef,
-      usuarioId: pago.usuarioIdRef,
-      metodoPago: pago.metodoPago,
-      proveedorRef: pago.proveedorRef,
-      procesadoEn: pago.procesadoEn,
-    };
-  }
-}
-```
 
 ***
 
@@ -166,43 +48,6 @@ Expone endpoint de salud:
 ```http
 GET /health
 ```
-
-***
-
-## ✅ ¿Qué representa?
-
-Un endpoint usado para:
-
-* Docker healthchecks
-* monitoreo
-* pruebas rápidas
-
-***
-
-## ✅ Código
-
-```ts
-// src/health/health.controller.ts
-
-import { Controller, Get } from '@nestjs/common';
-
-@Controller('health')
-export class HealthController {
-  /**
-   * GET /health
-   * Verifica que el servicio esté funcionando
-   */
-  @Get()
-  check() {
-    return {
-      status: 'ok',
-      service: 'payments-service',
-      timestamp: new Date().toISOString(),
-    };
-  }
-}
-```
-
 ***
 
 ## ✅ ¿Por qué es importante?
@@ -211,71 +56,21 @@ export class HealthController {
 ✔ API Gateway puede usarlo  
 ✔ Debug rápido
 
-***
 
-# ✅ 3) 📄 `src/health/health.module.ts`
+salida:
+```
+{
+    "status": "ok",
+    "service": "payments-service",
+    "timestamp": "2026-06-21T06:19:26.437Z"
+}
 
-***
-
-## ✅ ¿Qué hace?
-
-Registra el controller de health.
-
-***
-
-## ✅ Código
-
-```ts
-// src/health/health.module.ts
-
-import { Module } from '@nestjs/common';
-import { HealthController } from './health.controller';
-
-@Module({
-  controllers: [HealthController],
-})
-export class HealthModule {}
 ```
 
-***
-
-# ✅ 4) 🔧 ACTUALIZAR `app.module.ts`
-
-Necesitas registrar el módulo de health.
 
 ***
 
-## ✅ Código actualizado
-
-```ts
-// src/app.module.ts
-
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
-
-import { databaseConfig } from './config/database.config';
-import { PaymentsModule } from './payments/payments.module';
-import { HealthModule } from './health/health.module';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-
-    TypeOrmModule.forRoot(databaseConfig),
-
-    PaymentsModule,
-    HealthModule,
-  ],
-})
-export class AppModule {}
-```
-
-***
-
-# ✅ 5) 🚀 YA PUEDES PROBAR EL SERVICIO
+# ✅ 3)  YA PUEDES PROBAR EL SERVICIO
 
 ***
 
@@ -314,6 +109,58 @@ Body:
 }
 ```
 
+TODO: aqui me da un error:
+```
+{
+    "message": [
+        "reservaId must be a UUID",
+        "usuarioId must be a UUID"
+    ],
+    "error": "Bad Request",
+    "statusCode": 400
+}
+
+```
+
+este es el token que estoy usando: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZGY3MTRiZi1iNGZhLTQ0ZjMtOTZhYi02YzU5MmNiOWE3MjEiLCJlbWFpbCI6InBhZ29zQGdtYWlsLmNvbSIsIm5vbWJyZSI6Imdpby1wYWdvcyIsInJvbCI6ImN1c3RvbWVyIiwiaWF0IjoxNzgyMDIzMDMwLCJleHAiOjE3ODIxMDk0MzB9.SQ2NqQfS-NN-69tUBqQhQ98SlA3d1ThU_0Euz4Co1m8`
+
+y esta la info:
+```
+{"id":"6df714bf-b4fa-44f3-96ab-6c592cb9a721","name":"gio-pagos","email":"pagos@gmail.com","role":"USER"}
+
+
+```
+
+
+con esta entrada si es funciona:
+"{
+  "reservaId": "7643a23f-2aba-4038-b698-f51b8c0ce385",
+  "usuarioId": "6df714bf-b4fa-44f3-96ab-6c592cb9a721",
+  "monto": 90,
+  "metodoPago": "TEST_APROBADO"
+}"
+
+
+
+esta es la respuesta:
+"
+```
+{
+    "id": "631e09fb-9e67-4866-90e2-51ebcb1658d5",
+    "estado": "APROBADO",
+    "monto": "90.00",
+    "moneda": "GTQ",
+    "reservaId": "7643a23f-2aba-4038-b698-f51b8c0ce385",
+    "usuarioId": "6df714bf-b4fa-44f3-96ab-6c592cb9a721",
+    "metodoPago": "TEST_APROBADO",
+    "proveedorRef": "fake-ok-631e09fb-9e67-4866-90e2-51ebcb1658d5",
+    "procesadoEn": "2026-06-21T06:27:22.917Z"
+}
+
+```
+"
+
+
 ***
 
 ### Resultado esperado:
@@ -335,6 +182,26 @@ Body:
 ```http
 GET http://localhost:3004/payments/{id}
 ```
+
+Nota: el id debe e ser del pago
+http://localhost:3004/payments/631e09fb-9e67-4866-90e2-51ebcb1658d5
+
+```
+{
+    "id": "631e09fb-9e67-4866-90e2-51ebcb1658d5",
+    "estado": "APROBADO",
+    "monto": "90.00",
+    "moneda": "GTQ",
+    "reservaId": "7643a23f-2aba-4038-b698-f51b8c0ce385",
+    "usuarioId": "6df714bf-b4fa-44f3-96ab-6c592cb9a721",
+    "metodoPago": "TEST_APROBADO",
+    "proveedorRef": "fake-ok-631e09fb-9e67-4866-90e2-51ebcb1658d5",
+    "procesadoEn": "2026-06-21T06:27:22.917Z"
+}
+
+
+```
+
 
 ***
 
@@ -374,7 +241,7 @@ sin tocar controller ni service.
 
 ***
 
-# ✅ 7) 🔥 ESTADO ACTUAL DEL PROYECTO
+# 7) ESTADO ACTUAL DEL PROYECTO
 
 Ya tienes:
 
@@ -388,7 +255,7 @@ Ya tienes:
 
 ***
 
-# ✅ 8) 🚀 SIGUIENTE PASO (YA FINAL)
+# 8) SIGUIENTE PASO (YA FINAL)
 
 Ahora viene lo que conecta todo:
 
@@ -410,19 +277,139 @@ payment_process_queue
 payment_result_queue
 ```
 
-***
 
-# ✅ Si quieres avanzar
 
-Dime:
 
-👉 **"siguiente: rabbitmq consumer + publisher"**
 
-y te doy:
 
-✅ conexión AMQP lista  
-✅ consumer de payment\_process\_queue  
-✅ publisher de payment\_result\_queue  
-✅ integración completa con reservas
 
-🔥 y ya cierras todo el sistema end-to-end
+
+
+
+
+
+
+
+
+
+
+# ============================== Practica 5 ==========================================
+
+## obtener mis boletos
+http://localhost:8080/api/payments/boletos/mis-boletos
+Respuesta:
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+```
+
+
+http://localhost:8080/api/payments/boletos/mis-boletos?estado=EMITIDO
+
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+
+```
+
+
+
+http://localhost:8080/api/payments/boletos/mis-boletos?fechaInicio=2026-06-01
+```
+[
+    {
+        "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+        "codigo": "BOL-1782092510320-0",
+        "estado": "EMITIDO",
+        "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+        "creado": "2026-06-22T01:41:50.322Z"
+    },
+    {
+        "id": "53479d4c-bacf-4594-91bd-c71a74f57489",
+        "codigo": "BOL-1782095548510-0",
+        "estado": "EMITIDO",
+        "reservaId": "3df3983f-15df-482a-a421-a6e6560e1f9a",
+        "creado": "2026-06-22T02:32:28.511Z"
+    },
+    {
+        "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+        "codigo": "BOL-1782095591933-0",
+        "estado": "EMITIDO",
+        "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+        "creado": "2026-06-22T02:33:11.936Z"
+    }
+]
+
+
+
+```
+
+
+
+# buscar por codigo
+http://localhost:8080/api/payments/boletos/codigo/BOL-1782092510320-0
+
+```
+{
+    "id": "9038d1b2-5df4-4ba1-96cc-fb0c5f60f50c",
+    "codigo": "BOL-1782092510320-0",
+    "estado": "EMITIDO",
+    "reservaId": "9c1bdc01-d25a-476b-b787-9703b19e1909",
+    "creado": "2026-06-22T01:41:50.322Z"
+}
+
+```
+
+http://localhost:8080/api/payments/boletos/codigo/BOL-1782095591933-0:
+```
+{
+    "id": "315e617b-edf0-4aff-bdfb-d8cc412f2d85",
+    "codigo": "BOL-1782095591933-0",
+    "estado": "EMITIDO",
+    "reservaId": "667023ea-0abf-4039-b123-a4b30ecc3e05",
+    "creado": "2026-06-22T02:33:11.936Z"
+}
+
+```

@@ -13,9 +13,12 @@ export function CheckoutPage() {
   const { step } = useCheckoutStore()
 
   // Si no hay items en el carrito, redirige al inicio
-  useEffect(() => {
-    if (items.length === 0) navigate('/', { replace: true })
-  }, [items.length, navigate])
+ // Si no hay items en el carrito Y no venimos de un pago exitoso, redirige al inicio
+useEffect(() => {
+  if (items.length === 0 && step !== 'confirmation') {
+    navigate('/', { replace: true })
+  }
+}, [items.length, step, navigate])
 
   // Cuando el pago es exitoso navega a confirmación
   useEffect(() => {

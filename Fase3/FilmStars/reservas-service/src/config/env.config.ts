@@ -1,6 +1,19 @@
 import * as dotenv from 'dotenv';
+import { readFileSync } from 'fs';
 
 dotenv.config();
+
+function readSecret(name: string): string | undefined {
+  const file = process.env[`${name}_FILE`];
+  if (file) return readFileSync(file, 'utf8').trim();
+  return process.env[name];
+}
+
+function requiredSecret(name: string): string {
+  const value = readSecret(name);
+  if (!value) throw new Error(`Missing required secret ${name} or ${name}_FILE`);
+  return value;
+}
 
 
 /**
@@ -17,11 +30,11 @@ export const envConfig = {
     port: parseInt(process.env.DB_PORT ?? '5432', 10),
     name: process.env.DB_NAME,
     user: process.env.DB_USER,
-    pass: process.env.DB_PASS,
+    pass: requiredSecret('DB_PASS'),
   },
 
 jwt: {
-    secret: process.env.JWT_SECRET ?? 'filmstars_jwt_secret_key_2026',
+    secret: requiredSecret('JWT_SECRET'),
   },
 
   reservation: {
@@ -33,7 +46,7 @@ rabbit: {
   host: process.env.RABBITMQ_HOST,
   port: parseInt(process.env.RABBITMQ_PORT ?? '5672', 10),
   user: process.env.RABBITMQ_USER,
-  pass: process.env.RABBITMQ_PASS,
+  pass: requiredSecret('RABBITMQ_PASS'),
 },
 
 

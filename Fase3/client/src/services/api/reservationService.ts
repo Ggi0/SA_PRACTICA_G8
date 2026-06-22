@@ -6,7 +6,7 @@ import type { Seat } from '@/types'
 // Tipos del backend real
 
 
-type ApiSeatState = 'DISPONIBLE' | 'BLOQUEADO' | 'OCUPADO'
+type ApiSeatState = 'DISPONIBLE' | 'BLOQUEADO' | 'OCUPADO' | 'EN_USO'
 
 interface ApiSeat {
   id: string
@@ -57,7 +57,7 @@ interface ApiMyReservationItem {
 }
 
 interface ApiConfirmReservationResponse {
-  estado: 'CONFIRMADA'
+  estado: 'EN_PROCESO_PAGO'
 }
 
 
@@ -107,6 +107,9 @@ function mapSeatStatus(apiStatus: ApiSeatState): Seat['status'] {
       return 'OCCUPIED'
     case 'BLOQUEADO':
       return 'BLOCKED_TEMP'
+    case 'EN_USO':
+      return 'EN_USO'
+
     default:
       return 'BLOCKED_TEMP'
   }
@@ -233,7 +236,14 @@ export async function getReservation(id: string): Promise<ReservationDetails> {
 export async function getMyReservations(): Promise<MyReservationItem[]> {
   try {
     const { data } = await httpClient.get<ApiMyReservationItem[]>(
-      '/reservas/mis-reservas'
+      '/reservas/mis-reservas',{
+
+params: {
+        t: Date.now(), // 🔥 evita cache (304)
+      },
+
+
+      }
     )
 
     return data
@@ -255,13 +265,10 @@ export async function cancelReservation(id: string): Promise<{ message: string }
 // 7. Confirmar reserva
 export async function confirmReservation(
   reservationId: string,
-  referenciaPago?: string
 ): Promise<ApiConfirmReservationResponse> {
   try {
     const { data } = await httpClient.post<ApiConfirmReservationResponse>(
-      `/reservas/${reservationId}/confirmar`,
-      referenciaPago ? { referenciaPago } : {}
-    )
+      `/reservas/${reservationId}/confirmar`    )
 
     return data
   } catch (error) {

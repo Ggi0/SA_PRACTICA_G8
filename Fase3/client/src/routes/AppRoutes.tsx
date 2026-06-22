@@ -11,6 +11,7 @@ import { CheckoutPage } from '@/pages/Checkoutpage'
 import { ConfirmationPage } from '@/pages/ConfirmationPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
+
 import { ReservationsPage } from '@/pages/ReservationsPage'
 
 // admin
@@ -19,6 +20,9 @@ import { AdminFunctionsPage } from '@/pages/admin/AdminFunctionsPage'
 import { AdminCinemasPage } from '@/pages/admin/AdminCinemasPage'
 import { AdminSalasPage } from '@/pages/admin/AdminSalasPage'
 import { AdminBulkMoviesPage } from '@/pages/admin/AdminBulkMoviesPage'
+import { AdminBoletosPage } from '@/pages/admin/AdminBoletosPage'
+
+import { HistorialPage } from '@/pages/HistorialPage'
 
 
 // Protege rutas que requieren login
@@ -44,6 +48,7 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+                <Route path="/historial" element={<HistorialPage />} />
 
         <Route path="/movies/:movieId" element={
           <ProtectedRoute><MovieDetailPage /></ProtectedRoute>
@@ -69,6 +74,7 @@ export function AppRoutes() {
         <Route path="salas" element={<AdminSalasPage />} />
         <Route path="cines" element={<AdminCinemasPage />} />
         <Route path="movies/bulk" element={<AdminBulkMoviesPage />} />
+        <Route path="boletos" element={<AdminBoletosPage />} />
       </Route>
 
 

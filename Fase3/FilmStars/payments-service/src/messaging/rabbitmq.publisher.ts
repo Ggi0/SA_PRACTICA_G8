@@ -22,7 +22,9 @@ export class RabbitMqPublisher
   private channel: amqp.Channel | null = null;
 
   async onModuleInit(): Promise<void> {
-    const url = `amqp://${envConfig.rabbit.user}:${envConfig.rabbit.pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}/`;
+    const user = encodeURIComponent(envConfig.rabbit.user ?? '');
+    const pass = encodeURIComponent(envConfig.rabbit.pass ?? '');
+    const url = `amqp://${user}:${pass}@${envConfig.rabbit.host}:${envConfig.rabbit.port}/`;
 
     try {
       this.connection = await amqp.connect(url);
@@ -32,6 +34,10 @@ export class RabbitMqPublisher
       await this.channel.assertQueue(RABBITMQ_QUEUES.PAYMENT_RESULT, {
         durable: true,
       });
+
+      await this.channel.assertQueue(RABBITMQ_QUEUES.BOLETO_USADO, {
+          durable: true,
+        });
 
       this.logger.log('RabbitMQ publisher conectado correctamente');
     } catch (error) {
