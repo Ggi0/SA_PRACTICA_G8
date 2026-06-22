@@ -390,6 +390,42 @@ async confirmarReservaInterna(reservaId: string, pagoId?: string) {
 }
 
 
+async procesarBoletoUsado(event: {
+  reservaId: string;
+  usuarioId?: string;
+  reservaAsientoId?: string;
+}) {
+  return this.dataSource.transaction(async (manager) => {
+    const asientoRepo = manager.getRepository(EstadoAsientoFuncionEntity);
+
+    // ✅ buscar asientos de la reserva
+    const asientos = await asientoRepo.find({
+      where: {
+        reservaId: event.reservaId,
+      },
+    });
+
+    if (!asientos || asientos.length === 0) {
+      console.log('⚠️ No hay asientos para esta reserva');
+      return;
+    }
+
+    for (const asiento of asientos) {
+      // ✅ SOLO cambiar si estaba OCUPADO
+      if (asiento.estado === AsientoEstado.OCUPADO) {
+        asiento.estado = AsientoEstado.EN_USO;
+        asiento.modificacion = new Date();
+      }
+    }
+
+    await asientoRepo.save(asientos);
+
+    console.log(
+      `✅ Asientos en reserva ${event.reservaId} cambiados a EN_USO`,
+    );
+  });
+}
+
 
 
 }

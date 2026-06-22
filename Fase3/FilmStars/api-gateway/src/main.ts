@@ -33,8 +33,7 @@ const jwtSecret = requiredSecret('JWT_SECRET');
 const usersServiceUrl = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
 const moviesServiceUrl = process.env.MOVIES_SERVICE_URL || 'http://localhost:3002';
 const reservasServiceUrl = process.env.RESERVAS_SERVICE_URL || 'http://localhost:3003';
-const paymentsServiceUrl =
-  process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004';
+const paymentsServiceUrl = process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004';
 
 function jwtMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -160,6 +159,12 @@ async function bootstrap(): Promise<void> {
 
 app.use(
   '/api/payments',
+  jwtMiddleware, // ✅ igual que reservas
+  createPaymentsProxy(),
+);
+
+app.use(
+  '/api/admin',
   jwtMiddleware, // ✅ igual que reservas
   createPaymentsProxy(),
 );
