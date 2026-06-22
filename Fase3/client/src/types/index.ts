@@ -67,7 +67,7 @@ export interface Showtime {
 
 // ─── Asientos ────────────────────────────────────────────────────────────────
 
-export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'SELECTED' | 'BLOCKED_TEMP'
+export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'SELECTED' | 'BLOCKED_TEMP' | 'EN_USO'
 
 export interface Seat {
   id: string

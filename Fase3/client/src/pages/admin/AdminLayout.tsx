@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: 'Cines', href: '/admin/cines', icon: Calendar },
   { label: 'Salas', href: '/admin/salas', icon: Calendar },
   { label: 'Funciones', href: '/admin/functions', icon: Calendar },
+  { label: 'Boletos', href: '/admin/boletos', icon: Calendar },
 ]
 
 export function AdminLayout() {
