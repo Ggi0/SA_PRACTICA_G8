@@ -1,0 +1,67 @@
+name: Infra (Terraform + Ansible) - manual
+
+# Disparo MANUAL únicamente (workflow_dispatch) para respetar las reglas del PDF:
+# no accionar CI/CD ni levantar IaC fuera del horario establecido.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "plan | apply"
+        required: true
+        default: "plan"
+
+permissions:
+  contents: read
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Restaurar llave pública SSH (para aws_key_pair)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}"  > ~/.ssh/filmstars_deploy.pub
+          echo "${{ secrets.DEVELOP_SSH_KEY }}" > ~/.ssh/filmstars_deploy
+          chmod 600 ~/.ssh/filmstars_deploy
+
+      - name: Terraform init
+        run: terraform -chdir=terraform init
+
+      - name: Terraform plan
+        run: terraform -chdir=terraform plan -var="admin_cidr=0.0.0.0/0"
+
+      - name: Terraform apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: terraform -chdir=terraform apply -auto-approve -var="admin_cidr=0.0.0.0/0"
+
+      - name: Generar inventory de Ansible
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: terraform -chdir=terraform output -raw ansible_inventory > ansible/inventory.ini
+
+      - name: Ansible (configurar servidores + K3s)
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible
+          ansible-galaxy collection install community.docker community.general
+          cd ansible
+          mkdir -p artifacts group_vars
+          cat > group_vars/all.yml <<EOF
+          zot_user: "${{ secrets.ZOT_USER }}"
+          zot_password: "${{ secrets.ZOT_PASSWORD }}"
+          node_exporter_version: "1.8.2"
+          zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
+          zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"
+          EOF
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini \
+            --private-key ~/.ssh/filmstars_deploy site.yml
