@@ -5,6 +5,12 @@ on:
     branches: [develop, release]
   push:
     branches: [develop, release]
+  workflow_dispatch:
+    inputs:
+      run_terraform:
+        description: "Provision AWS infrastructure with Terraform"
+        required: false
+        default: "true"
 
 jobs:
   ci-tests:
@@ -390,10 +396,87 @@ jobs:
             fi
           done
 
+      - name: Deploy monitoring stack (Prometheus + Grafana)
+        run: |
+          # Create namespace and secret BEFORE applying the stack so Grafana
+          # does not crash on startup waiting for grafana-secret to exist.
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl -n monitoring create secret generic grafana-secret \
+            --from-literal=admin_password="${{ secrets.GRAFANA_ADMIN_PASSWORD || 'filmstars2026' }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl apply -f Fase3/FilmStars/k3s/monitoring.yaml
+
+          kubectl -n monitoring rollout status deployment/prometheus --timeout=180s || true
+          kubectl -n monitoring rollout status deployment/grafana   --timeout=180s || true
+
       - name: Show cluster status
         if: always()
         run: |
           kubectl -n $NS get pods,svc,ingress
+          kubectl -n monitoring get pods,svc || true
           kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
           kubectl -n $NS logs deployment/reservations-service --tail=80 || true
           kubectl -n $NS logs deployment/payments-service --tail=80 || true
+
+# ─── Terraform Validate (IaC sanity check on every push) ─────────────────────
+  terraform-validate:
+    name: "IaC - Terraform Validate"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.5"
+
+      - name: Terraform Init (no backend)
+        working-directory: Fase3/terraform
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: Fase3/terraform
+        run: terraform validate
+
+      - name: Terraform Format Check
+        working-directory: Fase3/terraform
+        run: terraform fmt -check -recursive
+
+# ─── Terraform Apply (manual — provision AWS infrastructure) ──────────────────
+  terraform-apply:
+    name: "IaC - Terraform Apply (manual trigger)"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.5"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Terraform Init
+        working-directory: Fase3/terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: Fase3/terraform
+        env:
+          TF_VAR_key_pair_name: ${{ secrets.TF_KEY_PAIR_NAME }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: Fase3/terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Export outputs
+        working-directory: Fase3/terraform
+        run: terraform output -json
