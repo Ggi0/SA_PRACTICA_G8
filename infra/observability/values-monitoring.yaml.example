@@ -1,0 +1,39 @@
+# Copia a values-monitoring.yaml y reemplaza las IPs PRIVADAS por las de
+# `terraform -chdir=../terraform output`. (values-monitoring.yaml está gitignored
+# porque suele llevar la adminPassword de Grafana.)
+grafana:
+  adminPassword: "grafana123"
+  service:
+    type: NodePort
+    nodePort: 30030
+  defaultDashboardsEnabled: true # incluye dashboards de nodo y cluster
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    retention: 7d
+    # Permite que Prometheus descubra ServiceMonitors creados fuera del chart
+    serviceMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { memory: 700Mi }
+    # Scrape estatico de las EC2 (node_exporter) y de la app (api-gateway /metrics)
+    additionalScrapeConfigs:
+      - job_name: "ec2-node-exporter"
+        static_configs:
+          - targets:
+              - "REGISTRY_PRIVATE_IP:9100"
+              - "DEVELOP_PRIVATE_IP:9100"
+              - "K3S_PRIVATE_IP:9100"
+            labels: { group: "aws-ec2" }
+      - job_name: "filmstars-api"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["api-gateway.filmstars.svc.cluster.local:8080"]
+            labels: { group: "filmstars-app" }
+
+# Aligerar para el lab
+alertmanager:
+  enabled: false

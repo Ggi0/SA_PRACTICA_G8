@@ -6,6 +6,7 @@ import { NextFunction, Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import jwt from 'jsonwebtoken';
 import { AppModule } from './app.module';
+import { metricsMiddleware, metricsHandler } from './metrics';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -130,6 +131,10 @@ function createPaymentsProxy() {
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
+
+  // Observabilidad: Prometheus scrapea http://api-gateway:8080/metrics
+  app.use(metricsMiddleware);
+  app.use('/metrics', metricsHandler);
 
   app.use('/api/auth', createUsersProxy());
   app.use('/api/clientes', jwtMiddleware, createUsersProxy());
