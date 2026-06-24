@@ -28,7 +28,7 @@ variable "subnet_cidr" {
 variable "admin_cidr" {
   type        = string
   description = "Tu IP pública /32 para acceso administrativo"
-  default     = "0.0.0.0/0"
+  default     = "181.209.152.179/32"
 }
 
 variable "ssh_pub_key_path" {
@@ -41,7 +41,7 @@ variable "ssh_pub_key_path" {
 # + node-exporter: usa t3.large COMO MÍNIMO; sube a t3.xlarge si ves pods OOMKilled/Pending.
 variable "k3s_instance_type" {
   type    = string
-  default = "t3.large"
+  default = "c7i-flex.large"
 }
 variable "registry_instance_type" {
   type    = string
@@ -49,5 +49,5 @@ variable "registry_instance_type" {
 }
 variable "develop_instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "c7i-flex.large"
 }
