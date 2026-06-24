@@ -65,10 +65,18 @@
         src: /etc/rancher/k3s/k3s.yaml
       register: kubecfg
 
+    - name: Asegurar carpeta local de artifacts
+      file:
+        path: "{{ playbook_dir }}/../artifacts"
+        state: directory
+        mode: "0700"
+      delegate_to: localhost
+      become: false
+
     - name: Guardar kubeconfig en el control node (con la IP publica)
       copy:
         content: "{{ kubecfg.content | b64decode | regex_replace('127.0.0.1', public_ip) }}"
-        dest: "./artifacts/k3s-kubeconfig.yaml"
+        dest: "{{ playbook_dir }}/../artifacts/k3s-kubeconfig.yaml"
         mode: "0600"
       delegate_to: localhost
       become: false
