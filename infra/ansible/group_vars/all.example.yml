@@ -1,0 +1,17 @@
+# Copia a infra/ansible/group_vars/all.yml y rellena.
+# all.yml está ignorado por Git (lleva credenciales). Sube solo este .example.
+
+# Credenciales del registry Zot — deben COINCIDIR con los GitHub Secrets ZOT_USER / ZOT_PASSWORD
+zot_user: "filmstars"
+zot_password: "zotpass"
+
+# Versión de node_exporter
+node_exporter_version: "1.8.2"
+
+# Host público del registry (EIP de la EC2 registry + :5000).
+# Es EXACTAMENTE el mismo valor que el GitHub Secret ZOT_HOST y el que usa
+# k3s/apps.yaml en ${ZOT_HOST}. Por eso K3s debe confiar en este host.
+zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
+
+# Host interno (IP privada) del registry — se registra también para pulls internos.
+zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"

@@ -1,0 +1,67 @@
+- name: Zot registry privado
+  hosts: registry
+  become: true
+  vars:
+    zot_dir: /opt/zot
+  tasks:
+    - name: Instalar dependencias (Docker + apache2-utils para htpasswd)
+      apt:
+        name: [docker.io, apache2-utils, python3-passlib]
+        update_cache: true
+        state: present
+
+    - name: Habilitar Docker
+      systemd: { name: docker, enabled: true, state: started }
+
+    - name: Crear carpetas de Zot
+      file: { path: "{{ item }}", state: directory, mode: "0755" }
+      loop:
+        - "{{ zot_dir }}"
+        - "{{ zot_dir }}/data"
+
+    - name: Generar htpasswd (bcrypt) para el usuario de Zot
+      community.general.htpasswd:
+        path: "{{ zot_dir }}/htpasswd"
+        name: "{{ zot_user }}"
+        password: "{{ zot_password }}"
+        crypt_scheme: bcrypt
+        mode: "0644"
+
+    - name: Config de Zot (auth htpasswd + storage)
+      copy:
+        dest: "{{ zot_dir }}/config.json"
+        content: |
+          {
+            "distSpecVersion": "1.1.0",
+            "storage": { "rootDirectory": "/var/lib/registry" },
+            "http": {
+              "address": "0.0.0.0",
+              "port": "5000",
+              "auth": { "htpasswd": { "path": "/etc/zot/htpasswd" } }
+            },
+            "log": { "level": "info" }
+          }
+
+    - name: Arrancar contenedor Zot
+      community.docker.docker_container:
+        name: zot
+        image: ghcr.io/project-zot/zot-linux-amd64:latest
+        state: started
+        restart_policy: unless-stopped
+        ports: ["5000:5000"]
+        volumes:
+          - "{{ zot_dir }}/config.json:/etc/zot/config.json:ro"
+          - "{{ zot_dir }}/htpasswd:/etc/zot/htpasswd:ro"
+          - "{{ zot_dir }}/data:/var/lib/registry"
+
+    - name: Esperar a que Zot responda
+      uri:
+        url: "http://localhost:5000/v2/"
+        user: "{{ zot_user }}"
+        password: "{{ zot_password }}"
+        force_basic_auth: true
+        status_code: 200
+      register: zot_ping
+      retries: 15
+      delay: 4
+      until: zot_ping.status == 200

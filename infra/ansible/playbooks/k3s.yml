@@ -1,0 +1,82 @@
+- name: K3s server + acceso al registry Zot
+  hosts: k3s
+  become: true
+  vars:
+    public_ip: "{{ inventory_hostname }}"
+  tasks:
+    # 1) La carpeta de K3s debe existir ANTES de escribir registries.yaml
+    - name: Asegurar carpeta de configuracion de K3s
+      file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: "0755"
+
+    # 2) registries.yaml: confiar en el Zot inseguro por su host PUBLICO (EIP:5000,
+    #    el mismo de ${ZOT_HOST} en apps.yaml) y tambien por su IP privada.
+    - name: Escribir /etc/rancher/k3s/registries.yaml (host publico + privado)
+      copy:
+        dest: /etc/rancher/k3s/registries.yaml
+        content: |
+          mirrors:
+            "{{ zot_host_public }}":
+              endpoint:
+                - "http://{{ zot_host_public }}"
+            "{{ zot_host_private }}":
+              endpoint:
+                - "http://{{ zot_host_private }}"
+          configs:
+            "{{ zot_host_public }}":
+              auth:
+                username: "{{ zot_user }}"
+                password: "{{ zot_password }}"
+              tls:
+                insecure_skip_verify: true
+            "{{ zot_host_private }}":
+              auth:
+                username: "{{ zot_user }}"
+                password: "{{ zot_password }}"
+              tls:
+                insecure_skip_verify: true
+
+    # 3) Instalar K3s server (TLS-SAN con la IP publica para kubectl externo)
+    - name: Instalar K3s server
+      shell: |
+        curl -sfL https://get.k3s.io | \
+        INSTALL_K3S_EXEC="--tls-san {{ public_ip }} --write-kubeconfig-mode 644" sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    # 4) Si K3s ya estaba instalado, reinicia para tomar registries.yaml
+    - name: Reiniciar K3s para aplicar registries.yaml
+      systemd:
+        name: k3s
+        state: restarted
+
+    - name: Esperar a que el nodo este Ready
+      shell: k3s kubectl get nodes
+      register: nodes
+      until: "'Ready' in nodes.stdout"
+      retries: 20
+      delay: 10
+      changed_when: false
+
+    - name: Leer kubeconfig generado
+      slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: kubecfg
+
+    - name: Asegurar carpeta local de artifacts
+      file:
+        path: "{{ playbook_dir }}/../artifacts"
+        state: directory
+        mode: "0700"
+      delegate_to: localhost
+      become: false
+
+    - name: Guardar kubeconfig en el control node (con la IP publica)
+      copy:
+        content: "{{ kubecfg.content | b64decode | regex_replace('127.0.0.1', public_ip) }}"
+        dest: "{{ playbook_dir }}/../artifacts/k3s-kubeconfig.yaml"
+        mode: "0600"
+      delegate_to: localhost
+      become: false
