@@ -2,6 +2,15 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { envConfig } from '../config/env.config';
 
+const QUEUE_OPTIONS: Record<string, amqp.Options.AssertQueue> = {
+  seat_hold_queue: {
+    durable: true,
+    arguments: {
+      'x-message-ttl': 600000,
+    },
+  },
+};
+
 @Injectable()
 export class RabbitMQPublisher implements OnModuleInit {
   private channel: amqp.Channel;
@@ -20,7 +29,7 @@ export class RabbitMQPublisher implements OnModuleInit {
   }
 
   async publish(queue: string, message: any) {
-    await this.channel.assertQueue(queue, { durable: true });
+    await this.channel.assertQueue(queue, QUEUE_OPTIONS[queue] ?? { durable: true });
 
     this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
       persistent: true,
