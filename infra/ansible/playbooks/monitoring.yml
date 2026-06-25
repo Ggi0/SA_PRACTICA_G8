@@ -55,6 +55,9 @@
                 enabled: true
                 label: grafana_dashboard
 
+          prometheus-node-exporter:
+            enabled: false
+
           prometheus:
             service:
               type: NodePort
@@ -109,6 +112,26 @@
         kubectl --kubeconfig {{ kubeconfig_path }} apply -f -
       changed_when: false
 
-    - name: Esperar pods de monitoring
-      shell: kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} wait --for=condition=Ready pod --all --timeout=300s
+    - name: Eliminar node-exporter del chart si quedo de una instalacion anterior
+      shell: |
+        kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} delete daemonset kps-prometheus-node-exporter --ignore-not-found=true
+        kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} delete service kps-prometheus-node-exporter --ignore-not-found=true
+      changed_when: false
+
+    - name: Esperar deployments de monitoring
+      shell: |
+        for resource in $(kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} get deployment -o name); do
+          kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} rollout status "$resource" --timeout=300s
+        done
+      changed_when: false
+
+    - name: Esperar StatefulSets de monitoring
+      shell: |
+        for resource in $(kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} get statefulset -o name); do
+          kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} rollout status "$resource" --timeout=600s
+        done
+      changed_when: false
+
+    - name: Mostrar estado final de monitoring
+      shell: kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} get pods,svc -o wide
       changed_when: false
