@@ -40,14 +40,16 @@ TF_STATE_BUCKET=mi-bucket-unico bash scripts/deploy-infra.sh
 ```
 
 El script: `init` (con tu bucket) → **`plan` (lo revisas)** → te pide escribir `yes`
-→ `apply` → genera `ansible/inventory.ini` desde los outputs → corre los playbooks →
-imprime los valores para los **GitHub Secrets** (`ZOT_HOST`, `K3S_IP`, `DEVELOP_HOST`,
-`KUBECONFIG_B64`). Para CI no interactivo: `AUTO_APPROVE=1`.
+→ `apply` → genera `ansible/inventory.ini` desde los outputs → corre los playbooks.
+Para CI no interactivo: `AUTO_APPROVE=1`.
 
 > El PDF exige despliegue de la app **sin clics manuales**: eso lo cubre el pipeline
-> `.github/workflows/ci-cd.yml`. La infraestructura es reproducible vía estos archivos
-> versionados y el script; opcionalmente puede ejecutarse desde
-> `.github/workflows/infra.yml` (disparo manual `workflow_dispatch`).
+> `.github/workflows/ci-cd.yml`. En cada `push` a `develop` o `release`, el pipeline
+> ejecuta Terraform con `plan -detailed-exitcode`, solo aplica si detecta cambios,
+> genera el inventario de Ansible desde outputs de Terraform y reconfigura los
+> servidores de forma idempotente. Las IPs (`DEVELOP_HOST`, `ZOT_HOST`, `K3S_IP`) y
+> el kubeconfig salen del job de infraestructura; ya no se copian manualmente a
+> GitHub Secrets.
 
 ## Observabilidad
 

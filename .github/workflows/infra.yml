@@ -36,14 +36,33 @@ jobs:
           chmod 600 ~/.ssh/filmstars_deploy
 
       - name: Terraform init
-        run: terraform -chdir=terraform init
+        run: terraform -chdir=terraform init -input=false
 
       - name: Terraform plan
-        run: terraform -chdir=terraform plan -var="admin_cidr=0.0.0.0/0"
+        id: tfplan
+        run: |
+          set +e
+          terraform -chdir=terraform plan -input=false -detailed-exitcode -out=tfplan -var="admin_cidr=0.0.0.0/0"
+          status=$?
+          set -e
 
-      - name: Terraform apply
-        if: ${{ github.event.inputs.action == 'apply' }}
-        run: terraform -chdir=terraform apply -auto-approve -var="admin_cidr=0.0.0.0/0"
+          if [ "$status" -eq 0 ]; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+            echo "Terraform no detecto cambios de infraestructura."
+          elif [ "$status" -eq 2 ]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            echo "Terraform detecto cambios de infraestructura."
+          else
+            exit "$status"
+          fi
+
+      - name: Terraform apply cuando hay cambios
+        if: ${{ github.event.inputs.action == 'apply' && steps.tfplan.outputs.changes == 'true' }}
+        run: terraform -chdir=terraform apply -input=false tfplan
+
+      - name: Omitir Terraform apply sin cambios
+        if: ${{ github.event.inputs.action == 'apply' && steps.tfplan.outputs.changes == 'false' }}
+        run: echo "Sin diferencias en infraestructura; Terraform apply no se ejecuta."
 
       - name: Generar inventory de Ansible
         if: ${{ github.event.inputs.action == 'apply' }}
@@ -63,5 +82,7 @@ jobs:
           zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
           zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"
           EOF
+          ansible all -i inventory.ini -m wait_for_connection -a "timeout=300" \
+            --private-key ~/.ssh/filmstars_deploy
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini \
             --private-key ~/.ssh/filmstars_deploy site.yml

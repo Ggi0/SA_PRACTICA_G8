@@ -37,6 +37,7 @@
                 password: "{{ zot_password }}"
               tls:
                 insecure_skip_verify: true
+      notify: Reiniciar K3s
 
     # 3) Instalar K3s server (TLS-SAN con la IP publica para kubectl externo)
     - name: Instalar K3s server
@@ -45,12 +46,11 @@
         INSTALL_K3S_EXEC="--tls-san {{ public_ip }} --write-kubeconfig-mode 644" sh -
       args:
         creates: /usr/local/bin/k3s
+      notify: Reiniciar K3s
 
-    # 4) Si K3s ya estaba instalado, reinicia para tomar registries.yaml
-    - name: Reiniciar K3s para aplicar registries.yaml
-      systemd:
-        name: k3s
-        state: restarted
+    # 4) Aplicar cambios pendientes antes de validar el estado del cluster.
+    - name: Aplicar handlers pendientes de K3s
+      meta: flush_handlers
 
     - name: Esperar a que el nodo este Ready
       shell: k3s kubectl get nodes
@@ -80,3 +80,9 @@
         mode: "0600"
       delegate_to: localhost
       become: false
+
+  handlers:
+    - name: Reiniciar K3s
+      systemd:
+        name: k3s
+        state: restarted

@@ -135,7 +135,7 @@ deploy-develop:
     - name: Pull and restart compose stack
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.DEVELOP_HOST }}
+        host: ${{ needs.provision-infra.outputs.develop_host }}
         username: ubuntu
         key: ${{ secrets.DEVELOP_SSH_KEY }}
         script: |
@@ -159,8 +159,8 @@ build-push-zot-release:
   if: github.ref == 'refs/heads/release' && github.event_name == 'push'
   env:
     TAG: release-${{ github.run_number }}
-    ZOT_HOST: ${{ secrets.ZOT_HOST }}
-    REG: ${{ secrets.ZOT_HOST }}/filmstars
+    ZOT_HOST: ${{ needs.provision-infra.outputs.zot_host }}
+    REG: ${{ needs.provision-infra.outputs.zot_host }}/filmstars
 ```
 
 ```yaml
@@ -197,8 +197,8 @@ deploy-k3s-release:
   env:
     NS: filmstars
     TAG: release-${{ github.run_number }}
-    ZOT_HOST: ${{ secrets.ZOT_HOST }}
-    K3S_IP: ${{ secrets.K3S_IP }}
+    ZOT_HOST: ${{ needs.provision-infra.outputs.zot_host }}
+    K3S_IP: ${{ needs.provision-infra.outputs.k3s_ip }}
 ```
 
 ```yaml
