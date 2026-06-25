@@ -293,6 +293,15 @@ jobs:
           echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      - name: Validate Kubernetes API access
+        run: |
+          server="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+          echo "Using Kubernetes API: $server"
+          if ! kubectl --request-timeout=15s get --raw=/readyz >/dev/null; then
+            echo "::error::Cannot reach the Kubernetes API. Regenerate KUBECONFIG_B64 and K3S_IP from the current Terraform/Ansible outputs, then update the GitHub release secrets."
+            exit 1
+          fi
+
       - name: Apply namespace
         run: kubectl apply -f Fase3/FilmStars/k3s/namespace.yaml
 
@@ -393,7 +402,7 @@ jobs:
       - name: Show cluster status
         if: always()
         run: |
-          kubectl -n $NS get pods,svc,ingress
+          kubectl -n $NS get pods,svc,ingress || true
           kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
           kubectl -n $NS logs deployment/reservations-service --tail=80 || true
           kubectl -n $NS logs deployment/payments-service --tail=80 || true
