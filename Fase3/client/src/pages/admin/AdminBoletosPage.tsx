@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label'
 import jsQR from 'jsqr'
 import * as pdfjs from 'pdfjs-dist'
 
+import { Html5Qrcode } from 'html5-qrcode'
+
 import {
   Search,
   QrCode,
@@ -48,6 +50,8 @@ export function AdminBoletosPage() {
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  const [scanning, setScanning] = useState(false)
 
   async function cargar() {
     const data = await getBoletos(filtros)
@@ -165,6 +169,50 @@ export function AdminBoletosPage() {
     }
   }
 
+  async function iniciarEscaner() {
+  setScanning(true)
+
+  const qr = new Html5Qrcode("reader")
+
+  try {
+    const devices = await Html5Qrcode.getCameras()
+    const cameraId = devices[0].id
+
+await qr.start(
+  cameraId,
+  {
+    fps: 10,
+    qrbox: 250,
+  },
+  async (decodedText) => {
+    console.log("QR detectado:", decodedText)
+
+    await qr.stop()
+    setScanning(false)
+
+    setCodigo(decodedText)
+
+    try {
+      const res = await scanBoleto(decodedText)
+      setMensaje(`${res.mensaje} — ${decodedText}`)
+      setError(null)
+      cargar()
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? 'Error al escanear')
+    }
+  },
+  (errorMessage) => {
+     console.log("Scan error:", errorMessage)
+  }
+)
+  } catch (err) {
+    console.error(err)
+    setError("No se pudo acceder a la cámara")
+    setScanning(false)
+  }
+}
+
+
   return (
     <div className="space-y-6">
 
@@ -196,12 +244,15 @@ export function AdminBoletosPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleScan()}
             className="flex-1 min-w-[180px]"
           />
+          
           <Button onClick={handleScan} title="Validar código">
             <QrCode size={16} />
           </Button>
+          
           <Button variant="outline" onClick={handleBuscar} title="Buscar boleto">
             <Search size={16} />
           </Button>
+          
           <Button variant="outline" asChild disabled={uploading}>
             <label className="cursor-pointer flex items-center gap-2">
               {uploading ? (
@@ -217,6 +268,26 @@ export function AdminBoletosPage() {
               />
             </label>
           </Button>
+
+              <Button onClick={iniciarEscaner}>
+  📷 Escáner QR
+  
+</Button>
+{scanning && (
+  <div className="mt-4 border rounded p-3">
+    <div id="reader" style={{ width: '300px' }} />
+    <Button
+      variant="destructive"
+      className="mt-2"
+      onClick={() => setScanning(false)}
+    >
+      Cancelar
+    </Button>
+  </div>
+)}
+
+
+        
         </div>
       </div>
 
