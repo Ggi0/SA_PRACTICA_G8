@@ -114,7 +114,30 @@
 | RF-109 | K3s / Kubernetes | Alta | El sistema debe soportar estrategia RollingUpdate para despliegues sin interrupción. |
 | RF-110 | K3s / Kubernetes | Alta | El sistema debe permitir rollback hacia la última versión estable mediante `kubectl rollout undo` cuando falle una nueva versión. |
 | RF-111 | Documentación | Media | El sistema debe documentar la arquitectura del clúster, namespaces, pods, Services, Ingress, ConfigMaps, Secrets y estrategia de despliegue zero-downtime. |
-
+| RF-112 | Terraform / AWS | Alta | El sistema debe permitir aprovisionar la infraestructura base de AWS mediante Terraform, incluyendo VPC, subredes, Internet Gateway, Security Groups e instancias EC2 necesarias para los entornos `develop` y `release`. |
+| RF-113 | Terraform / AWS | Alta | El sistema debe generar salidas de Terraform con información necesaria para el despliegue, como IPs públicas, nombres de instancias, identificadores de red y datos requeridos por Ansible. |
+| RF-114 | Terraform | Alta | El sistema debe mantener la definición declarativa de la infraestructura en archivos `.tf`, evitando la creación manual de recursos desde la consola de AWS. |
+| RF-115 | Ansible / AWS EC2 | Alta | El sistema debe ejecutar playbooks de Ansible para configurar automáticamente las instancias EC2 aprovisionadas por Terraform. |
+| RF-116 | Ansible / K3s | Alta | El sistema debe instalar y configurar K3s mediante Ansible en las instancias destinadas al entorno `release`. |
+| RF-117 | Ansible / Servidores | Alta | El sistema debe instalar dependencias base requeridas por la aplicación, como Docker, herramientas de Kubernetes, cliente de conexión, configuración de usuarios y paquetes necesarios para la operación. |
+| RF-118 | CI/CD / Terraform | Alta | El pipeline debe ejecutar una fase de validación y planificación de Terraform antes de aplicar cambios de infraestructura. |
+| RF-119 | CI/CD / Terraform / Ansible | Alta | El pipeline debe ejecutar Terraform para aprovisionar o actualizar infraestructura y posteriormente ejecutar Ansible para configurar los servidores. |
+| RF-120 | CI/CD / Ansible | Alta | El pipeline debe utilizar las salidas de Terraform como insumo para generar o actualizar el inventario de Ansible. |
+| RF-121 | CI/CD / AWS | Alta | El sistema debe desplegar el entorno `develop` en una VM EC2, eliminando la dependencia de un entorno local como destino principal de despliegue. |
+| RF-122 | CI/CD / K3s | Alta | El sistema debe desplegar el entorno `release` sobre el clúster K3s aprovisionado y configurado en AWS mediante Terraform y Ansible. |
+| RF-123 | Backend SOA / Observabilidad | Alta | Los servicios backend deben exponer métricas de operación que puedan ser recolectadas por Prometheus, incluyendo disponibilidad, errores y latencia de APIs. |
+| RF-124 | Prometheus / K3s | Alta | El sistema debe desplegar Prometheus dentro del entorno K3s para recolectar métricas del clúster, pods, servicios, APIs y componentes de soporte. |
+| RF-125 | Prometheus / RabbitMQ | Alta | El sistema debe permitir monitorear métricas de RabbitMQ, como estado del broker, colas activas, mensajes pendientes y saturación de colas. |
+| RF-126 | Prometheus / K3s | Alta | El sistema debe recolectar métricas de uso de CPU y memoria de los pods relacionados con frontend, API Gateway y servicios backend. |
+| RF-127 | Prometheus / Ingress | Media | El sistema debe recolectar o exponer información relacionada con el estado del Ingress y la disponibilidad de entrada hacia frontend y APIs. |
+| RF-128 | Grafana / K3s | Alta | El sistema debe desplegar Grafana conectado a Prometheus como origen de datos para visualizar métricas operativas del sistema. |
+| RF-129 | Grafana | Alta | El sistema debe incluir al menos un dashboard personalizado que muestre la salud del sistema, consumo de CPU/RAM, estado de pods, volumen de boletos validados por minuto y estado del Ingress. |
+| RF-130 | Módulo Administrativo / Cámara | Alta | El panel administrativo debe permitir validar boletos mediante lectura de código QR usando cámara o simulación equivalente del escáner. |
+| RF-131 | Módulo Administrativo / Observabilidad | Media | El sistema debe registrar métricas relacionadas con validaciones de boletos, incluyendo validaciones exitosas, rechazadas y forzadas manualmente. |
+| RF-132 | Documentación / Terraform | Media | El sistema debe documentar qué es Terraform, cómo funciona, cómo se organiza la infraestructura y el paso a paso de ejecución con evidencias de recursos creados. |
+| RF-133 | Documentación / Ansible | Media | El sistema debe documentar qué es Ansible, cómo funcionan los playbooks y el paso a paso de configuración de servidores, K3s y dependencias con evidencias de ejecución. |
+| RF-134 | Documentación / Prometheus y Grafana | Media | El sistema debe documentar el despliegue de Prometheus y Grafana, el modelo de scraping, los exporters utilizados y capturas del dashboard funcionando con telemetría viva. |
+| RF-135 | Seguridad / Configuración | Alta | El sistema debe utilizar archivos `.env`, GitHub Secrets, Kubernetes Secrets o mecanismos equivalentes para manejar URLs, contraseñas, IPs y llaves sensibles sin subirlas al repositorio. |
 
 ## Requerimientos NO Funcionales (RNF)
 
@@ -201,5 +224,41 @@
 | RNF-79 | Recursos | Media | Los pods deben documentar asignación de recursos de CPU y memoria para evitar consumo no controlado. |
 | RNF-80 | Documentación técnica | Alta | Deben cargarse al repositorio los archivos crudos de diagramas y manifiestos de orquestación. |
 | RNF-81 | Restricción operativa | Alta | Las construcciones de imágenes Docker deben realizarse exclusivamente por medio del CI/CD. |
+| RNF-82 | Infraestructura como Código | Alta | Toda la infraestructura de AWS debe definirse mediante Terraform y no debe ser creada manualmente desde la consola web. |
+| RNF-83 | Reproducibilidad | Alta | La infraestructura debe poder recrearse de forma consistente a partir de los archivos `.tf` del repositorio. |
+| RNF-84 | Modularidad IaC | Media | Los manifiestos de Terraform deben organizarse de forma modular, separando red, seguridad, cómputo, variables y salidas. |
+| RNF-85 | Gestión de estado | Alta | El estado de Terraform debe gestionarse y documentarse para evitar pérdida de control sobre los recursos aprovisionados. |
+| RNF-86 | Automatización | Alta | La configuración de servidores debe realizarse mediante playbooks de Ansible y no por comandos manuales repetitivos. |
+| RNF-87 | Idempotencia | Alta | Los playbooks de Ansible deben poder ejecutarse más de una vez sin generar configuraciones inconsistentes. |
+| RNF-88 | Cero clics manuales | Alta | El despliegue de `develop` y `release` hacia AWS debe ejecutarse sin clics manuales, utilizando CI/CD, Terraform y Ansible. |
+| RNF-89 | Nube | Alta | El entorno `develop` debe ejecutarse en una VM EC2 y el entorno `release` en K3s sobre AWS. |
+| RNF-90 | Observabilidad | Alta | El entorno productivo K3s debe contar con una pila de observabilidad centralizada basada en Prometheus y Grafana. |
+| RNF-91 | Retención de métricas | Media | El tiempo de retención de métricas en Prometheus debe definirse y documentarse según la capacidad del entorno y las necesidades del equipo. |
+| RNF-92 | Scraping | Alta | Prometheus debe recolectar métricas periódicamente desde el clúster K3s, servicios de la aplicación y componentes de soporte como RabbitMQ. |
+| RNF-93 | Visualización | Alta | Grafana debe mostrar dashboards dinámicos con métricas en tiempo real del sistema de cine. |
+| RNF-94 | Métricas de aplicación | Alta | Los servicios deben exponer métricas internas relacionadas con disponibilidad, latencia, errores y validación de boletos. |
+| RNF-95 | Métricas de infraestructura | Alta | El monitoreo debe incluir CPU, memoria y estado de pods del frontend, API Gateway y servicios backend. |
+| RNF-96 | Métricas de mensajería | Alta | El monitoreo debe incluir estado y saturación de colas en RabbitMQ o middleware equivalente. |
+| RNF-97 | Métricas de acceso | Media | El monitoreo debe incluir métricas del Ingress o punto de entrada externo del sistema. |
+| RNF-98 | Resiliencia operativa | Alta | La plataforma debe permitir detectar fallos de servicios, saturación de recursos o errores elevados antes de que afecten la venta de boletos. |
+| RNF-99 | Seguridad de secretos | Alta | Contraseñas, tokens, IPs, llaves JWT, usuarios de registry y credenciales cloud no deben subirse al repositorio. |
+| RNF-100 | Seguridad de red | Alta | Los Security Groups definidos por Terraform deben limitar el tráfico únicamente a los puertos necesarios para operación, administración y monitoreo. |
+| RNF-101 | Trazabilidad DevOps | Alta | El pipeline debe dejar evidencia de ejecución de Terraform, Ansible, pruebas, build, publicación de imágenes y despliegue. |
+| RNF-102 | Documentación técnica | Alta | La documentación debe incluir archivos crudos, diagramas, guías y capturas que evidencien Terraform, Ansible, Prometheus y Grafana. |
+| RNF-103 | Calidad SOLID | Alta | La instrumentación de métricas y nuevos módulos de observabilidad deben mantener separación de responsabilidades e inyección de dependencias. |
+| RNF-104 | Continuidad del sistema | Alta | Todos los elementos implementados en prácticas anteriores deben persistir y operar sobre la infraestructura aprovisionada por código. |
+| RNF-105 | Restricción operativa | Alta | No se deben ejecutar commits, despliegues, accionamientos de CI/CD ni levantamiento de infraestructura fuera del horario establecido. |
+| RNF-106 | Evidencia visual | Media | La documentación de Terraform, Ansible, Prometheus y Grafana debe incluir capturas de recursos, logs de playbooks y dashboards activos. |
+| RNF-107 | Disponibilidad de monitoreo | Alta | Prometheus y Grafana deben permanecer disponibles dentro del entorno productivo para consultar la salud del sistema durante la calificación. |
+| RNF-108 | Rendimiento de monitoreo | Media | La recolección de métricas no debe degradar de forma significativa el rendimiento de los servicios principales de FilmStars. |
 
+## Resumen de cambios
 
+En esta práctica se agregaron requerimientos orientados a consolidar la plataforma en un entorno cloud automatizado y observable:
+
+1. **Infraestructura como Código y automatización:** se agregó Terraform para aprovisionar recursos AWS y Ansible para configurar servidores, instalar dependencias y desplegar K3s sin configuraciones manuales.
+2. **CI/CD extendido:** el pipeline debe ejecutar fases de Terraform, Ansible y despliegue hacia AWS, diferenciando `develop` en EC2 y `release` en K3s.
+3. **Observabilidad:** se agregó Prometheus para recolección de métricas y Grafana para dashboards en tiempo real.
+4. **Métricas operativas:** se incorporan métricas de clúster, pods, APIs, RabbitMQ, Ingress y validaciones de boletos.
+5. **Seguridad de información:** se refuerza el uso obligatorio de `.env`, GitHub Secrets y Kubernetes Secrets para evitar subir información sensible al repositorio.
+6. **Persistencia de prácticas anteriores:** se mantiene todo lo implementado en usuarios, cartelera, reservas, pagos, CSV, paginación, boletos, control de accesos, K3s y CI/CD.
