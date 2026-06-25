@@ -39,6 +39,9 @@
               "port": "5000",
               "auth": { "htpasswd": { "path": "/etc/zot/htpasswd" } }
             },
+            "extensions": {
+              "ui": { "enable": true }
+            },
             "log": { "level": "info" }
           }
 
