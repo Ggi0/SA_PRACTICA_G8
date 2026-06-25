@@ -5,11 +5,11 @@ resource "aws_security_group" "k3s" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH admin"
+    description = "SSH from CI/CD and admin"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     description = "Kube API (kubectl del CI/CD: runners con IP dinamica)"
@@ -76,11 +76,11 @@ resource "aws_security_group" "registry" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH admin"
+    description = "SSH from CI/CD and admin"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     description = "Zot :5000 (push del CI + pull de K3s)"
@@ -123,21 +123,21 @@ resource "aws_security_group" "develop" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     description = "Frontend"
     from_port   = 5173
     to_port     = 5173
     protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     description = "RabbitMQ management"
     from_port   = 15672
     to_port     = 15672
     protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     description = "Trafico interno de la VPC (node_exporter)"

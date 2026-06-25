@@ -82,7 +82,7 @@ jobs:
           zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
           zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"
           EOF
-          ansible all -i inventory.ini -m wait_for_connection -a "timeout=300" \
+          ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m wait_for_connection -a "timeout=300" \
             --private-key ~/.ssh/filmstars_deploy
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini \
             --private-key ~/.ssh/filmstars_deploy site.yml
