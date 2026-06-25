@@ -13,6 +13,12 @@
     - name: Habilitar Docker
       systemd: { name: docker, enabled: true, state: started }
 
+    - name: Permitir a ubuntu usar docker sin sudo
+      user:
+        name: ubuntu
+        groups: docker
+        append: true
+
     - name: Crear carpetas de Zot
       file: { path: "{{ item }}", state: directory, mode: "0755" }
       loop:
@@ -39,14 +45,20 @@
               "port": "5000",
               "auth": { "htpasswd": { "path": "/etc/zot/htpasswd" } }
             },
+            "extensions": {
+              "search": { "enable": true },
+              "mgmt": { "enable": true },
+              "ui": { "enable": true }
+            },
             "log": { "level": "info" }
           }
 
     - name: Arrancar contenedor Zot
       community.docker.docker_container:
         name: zot
-        image: ghcr.io/project-zot/zot-linux-amd64:latest
+        image: ghcr.io/project-zot/zot:latest
         state: started
+        recreate: true
         restart_policy: unless-stopped
         ports: ["5000:5000"]
         volumes:
