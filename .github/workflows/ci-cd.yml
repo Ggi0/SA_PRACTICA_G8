@@ -128,6 +128,18 @@ jobs:
 
       - name: Check SSH port reachability
         run: |
+          echo "Ansible inventory:"
+          cat ansible/inventory.ini
+          echo "EC2 network details:"
+          aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=filmstars-k3s,filmstars-registry,filmstars-develop" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].{Name:Tags[?Key==`Name`]|[0].Value,InstanceId:InstanceId,PublicIp:PublicIpAddress,PrivateIp:PrivateIpAddress,SecurityGroups:SecurityGroups[].GroupName}' \
+            --output table
+          echo "SSH security group rules:"
+          aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=filmstars-k3s-sg,filmstars-registry-sg,filmstars-develop-sg" \
+            --query 'SecurityGroups[].{GroupName:GroupName,Ingress:IpPermissions[?FromPort==`22` && ToPort==`22`].IpRanges[].CidrIp}' \
+            --output table
           awk '/^[0-9]/{print $1}' ansible/inventory.ini | while read -r host; do
             echo "Checking SSH on $host:22"
             timeout 10 bash -c "</dev/tcp/$host/22" || { echo "::error::SSH port 22 is not reachable on $host"; exit 1; }

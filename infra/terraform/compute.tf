@@ -62,17 +62,29 @@ resource "aws_instance" "develop" {
 
 # ---------- Elastic IPs (IPs publicas fijas) ----------
 resource "aws_eip" "k3s" {
-  instance = aws_instance.k3s.id
-  domain   = "vpc"
-  tags     = { Name = "${var.project}-k3s-eip" }
+  domain = "vpc"
+  tags   = { Name = "${var.project}-k3s-eip" }
 }
 resource "aws_eip" "registry" {
-  instance = aws_instance.registry.id
-  domain   = "vpc"
-  tags     = { Name = "${var.project}-registry-eip" }
+  domain = "vpc"
+  tags   = { Name = "${var.project}-registry-eip" }
 }
 resource "aws_eip" "develop" {
-  instance = aws_instance.develop.id
-  domain   = "vpc"
-  tags     = { Name = "${var.project}-develop-eip" }
+  domain = "vpc"
+  tags   = { Name = "${var.project}-develop-eip" }
+}
+
+resource "aws_eip_association" "k3s" {
+  instance_id   = aws_instance.k3s.id
+  allocation_id = aws_eip.k3s.id
+}
+
+resource "aws_eip_association" "registry" {
+  instance_id   = aws_instance.registry.id
+  allocation_id = aws_eip.registry.id
+}
+
+resource "aws_eip_association" "develop" {
+  instance_id   = aws_instance.develop.id
+  allocation_id = aws_eip.develop.id
 }
