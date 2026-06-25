@@ -33,7 +33,21 @@ resource "aws_security_group" "k3s" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    description = "NodePorts (Grafana 30030, Prometheus 30090)"
+    description = "Grafana publico"
+    from_port   = 30030
+    to_port     = 30030
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Prometheus publico"
+    from_port   = 30090
+    to_port     = 30090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Otros NodePorts administrativos"
     from_port   = 30000
     to_port     = 32767
     protocol    = "tcp"
