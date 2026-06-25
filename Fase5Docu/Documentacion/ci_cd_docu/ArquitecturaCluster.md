@@ -4,7 +4,7 @@
 
 FilmStars despliega su entorno de **release** sobre un clúster de **K3s** (distribución ligera de Kubernetes certificada por la CNCF) ejecutándose en una instancia de **Amazon Web Services (AWS)** identificada como `vm-filmstars-k3s-server` en la zona `us-east-2c`. La elección de K3s responde al requisito de operar Kubernetes real sobre infraestructura limitada: empaqueta el Control Plane, el datastore y el runtime en un único binario liviano, ideal para un nodo único de laboratorio, conservando la compatibilidad total con la API de Kubernetes y con `kubectl`.
 
-Toda la infraestructura del clúster se gestiona de forma **declarativa** mediante manifiestos YAML versionados en `Fase3/FilmStars/k3s/`, aplicados exclusivamente a través del pipeline de CD (job `deploy-k3s-release`). El acceso al clúster se realiza con un kubeconfig inyectado desde el secret `KUBECONFIG_B64`; no existen credenciales estáticas embebidas en los manifiestos.
+Toda la infraestructura del clúster se gestiona de forma **declarativa** mediante Terraform, Ansible y manifiestos YAML versionados en `Fase3/FilmStars/k3s/`, aplicados exclusivamente a través del pipeline de CD. El acceso al clúster se realiza con el kubeconfig generado por Ansible y transferido como artifact interno del workflow; no existen credenciales estáticas embebidas en los manifiestos.
 
 ![Vista de Despliegue Release (K3s sobre AWS)](./image/Vista%20de%20Despliegue(Física)-release.png)
 

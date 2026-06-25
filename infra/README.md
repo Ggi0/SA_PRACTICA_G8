@@ -40,27 +40,30 @@ TF_STATE_BUCKET=mi-bucket-unico bash scripts/deploy-infra.sh
 ```
 
 El script: `init` (con tu bucket) → **`plan` (lo revisas)** → te pide escribir `yes`
-→ `apply` → genera `ansible/inventory.ini` desde los outputs → corre los playbooks →
-imprime los valores para los **GitHub Secrets** (`ZOT_HOST`, `K3S_IP`, `DEVELOP_HOST`,
-`KUBECONFIG_B64`). Para CI no interactivo: `AUTO_APPROVE=1`.
+→ `apply` → genera `ansible/inventory.ini` desde los outputs → corre los playbooks.
+Para CI no interactivo: `AUTO_APPROVE=1`.
 
 > El PDF exige despliegue de la app **sin clics manuales**: eso lo cubre el pipeline
-> `.github/workflows/ci-cd.yml`. La infraestructura es reproducible vía estos archivos
-> versionados y el script; opcionalmente puede ejecutarse desde
-> `.github/workflows/infra.yml` (disparo manual `workflow_dispatch`).
+> `.github/workflows/ci-cd.yml`. En cada `push` a `develop` o `release`, el pipeline
+> ejecuta Terraform con `plan -detailed-exitcode`, solo aplica si detecta cambios,
+> genera el inventario de Ansible desde outputs de Terraform y reconfigura los
+> servidores de forma idempotente. Las IPs (`DEVELOP_HOST`, `ZOT_HOST`, `K3S_IP`) y
+> el kubeconfig salen del job de infraestructura; ya no se copian manualmente a
+> GitHub Secrets.
 
 ## Observabilidad
 
+Ansible instala Prometheus y Grafana automaticamente al ejecutar `site.yml`
+despues de configurar K3s. Usa NodePorts fijos:
+
+- Grafana: `http://K3S_IP:30030`
+- Prometheus: `http://K3S_IP:30090`
+- Grafana login: `admin` / `grafana123`
+
 ```bash
 export KUBECONFIG=$PWD/ansible/artifacts/k3s-kubeconfig.yaml
-cp observability/values-monitoring.yaml.example observability/values-monitoring.yaml  # edita IPs privadas
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-kubectl create namespace monitoring
-helm install kps prometheus-community/kube-prometheus-stack -n monitoring \
-  -f observability/values-monitoring.yaml
-# Grafana: http://K3S_IP:30030   ·   Prometheus: http://K3S_IP:30090
-# Importa observability/grafana-filmstars-dashboard.json en Grafana.
+kubectl -n monitoring get pods
+kubectl -n monitoring get svc
 ```
 
 ## Limpieza (SOLO después de la calificación)

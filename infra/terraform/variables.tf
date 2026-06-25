@@ -28,7 +28,8 @@ variable "subnet_cidr" {
 variable "admin_cidr" {
   type        = string
   description = "Tu IP pública /32 para acceso administrativo"
-  default     = "181.209.152.179/32"
+  # default     = "181.209.152.179/32"
+  default     = "0.0.0.0/0"
 }
 
 variable "ssh_pub_key_path" {
