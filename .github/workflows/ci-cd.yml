@@ -402,7 +402,12 @@ jobs:
       - name: Show cluster status
         if: always()
         run: |
-          kubectl -n $NS get pods,svc,ingress || true
+          if ! kubectl --request-timeout=5s get --raw=/readyz >/dev/null 2>&1; then
+            echo "Kubernetes API is unreachable; skipping cluster diagnostics."
+            exit 0
+          fi
+
+          kubectl --request-timeout=10s -n $NS get pods,svc,ingress || true
           kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
           kubectl -n $NS logs deployment/reservations-service --tail=80 || true
           kubectl -n $NS logs deployment/payments-service --tail=80 || true

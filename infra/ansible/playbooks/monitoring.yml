@@ -1,0 +1,114 @@
+- name: Observabilidad Prometheus + Grafana en K3s
+  hosts: k3s
+  become: true
+  vars:
+    kubeconfig_path: /etc/rancher/k3s/k3s.yaml
+    monitoring_namespace: monitoring
+    monitoring_release: kps
+    grafana_admin_password: "{{ monitoring_grafana_admin_password | default('grafana123') }}"
+    registry_private_ip: "{{ hostvars[groups['registry'][0]]['private_ip'] }}"
+    develop_private_ip: "{{ hostvars[groups['develop'][0]]['private_ip'] }}"
+    k3s_private_ip: "{{ hostvars[inventory_hostname]['private_ip'] }}"
+  tasks:
+    - name: Instalar dependencias de Helm
+      apt:
+        name: [curl, ca-certificates]
+        update_cache: true
+        state: present
+
+    - name: Descargar instalador de Helm
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: "0755"
+
+    - name: Instalar Helm
+      shell: /tmp/get_helm.sh
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Agregar repo prometheus-community
+      shell: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+      changed_when: false
+
+    - name: Actualizar repos de Helm
+      shell: helm repo update
+      changed_when: false
+
+    - name: Crear namespace monitoring
+      shell: kubectl --kubeconfig {{ kubeconfig_path }} create namespace {{ monitoring_namespace }} --dry-run=client -o yaml | kubectl --kubeconfig {{ kubeconfig_path }} apply -f -
+      changed_when: false
+
+    - name: Escribir values de kube-prometheus-stack
+      copy:
+        dest: /tmp/values-monitoring.yaml
+        mode: "0600"
+        content: |
+          grafana:
+            adminPassword: "{{ grafana_admin_password }}"
+            service:
+              type: NodePort
+              nodePort: 30030
+            defaultDashboardsEnabled: true
+            sidecar:
+              dashboards:
+                enabled: true
+                label: grafana_dashboard
+
+          prometheus:
+            service:
+              type: NodePort
+              nodePort: 30090
+            prometheusSpec:
+              retention: 7d
+              serviceMonitorSelectorNilUsesHelmValues: false
+              resources:
+                requests: { cpu: 100m, memory: 256Mi }
+                limits: { memory: 700Mi }
+              additionalScrapeConfigs:
+                - job_name: "ec2-node-exporter"
+                  static_configs:
+                    - targets:
+                        - "{{ registry_private_ip }}:9100"
+                        - "{{ develop_private_ip }}:9100"
+                        - "{{ k3s_private_ip }}:9100"
+                      labels: { group: "aws-ec2" }
+                - job_name: "filmstars-api"
+                  metrics_path: /metrics
+                  static_configs:
+                    - targets: ["api-gateway.filmstars.svc.cluster.local:8080"]
+                      labels: { group: "filmstars-app" }
+
+          alertmanager:
+            enabled: false
+
+    - name: Instalar o actualizar kube-prometheus-stack
+      shell: >
+        helm upgrade --install {{ monitoring_release }} prometheus-community/kube-prometheus-stack
+        --namespace {{ monitoring_namespace }}
+        --kubeconfig {{ kubeconfig_path }}
+        -f /tmp/values-monitoring.yaml
+        --wait
+        --timeout 10m
+      register: helm_monitoring
+      changed_when: "'Release' in helm_monitoring.stdout or 'deployed' in helm_monitoring.stdout"
+
+    - name: Copiar dashboard FilmStars para Grafana
+      copy:
+        src: "{{ playbook_dir }}/../../observability/grafana-filmstars-dashboard.json"
+        dest: /tmp/grafana-filmstars-dashboard.json
+        mode: "0644"
+
+    - name: Importar dashboard FilmStars en Grafana
+      shell: >
+        kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }}
+        create configmap filmstars-grafana-dashboard
+        --from-file=filmstars.json=/tmp/grafana-filmstars-dashboard.json
+        --dry-run=client -o yaml |
+        kubectl --kubeconfig {{ kubeconfig_path }} label --local -f - grafana_dashboard=1 -o yaml |
+        kubectl --kubeconfig {{ kubeconfig_path }} apply -f -
+      changed_when: false
+
+    - name: Esperar pods de monitoring
+      shell: kubectl --kubeconfig {{ kubeconfig_path }} -n {{ monitoring_namespace }} wait --for=condition=Ready pod --all --timeout=300s
+      changed_when: false

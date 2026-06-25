@@ -51,16 +51,17 @@ imprime los valores para los **GitHub Secrets** (`ZOT_HOST`, `K3S_IP`, `DEVELOP_
 
 ## Observabilidad
 
+Ansible instala Prometheus y Grafana automaticamente al ejecutar `site.yml`
+despues de configurar K3s. Usa NodePorts fijos:
+
+- Grafana: `http://K3S_IP:30030`
+- Prometheus: `http://K3S_IP:30090`
+- Grafana login: `admin` / `grafana123`
+
 ```bash
 export KUBECONFIG=$PWD/ansible/artifacts/k3s-kubeconfig.yaml
-cp observability/values-monitoring.yaml.example observability/values-monitoring.yaml  # edita IPs privadas
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-kubectl create namespace monitoring
-helm install kps prometheus-community/kube-prometheus-stack -n monitoring \
-  -f observability/values-monitoring.yaml
-# Grafana: http://K3S_IP:30030   ·   Prometheus: http://K3S_IP:30090
-# Importa observability/grafana-filmstars-dashboard.json en Grafana.
+kubectl -n monitoring get pods
+kubectl -n monitoring get svc
 ```
 
 ## Limpieza (SOLO después de la calificación)
