@@ -68,6 +68,24 @@ jobs:
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform -chdir=terraform output -raw ansible_inventory > ansible/inventory.ini
 
+      - name: Esperar estado OK de EC2
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          instance_ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=filmstars-k3s,filmstars-registry,filmstars-develop" "Name=instance-state-name,Values=pending,running" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+          test -n "$instance_ids" || { echo "::error::No FilmStars EC2 instances found"; exit 1; }
+          aws ec2 wait instance-status-ok --instance-ids $instance_ids
+
+      - name: Verificar alcance de SSH
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          awk '/^[0-9]/{print $1}' ansible/inventory.ini | while read -r host; do
+            echo "Checking SSH on $host:22"
+            timeout 10 bash -c "</dev/tcp/$host/22" || { echo "::error::SSH port 22 is not reachable on $host"; exit 1; }
+          done
+
       - name: Ansible (configurar servidores + K3s)
         if: ${{ github.event.inputs.action == 'apply' }}
         run: |
@@ -82,7 +100,7 @@ jobs:
           zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
           zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"
           EOF
-          ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m wait_for_connection -a "timeout=300" \
+          ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m wait_for_connection -a "timeout=600" \
             --private-key ~/.ssh/filmstars_deploy
           ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini \
             --private-key ~/.ssh/filmstars_deploy site.yml
