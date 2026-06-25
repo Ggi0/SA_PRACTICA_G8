@@ -50,6 +50,7 @@
         name: zot
         image: ghcr.io/project-zot/zot-linux-amd64:latest
         state: started
+        recreate: true
         restart_policy: unless-stopped
         ports: ["5000:5000"]
         volumes:
