@@ -320,6 +320,69 @@ await dataSource.transaction(async (manager) => {
 
 ---
 
+## Relación con observabilidad e infraestructura
+
+La Práctica 6 no cambia la lógica transaccional principal de FilmStars, pero sí mejora la capacidad de detectar problemas relacionados con ACID. Prometheus y Grafana permiten observar errores, latencia, fallos de base de datos, saturación de RabbitMQ o inconsistencias operativas que podrían afectar reservas, pagos o validaciones de boletos.
+
+Terraform y Ansible no aplican ACID directamente porque no son bases de datos transaccionales del dominio, pero sí contribuyen a que los entornos donde corren las transacciones sean reproducibles y consistentes.
+
+---
+
+## Observabilidad de operaciones transaccionales
+
+Las operaciones críticas deben generar métricas para detectar fallos.
+
+| Operación | Métrica sugerida | Utilidad |
+|---|---|---|
+| Reserva creada | `filmstars_reservations_created_total` | Ver volumen de reservas exitosas. |
+| Reserva rechazada | `filmstars_reservations_rejected_total` | Detectar conflictos o errores de disponibilidad. |
+| Pago aprobado | `filmstars_payments_approved_total` | Medir pagos exitosos. |
+| Pago fallido | `filmstars_payments_failed_total` | Identificar fallos de gateway o servicio. |
+| Boleto validado | `filmstars_ticket_validations_total` | Medir ingresos autorizados. |
+| Boleto rechazado | `filmstars_ticket_validation_rejected_total` | Detectar boletos inválidos o reusados. |
+| Errores de BD | `filmstars_database_errors_total` | Detectar problemas de persistencia. |
+
+### Evidencia
+
+```ts
+// payments-service/src/metrics/payment.metrics.ts
+export const paymentsProcessedTotal = new Counter({
+  name: 'filmstars_payments_processed_total',
+  help: 'Total de pagos procesados',
+  labelNames: ['status'],
+});
+```
+
+```ts
+// payments-service/src/payments/services/payments.service.ts
+try {
+  const result = await this.paymentGateway.procesarPago(payload);
+  paymentsProcessedTotal.inc({ status: result.estado });
+} catch (error) {
+  paymentsProcessedTotal.inc({ status: 'FALLIDO' });
+  throw error;
+}
+```
+
+**Explicación:** aunque la métrica no reemplaza la transacción, permite observar si las operaciones transaccionales están fallando.
+
+---
+
+## ACID y monitoreo de doble uso de boletos
+
+El escaneo de boletos debe evitar que dos validaciones simultáneas marquen el mismo boleto dos veces. Con Prometheus se pueden observar rechazos por boleto usado.
+
+```ts
+// tickets/metrics/ticket.metrics.ts
+ticketValidationsTotal.inc({ result: 'rejected_already_used' });
+```
+
+**Explicación:** esta métrica ayuda a detectar intentos de reutilización de boletos o errores de validación concurrente.
+
+---
+
 ## Conclusión
 
 FilmStars aplica ACID dentro de cada servicio y cada base de datos. Reservas usa transacciones y bloqueos pesimistas para evitar doble venta de asientos. Movies usa validaciones, transacciones y savepoints para carga CSV. Payments registra pagos, boletos y eventos de forma durable. En el control de accesos, ACID permite evitar que un boleto sea usado dos veces y asegura que boleto, asiento y auditoría queden sincronizados.
+
+Práctica 6 no cambia los principios ACID aplicados en reservas, pagos, CSV y boletos; los fortalece mediante observabilidad. Prometheus y Grafana ayudan a detectar errores transaccionales, saturación de servicios y fallos que podrían afectar la consistencia del sistema. Terraform y Ansible aseguran que la infraestructura donde ocurren estas transacciones sea reproducible y configurada de forma controlada.

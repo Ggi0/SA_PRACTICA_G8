@@ -21,6 +21,17 @@ La arquitectura se mantiene consistente aunque el sistema crezca. Las funcionali
 | Docker Hub / Zot | Registry de imágenes. | Artefactos Docker. | Docker Hub para `develop`; Zot/Harbor para entorno `release`. |
 | K3s | Orquestación cloud native. | Clúster sobre AWS. | Despliega servicios con Deployments, Services, ConfigMaps, Secrets, Ingress y RollingUpdate. |
 
+
+## Infraestructura como parte de la arquitectura SOA en Práctica 6
+
+| Componente | Rol dentro de SOA |
+|---|---|
+| Terraform | Aprovisiona la infraestructura donde viven los servicios. |
+| Ansible | Configura los servidores y prepara K3s para ejecutar los servicios. |
+| K3s | Orquesta los servicios como unidades independientes. |
+| Prometheus | Observa cada servicio y componente operativo mediante métricas. |
+| Grafana | Permite visualizar la salud de los servicios y detectar fallos. |
+
 ---
 
 ## ¿Por qué SOA es adecuada para FilmStars?
@@ -302,7 +313,7 @@ spec:
 
 ---
 
-## 11. ConfigMaps y Secrets
+## ConfigMaps y Secrets
 
 ```yaml
 # Fase3/FilmStars/k3s/configmaps.yaml
@@ -353,8 +364,80 @@ data:
 
 ---
 
+## Terraform y Ansible como soporte del despliegue SOA
+
+La arquitectura SOA necesita ambientes reproducibles. Si los servicios se despliegan manualmente, aumenta el riesgo de inconsistencias entre `develop`, `release` y los ambientes de prueba. Terraform define los recursos AWS y Ansible configura las instancias.
+
+```hcl
+# infrastructure/terraform/outputs.tf
+output "develop_public_ip" {
+  value = aws_instance.filmstars_develop.public_ip
+}
+
+output "release_public_ip" {
+  value = aws_instance.filmstars_release.public_ip
+}
+```
+
+```yaml
+# infrastructure/ansible/inventory.ini
+[develop]
+develop-server ansible_host=${develop_public_ip} ansible_user=ubuntu
+
+[release]
+release-server ansible_host=${release_public_ip} ansible_user=ubuntu
+```
+
+**Justificación SOA:** Terraform crea infraestructura y sus outputs alimentan Ansible. Esto automatiza el entorno donde se ejecutan los servicios sin mezclar infraestructura con lógica de negocio.
+
+---
+
+## Observabilidad orientada a servicios
+
+Cada servicio debe poder observarse de forma independiente. Esto permite saber si el problema está en `api-gateway`, `movies-service`, `reservations-service`, `payments-service`, RabbitMQ, Ingress o infraestructura.
+
+```yaml
+# k3s/monitoring/prometheus-config.yaml
+scrape_configs:
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:8080']
+
+  - job_name: 'movies-service'
+    static_configs:
+      - targets: ['movies-service:3002']
+
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15692']
+```
+
+**Justificación SOA:** Prometheus respeta la separación por servicio. No monitorea un monolito, sino componentes independientes.
+
+---
+
+## Grafana como vista operativa de la arquitectura
+
+Grafana permite consolidar métricas de todos los servicios sin acoplarlos. El administrador puede ver en un solo dashboard la salud del sistema.
+
+| Panel | Qué observa |
+|---|---|
+| CPU/RAM por pod | Consumo de recursos por servicio. |
+| Estado de pods | Disponibilidad de cada componente. |
+| RabbitMQ | Mensajes pendientes y estado de colas. |
+| Ingress | Estado de entrada al sistema. |
+| Boletos validados por minuto | Operación del módulo de control de accesos. |
+| Errores por API | Salud de endpoints y servicios. |
+
+---
+
 ## Conclusión
 
 SOA sigue siendo adecuada para FilmStars porque permite agregar nuevas capacidades sin romper la arquitectura existente. La carga CSV y la paginación se integran en Movies Service; el historial, descarga y escaneo de boletos se apoyan en Payments Service; el estado de asientos permanece en Reservations Service; y el API Gateway mantiene seguridad y enrutamiento.
 
 K3s fortalece esta arquitectura porque cada servicio se despliega como unidad independiente, con configuración externa, secretos protegidos, entrada controlada mediante Ingress y despliegues con RollingUpdate. Así, FilmStars conserva una solución modular, mantenible, escalable y preparada para crecimiento.
+
+Terraform y Ansible garantizan que la infraestructura sea reproducible; K3s mantiene los servicios separados como deployments; Prometheus recolecta métricas por componente; y Grafana permite visualizar la salud general. Así, FilmStars no solo está dividido por dominios de negocio, sino también preparado para operar en un entorno cloud observable.
+
+
+---

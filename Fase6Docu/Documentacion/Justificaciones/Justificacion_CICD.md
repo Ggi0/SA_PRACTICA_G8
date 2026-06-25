@@ -262,6 +262,146 @@ deploy-k3s-release:
 
 ---
 
+# Terraform, Ansible y Observabilidad
+
+En Práctica 6, GitHub Actions deja de ser únicamente un pipeline de pruebas, build y despliegue de imágenes. Ahora también coordina el aprovisionamiento de infraestructura y la configuración de servidores mediante Terraform y Ansible.
+
+---
+
+## Flujo CI/CD extendido
+
+| Etapa | Herramienta | Propósito |
+|---|---|---|
+| Validación | GitHub Actions | Ejecutar pruebas, build y validaciones. |
+| Planificación IaC | Terraform | Revisar cambios de infraestructura antes de aplicarlos. |
+| Aprovisionamiento | Terraform | Crear o actualizar recursos AWS. |
+| Inventario | Terraform outputs / script | Generar datos para Ansible. |
+| Configuración | Ansible | Instalar dependencias, configurar servidores y K3s. |
+| Publicación | Docker Hub / Zot | Publicar imágenes. |
+| Despliegue | Docker Compose / K3s | Levantar servicios según ambiente. |
+| Observabilidad | Prometheus / Grafana | Verificar salud del sistema desplegado. |
+
+---
+
+## Terraform dentro del pipeline
+
+```yaml
+terraform-plan:
+  name: "Terraform - Plan"
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      working-directory: infrastructure/terraform
+      run: terraform init
+
+    - name: Terraform Validate
+      working-directory: infrastructure/terraform
+      run: terraform validate
+
+    - name: Terraform Plan
+      working-directory: infrastructure/terraform
+      run: terraform plan -out=tfplan
+```
+
+**Explicación:** antes de crear o modificar infraestructura, el pipeline valida y planifica los cambios. Esto reduce el riesgo de errores en AWS.
+
+---
+
+## Terraform Apply e inventario para Ansible
+
+```yaml
+terraform-apply:
+  name: "Terraform - Apply"
+  runs-on: ubuntu-latest
+  needs: [terraform-plan]
+  if: github.ref == 'refs/heads/release'
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Apply
+      working-directory: infrastructure/terraform
+      run: terraform apply -auto-approve
+
+    - name: Export Terraform Outputs
+      working-directory: infrastructure/terraform
+      run: terraform output -json > ../ansible/tf_outputs.json
+```
+
+**Explicación:** después de aplicar infraestructura, Terraform genera salidas que pueden ser usadas para crear inventarios de Ansible.
+
+---
+
+## Ansible dentro del pipeline
+
+```yaml
+ansible-configure:
+  name: "Ansible - Configure Servers"
+  runs-on: ubuntu-latest
+  needs: [terraform-apply]
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Ansible
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ansible
+
+    - name: Run Ansible Playbook
+      working-directory: infrastructure/ansible
+      run: |
+        ansible-playbook -i inventory.ini playbooks/setup-k3s.yml
+```
+
+**Explicación:** Ansible configura los servidores aprovisionados por Terraform. Esto evita ingresar manualmente a las EC2 para instalar dependencias o K3s.
+
+---
+
+## Despliegue de Prometheus y Grafana
+
+```yaml
+deploy-observability:
+  name: "Deploy Observability Stack"
+  runs-on: ubuntu-latest
+  needs: [ansible-configure]
+  steps:
+    - name: Apply monitoring manifests
+      run: |
+        kubectl apply -f Fase3/FilmStars/k3s/monitoring/prometheus.yaml
+        kubectl apply -f Fase3/FilmStars/k3s/monitoring/grafana.yaml
+        kubectl apply -f Fase3/FilmStars/k3s/monitoring/exporters.yaml
+```
+
+**Explicación:** el pipeline despliega la pila de observabilidad como parte del entorno release.
+
+---
+
+## Seguridad en el pipeline
+
+Las credenciales necesarias para AWS, Docker Hub, Zot, SSH y K3s deben almacenarse como GitHub Secrets.
+
+```yaml
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  K3S_KUBECONFIG: ${{ secrets.K3S_KUBECONFIG }}
+```
+
+**Explicación:** las credenciales no se escriben en el repositorio y se inyectan de forma segura durante la ejecución del pipeline.
+
+---
+
 ## Conclusión
 
 GitHub Actions se utiliza porque integra pruebas, build, publicación de imágenes y despliegue en un solo flujo controlado desde el repositorio. La misma herramienta cubre el ciclo completo: valida servicios, genera imágenes inmutables, publica artefactos, despliega `develop` con Docker Compose y despliega `release` en K3s con rollback. Así el proyecto evita builds manuales, reduce errores y mantiene trazabilidad desde el commit hasta el despliegue.
+
+GitHub Actions ahora integra CI/CD e Infraestructura como Código. El pipeline valida código, ejecuta pruebas, construye imágenes, aprovisiona AWS con Terraform, configura servidores con Ansible, despliega servicios en K3s y habilita Prometheus/Grafana. Esto permite un flujo más profesional, reproducible, trazable y alineado con despliegue cloud.
+
+---

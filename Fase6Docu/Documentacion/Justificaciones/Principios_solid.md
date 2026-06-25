@@ -1,4 +1,4 @@
-# Principios SOLID aplicados en FilmStars - Documento fusionado hasta Práctica 5
+# Principios SOLID aplicados en FilmStars - Documento actualizado hasta Práctica 6
 
 Este documento consolida la aplicación de los principios SOLID en FilmStars desde las fases anteriores hasta la Práctica 5.  
 No se separa por fase como anexos independientes; en su lugar, las funcionalidades agregadas en Fase 4 y Práctica 5 se integran dentro de cada principio.
@@ -12,6 +12,8 @@ Las funcionalidades consideradas son:
 - Paginación del lado del servidor.
 - Descarga e historial de boletos.
 - Escaneo y control de accesos.
+- Infraestructura y Monitoreo.
+- Métricas.
 - Búsqueda manual de contingencia.
 - Despliegue con Docker Compose, CI/CD y K3s.
 
@@ -160,6 +162,33 @@ export class BoletoEntity {
 
 **Explicación:** el boleto digital tiene su propia entidad. Esta clase no procesa pagos, no valida escaneo ni genera archivos descargables; solo modela la información persistente del boleto.
 
+
+## Infraestructura y Monitoreo
+
+Cada componente debe tener una responsabilidad clara.
+
+| Componente | Responsabilidad |
+|---|---|
+| Terraform | Aprovisionar recursos de AWS. |
+| Ansible | Configurar servidores y preparar K3s. |
+| Prometheus | Recolectar métricas. |
+| Grafana | Visualizar métricas mediante dashboards. |
+| Metrics Middleware | Exponer métricas HTTP de los servicios. |
+| Exporters | Exponer métricas de componentes como RabbitMQ. |
+
+```ts
+// api-gateway/src/metrics/metrics.controller.ts
+@Controller('metrics')
+export class MetricsController {
+  @Get()
+  getMetrics() {
+    return register.metrics();
+  }
+}
+```
+
+**Explicación:** el controlador de métricas solo expone métricas. No maneja autenticación, pagos, cartelera ni reservas. Esto respeta SRP.
+
 ---
 
 # O — Open/Closed Principle
@@ -266,7 +295,23 @@ export class QrTicketRenderStrategy implements TicketRenderStrategy {
 
 **Explicación:** el sistema queda abierto para nuevos formatos de boleto o validación de acceso, pero cerrado para modificar el flujo principal de pago o reserva.
 
+## Métricas
+
+El sistema debe permitir agregar nuevas métricas sin modificar toda la lógica existente. Por ejemplo, se pueden agregar métricas para boletos validados, errores de API o colas de RabbitMQ sin modificar los servicios principales.
+
+```ts
+// metrics/ticket.metrics.ts
+export const ticketValidationsTotal = new Counter({
+  name: 'filmstars_ticket_validations_total',
+  help: 'Total de boletos validados',
+  labelNames: ['result'],
+});
+```
+
+**Explicación:** si mañana se agrega una métrica de pagos rechazados o latencia de reservas, se crea una nueva métrica sin modificar los contadores existentes.
+
 ---
+
 
 # L — Liskov Substitution Principle
 
@@ -349,6 +394,27 @@ export class RabbitMqPublisher
 ```
 
 **Explicación:** `PaymentsService` puede trabajar con cualquier publicador que respete `MessagePublisher`. Si el broker cambia, no se rompe el servicio de pagos.
+
+
+## Exporters y fuentes de métricas
+
+Todas las fuentes de métricas deben cumplir un contrato común: exponer datos en un formato que Prometheus pueda recolectar.
+
+```ts
+export interface MetricsExporter {
+  expose(): Promise<string>;
+}
+```
+
+```ts
+export class PrometheusMetricsExporter implements MetricsExporter {
+  async expose(): Promise<string> {
+    return register.metrics();
+  }
+}
+```
+
+**Explicación:** cualquier exporter que respete el contrato puede sustituirse sin romper el flujo de observabilidad.
 
 ---
 
@@ -435,6 +501,27 @@ export interface ITicketAccessValidationService {
 ```
 
 **Explicación:** el módulo de historial no debe depender de métodos de escaneo, y el módulo de escaneo no debe depender de métodos de descarga.
+
+
+## Segregación aplicado a monitoreo
+
+No todos los servicios necesitan exponer las mismas métricas. Por eso conviene separar interfaces.
+
+```ts
+export interface HttpMetricsService {
+  recordHttpRequest(method: string, route: string, status: number, duration: number): void;
+}
+
+export interface TicketMetricsService {
+  recordTicketValidation(result: 'approved' | 'rejected' | 'manual'): void;
+}
+
+export interface QueueMetricsService {
+  recordQueueStatus(queue: string, pendingMessages: number): void;
+}
+```
+
+**Explicación:** el módulo de boletos no depende de métricas de colas si no las usa, y el API Gateway no depende de métricas específicas de boletos.
 
 ---
 
@@ -543,21 +630,81 @@ export class TicketAccessController {
 
 **Explicación:** los controladores dependen de interfaces, no de implementaciones concretas. Esto facilita pruebas unitarias, cambios futuros y separación de responsabilidades.
 
+
+## Inversion aplicado a métricas
+
+Los servicios de negocio deben depender de abstracciones de métricas, no de una librería concreta. Esto permite cambiar la implementación sin afectar el dominio.
+
+```ts
+@Injectable()
+export class TicketAccessService {
+  constructor(
+    @Inject(TICKET_METRICS_SERVICE)
+    private readonly ticketMetrics: TicketMetricsService,
+  ) {}
+
+  validateTicket(code: string) {
+    // lógica de validación
+    this.ticketMetrics.recordTicketValidation('approved');
+  }
+}
+```
+
+**Explicación:** el servicio de acceso no depende directamente de Prometheus. Depende de una abstracción que puede implementarse con Prometheus u otra herramienta.
+
 ---
+
 
 # Aplicación específica de SOLID por funcionalidad
 
-| Funcionalidad | S | O | L | I | D |
-|---|---|---|---|---|---|
-| Gestión de usuarios | Controlador, servicio y repositorio separados. | Nuevas reglas de usuario pueden agregarse sin romper login. | Guards respetan contratos de NestJS. | Interfaces específicas de usuario. | Inyección mediante tokens. |
-| Cartelera | Movies, Cities, Theaters y Functions separados. | Strategy de precios. | Estrategias sustituibles. | Interfaces por subdominio. | `MOVIES_SERVICE`, `MOVIES_REPOSITORY`. |
-| CSV | Controller, Service, Parser y Repository separados. | Nuevos formatos pueden agregarse como estrategias. | Estrategias de importación sustituibles. | Contratos específicos de importación. | Parser y repository inyectados. |
-| Paginación | Consulta paginada separada. | Puede cambiar estrategia de paginación. | Repositorios paginados sustituibles. | Contratos `MoviePageFilters` y `PaginatedMoviesResult`. | Service depende de repository abstracto. |
-| Reservas | Reserva y estado de asiento separados. | Se pueden agregar nuevas reglas de estado. | Repositorios sustituibles. | Repositorios específicos. | Repositorios inyectados. |
-| Pagos | Pago, gateway y mensajería separados. | Gateway de pago puede cambiar. | Implementaciones de gateway y publisher sustituibles. | Interfaces pequeñas. | Depende de `PaymentGatewayInterface` y `MessagePublisher`. |
-| Boletos | Entidad y futuros servicios de historial/descarga separados. | Nuevos formatos de boleto. | Renderizadores sustituibles. | `ITicketHistoryService` separado de escaneo. | Controladores dependen de servicios abstractos. |
-| Control de accesos | Validación, auditoría y búsqueda manual separados. | Nuevas estrategias de validación. | Validadores sustituibles. | `ITicketAccessValidationService` específico. | Inyección de servicios. |
-| K3s | Manifiestos separados por propósito. | Se pueden agregar más deployments/services. | Deployments siguen contrato Kubernetes. | ConfigMaps, Secrets e Ingress separados. | Configuración externa al código. |
+| Funcionalidad              | S                                                                        | O                                                                                 | L                                                                                             | I                                                                        | D                                                                               |
+| -------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Gestión de usuarios        | Controlador, servicio y repositorio separados.                           | Nuevas reglas de usuario pueden agregarse sin romper el login.                    | Guards y servicios respetan contratos de NestJS.                                              | Interfaces específicas de usuario.                                       | Inyección mediante tokens y providers.                                          |
+| Cartelera                  | Movies, Cities, Theaters y Functions separados.                          | Strategy de precios para diferentes tipos de película.                            | Estrategias de precio sustituibles.                                                           | Interfaces por subdominio.                                               | `MOVIES_SERVICE` y `MOVIES_REPOSITORY` inyectados.                              |
+| CSV                        | Controller, Service, Parser y Repository separados.                      | Nuevos formatos pueden agregarse como estrategias.                                | Estrategias de importación sustituibles.                                                      | Contratos específicos de importación.                                    | Parser y repository inyectados.                                                 |
+| Paginación                 | Consulta paginada separada del renderizado del frontend.                 | Puede cambiar la estrategia de paginación sin modificar el controlador.           | Repositorios paginados sustituibles.                                                          | Contratos `MoviePageFilters` y `PaginatedMoviesResult`.                  | Service depende de repository abstracto.                                        |
+| Reservas                   | Reserva y estado de asiento separados.                                   | Se pueden agregar nuevas reglas de estado.                                        | Repositorios sustituibles.                                                                    | Repositorios específicos para reserva y asiento.                         | Repositorios inyectados.                                                        |
+| Pagos                      | Pago, gateway y mensajería separados.                                    | Gateway de pago puede cambiar sin afectar el flujo principal.                     | Implementaciones de gateway y publisher sustituibles.                                         | Interfaces pequeñas.                                                     | Depende de `PaymentGatewayInterface` y `MessagePublisher`.                      |
+| Boletos                    | Entidad y servicios de historial/descarga separados.                     | Nuevos formatos de boleto pueden agregarse.                                       | Renderizadores de boleto sustituibles.                                                        | `ITicketHistoryService` separado de escaneo.                             | Controladores dependen de servicios abstractos.                                 |
+| Control de accesos         | Validación, auditoría y búsqueda manual separados.                       | Nuevas estrategias de validación pueden agregarse.                                | Validadores sustituibles.                                                                     | `ITicketAccessValidationService` específico.                             | Inyección de servicios.                                                         |
+| K3s                        | Manifiestos separados por propósito.                                     | Se pueden agregar más Deployments y Services.                                     | Deployments siguen contrato Kubernetes.                                                       | ConfigMaps, Secrets e Ingress separados.                                 | Configuración externa al código.                                                |
+| Terraform                  | Módulos separados para red, seguridad, cómputo, variables y outputs.     | Se pueden agregar nuevos recursos AWS sin modificar todos los módulos existentes. | Módulos reutilizables con variables y outputs compatibles.                                    | Variables específicas por módulo y entorno.                              | La infraestructura depende de variables, no de valores quemados.                |
+| Ansible                    | Playbooks separados para configuración base, Docker, K3s y dependencias. | Se pueden agregar nuevas tareas o roles sin rehacer todo el playbook.             | Roles reutilizables en distintos servidores o entornos.                                       | Inventarios y variables separados por ambiente.                          | Los playbooks dependen de variables e inventario generado, no de IPs fijas.     |
+| Prometheus                 | Recolección de métricas separada de la lógica de negocio.                | Se pueden agregar nuevos targets o métricas sin modificar servicios existentes.   | Exporters compatibles pueden sustituirse si exponen formato Prometheus.                       | Métricas HTTP, RabbitMQ, pods e Ingress separadas.                       | Servicios dependen de abstracciones de métricas, no directamente de Prometheus. |
+| Grafana                    | Visualización separada de la recolección de métricas.                    | Se pueden agregar nuevos dashboards o paneles sin cambiar Prometheus.             | Dashboards pueden reutilizar el mismo datasource.                                             | Paneles separados por salud del sistema, pods, colas, Ingress y boletos. | Grafana depende de Prometheus como datasource configurable.                     |
+| Métricas de aplicación     | Middleware/controladores de métricas separados de endpoints de negocio.  | Nuevas métricas pueden agregarse sin modificar todo el backend.                   | Exportadores de métricas sustituibles.                                                        | Interfaces separadas para métricas HTTP, boletos y colas.                | Servicios de negocio registran métricas mediante abstracciones inyectadas.      |
+| Seguridad de configuración | Secrets, `.env` y variables separadas del código fuente.                 | Nuevos secretos pueden agregarse sin modificar la lógica del sistema.             | Kubernetes Secrets y GitHub Secrets cumplen el mismo propósito de inyectar valores sensibles. | Variables separadas por entorno y tipo de credencial.                    | El sistema depende de configuración externa, no de credenciales quemadas.       |
+
+
+---
+
+## SOLID aplicado a Terraform y Ansible
+
+Aunque Terraform y Ansible no son código orientado a objetos, sí se organizan con principios equivalentes:
+
+| Principio | Aplicación en Terraform / Ansible |
+|---|---|
+| SRP | Separar módulos de red, seguridad, cómputo, outputs y variables. |
+| OCP | Agregar nuevos módulos sin modificar todos los existentes. |
+| LSP | Mantener módulos con variables/outputs compatibles. |
+| ISP | Separar variables por entorno y no crear archivos gigantes. |
+| DIP | Usar variables, outputs y secrets en lugar de valores quemados. |
+
+```hcl
+# terraform/modules/network/variables.tf
+variable "vpc_cidr" {
+  type = string
+}
+```
+
+```hcl
+# terraform/modules/network/outputs.tf
+output "vpc_id" {
+  value = aws_vpc.main.id
+}
+```
+
+**Explicación:** el módulo de red expone únicamente lo necesario. Otros módulos dependen del output `vpc_id`, no de detalles internos.
 
 ---
 
@@ -568,3 +715,8 @@ La aplicación de SOLID en FilmStars se evidencia mediante la separación `contr
 Las funcionalidades de Fase 4, como carga CSV y paginación server-side, se integran al `Movies Service` sin convertirlo en una clase monolítica. Las funcionalidades de Práctica 5, como descarga de boletos, historial, escaneo, validación manual y control de accesos, se integran respetando la misma lógica: cada responsabilidad debe mantenerse en un componente especializado.
 
 De esta manera, FilmStars puede crecer hacia una plataforma más completa sin perder mantenibilidad, bajo acoplamiento, facilidad de pruebas y claridad arquitectónica.
+
+La Práctica 6 mantiene SOLID al separar infraestructura, configuración y observabilidad en componentes especializados. Terraform aprovisiona, Ansible configura, Prometheus recolecta y Grafana visualiza. En el código, las métricas deben exponerse mediante controladores y servicios específicos, evitando mezclar observabilidad con reglas de negocio.
+
+---
+

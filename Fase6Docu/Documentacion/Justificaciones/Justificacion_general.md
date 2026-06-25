@@ -4,7 +4,9 @@ FilmStars es una plataforma web para la venta de boletos de cine en línea. El o
 
 El proyecto realiza el diseño arquitectónico de la fase anterior hacia una implementación funcional, agregando autenticación con JWT, frontend integrado, backend orientado a servicios, comunicación asíncrona mediante RabbitMQ y despliegue local mediante Docker Compose.
 
-La Práctica 5 amplía FilmStars hacia dos frentes principales: el frente funcional de boletos digitales y control de accesos, y el frente operativo de despliegue cloud native. En esta fase el sistema debe permitir descargar boletos, consultar historial de compras, validar boletos desde el panel administrador, marcar boletos como usados, cambiar el estado de asientos a `EN_USO` cuando el ingreso sea autorizado y contar con flujos de contingencia mediante búsqueda manual. Además, la infraestructura pasa de un despliegue basado únicamente en VM/Docker Compose hacia un flujo multi-entorno donde `develop` despliega en VM y `release` despliega en K3s sobre AWS.
+En la Práctica 6, FilmStars mantiene las funcionalidades de las prácticas anteriores, pero se fortalece la operación del sistema mediante tres elementos principales: Terraform, Ansible y Prometheus/Grafana. Estos elementos no reemplazan la arquitectura existente; la complementan para que el despliegue sea reproducible, automatizado, observable y controlado.
+
+La solución pasa de depender únicamente de despliegues manuales o configuraciones directas en servidores a un enfoque de Infraestructura como Código (IaC) y automatización de configuración. Terraform define y aprovisiona los recursos de AWS, Ansible configura las instancias y K3s, y Prometheus/Grafana permiten observar la salud del sistema en ejecución.
 
 A continuación se justifican las tecnologías utilizadas, por qué se trabajó de esa manera y dónde se evidencia su uso dentro del código del proyecto.
 
@@ -22,6 +24,21 @@ Se construyó una solución dividida en componentes independientes:
 | Payments Service | PostgreSQL + estructura base | Persistencia diseñada para pagos, detalles de pago, boletos y reembolsos. |
 | RabbitMQ | RabbitMQ Management | Broker de mensajería para desacoplar procesos críticos como reservas y pagos. |
 | Docker Compose | Docker | Orquestación local de servicios, bases de datos y RabbitMQ. |
+
+
+
+## Nuevos componentes incorporados
+
+| Componente | Tecnología | Responsabilidad |
+|---|---|---|
+| Infraestructura como Código | Terraform | Definir y crear recursos AWS como red, subredes, Security Groups, instancias EC2 y salidas necesarias para el despliegue. |
+| Configuración automatizada | Ansible | Instalar dependencias, configurar servidores, preparar Docker/K3s y dejar listo el entorno para FilmStars. |
+| Orquestación release | K3s | Ejecutar frontend, API Gateway, servicios backend, RabbitMQ, Prometheus y Grafana dentro del entorno productivo. |
+| Observabilidad | Prometheus | Recolectar métricas de servicios, pods, APIs, RabbitMQ, Ingress y validaciones de boletos. |
+| Visualización operativa | Grafana | Mostrar dashboards con estado de pods, CPU/RAM, colas, Ingress y boletos validados por minuto. |
+| Seguridad de configuración | `.env`, GitHub Secrets y Kubernetes Secrets | Evitar que credenciales, IPs, tokens, claves JWT o contraseñas queden quemadas en el repositorio. |
+
+---
 
 ## Aplicación de Arquitectura
 
@@ -398,8 +415,347 @@ await this.channel.consume(
 
 ---
 
-## Conclusión
+# Actualización integrada de Infraestructura como Código, configuración automatizada y observabilidad
 
-La combinación de TypeScript, NestJS, React, Vite, PostgreSQL y RabbitMQ permite que FilmStars mantenga una arquitectura modular, segura y preparada para crecer. Las decisiones técnicas no se tomaron de forma aislada: cada herramienta responde a una necesidad concreta del sistema. TypeScript mejora la mantenibilidad, NestJS ordena el backend, React facilita la interfaz, PostgreSQL garantiza integridad transaccional y RabbitMQ desacopla procesos críticos.
+## Terraform
 
-En Práctica 5 estas decisiones siguen siendo válidas porque el sistema ahora debe gestionar boletos digitales, historial, escaneo, control de acceso y despliegue cloud native sin romper la arquitectura existente.
+### ¿Qué es?
+
+Terraform es una herramienta de Infraestructura como Código que permite definir recursos cloud en archivos declarativos `.tf`. En lugar de crear manualmente recursos desde la consola de AWS, el equipo define la infraestructura en código, la versiona y la puede recrear de forma consistente.
+
+### ¿Por qué se utiliza?
+
+Se utiliza porque la Práctica 6 requiere automatizar la infraestructura en AWS y evitar configuraciones manuales. Terraform permite que el entorno `develop` y el entorno `release` puedan aprovisionarse de forma repetible, reduciendo errores humanos y dejando evidencia clara de qué recursos forman parte de la solución.
+
+### ¿Para qué se utiliza en FilmStars?
+
+- Crear red base en AWS.
+- Crear Security Groups.
+- Crear instancias EC2 para `develop` y `release`.
+- Exponer salidas como IP pública, DNS o datos requeridos por Ansible.
+- Mantener trazabilidad de infraestructura desde el repositorio.
+
+### Evidencia de estructura esperada
+
+```hcl
+# infrastructure/terraform/main.tf
+provider "aws" {
+  region = var.aws_region
+}
+
+resource "aws_security_group" "filmstars_sg" {
+  name        = "filmstars-sg"
+  description = "Security group para FilmStars"
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  ingress {
+    description = "HTTPS / Ingress"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
+  }
+
+  ingress {
+    description = "SSH administrado"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.admin_cidr_blocks
+  }
+}
+
+resource "aws_instance" "filmstars_release" {
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  vpc_security_group_ids = [aws_security_group.filmstars_sg.id]
+  key_name               = var.key_name
+
+  tags = {
+    Name        = "filmstars-release-k3s"
+    Environment = "release"
+  }
+}
+
+output "release_public_ip" {
+  value = aws_instance.filmstars_release.public_ip
+}
+```
+
+**Explicación:** este bloque evidencia cómo Terraform define infraestructura de AWS de forma declarativa. Las salidas pueden ser usadas por Ansible para configurar automáticamente los servidores.
+
+---
+
+## Ansible
+
+### ¿Qué es?
+
+Ansible es una herramienta de automatización de configuración. Permite ejecutar playbooks para instalar paquetes, configurar servicios, preparar servidores y ejecutar comandos de forma repetible.
+
+### ¿Por qué se utiliza?
+
+Se utiliza porque después de crear la infraestructura con Terraform, las instancias EC2 necesitan configuración: instalación de Docker, herramientas de Kubernetes, K3s, configuración de usuarios, directorios, permisos, variables de entorno y dependencias necesarias para ejecutar FilmStars.
+
+### ¿Para qué se utiliza en FilmStars?
+
+- Configurar servidores EC2.
+- Instalar Docker y herramientas base.
+- Instalar y configurar K3s.
+- Preparar directorios de despliegue.
+- Configurar acceso a registry.
+- Dejar el entorno listo para que GitHub Actions despliegue.
+
+### Evidencia de estructura esperada
+
+```yaml
+# infrastructure/ansible/playbooks/setup-k3s.yml
+- name: Configurar servidor release con K3s
+  hosts: release
+  become: true
+
+  tasks:
+    - name: Actualizar paquetes base
+      apt:
+        update_cache: yes
+
+    - name: Instalar dependencias necesarias
+      apt:
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
+          - docker.io
+        state: present
+
+    - name: Instalar K3s
+      shell: |
+        curl -sfL https://get.k3s.io | sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Validar estado de K3s
+      command: kubectl get nodes
+      register: k3s_nodes
+      changed_when: false
+
+    - name: Mostrar nodos disponibles
+      debug:
+        var: k3s_nodes.stdout_lines
+```
+
+**Explicación:** este playbook permite configurar el servidor de release de forma idempotente. Si se vuelve a ejecutar, no debería generar un estado inconsistente.
+
+---
+
+## Prometheus
+
+### ¿Qué es?
+
+Prometheus es una herramienta de monitoreo basada en métricas. Recolecta datos mediante scraping periódico sobre endpoints configurados y almacena la información como series temporales.
+
+### ¿Por qué se utiliza?
+
+Se utiliza porque FilmStars necesita observar su comportamiento operativo: estado de pods, CPU, memoria, disponibilidad de servicios, errores, latencia de APIs, estado de RabbitMQ, colas pendientes, estado de Ingress y volumen de boletos validados.
+
+### ¿Para qué se utiliza en FilmStars?
+
+- Recolectar métricas de servicios backend.
+- Recolectar métricas de K3s y pods.
+- Recolectar métricas de RabbitMQ.
+- Recolectar métricas de Ingress.
+- Alimentar dashboards en Grafana.
+
+### Evidencia de configuración esperada
+
+```yaml
+# k3s/monitoring/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: filmstars
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'api-gateway'
+        static_configs:
+          - targets: ['api-gateway:8080']
+
+      - job_name: 'movies-service'
+        static_configs:
+          - targets: ['movies-service:3002']
+
+      - job_name: 'reservations-service'
+        static_configs:
+          - targets: ['reservations-service:3003']
+
+      - job_name: 'payments-service'
+        static_configs:
+          - targets: ['payments-service:3004']
+
+      - job_name: 'rabbitmq'
+        static_configs:
+          - targets: ['rabbitmq:15692']
+```
+
+**Explicación:** Prometheus consulta periódicamente los servicios configurados. Esto permite detectar errores, caídas, saturación o falta de respuesta.
+
+---
+
+## Grafana
+
+### ¿Qué es?
+
+Grafana es una herramienta de visualización de métricas. Se conecta a Prometheus como datasource y permite crear dashboards gráficos para monitoreo operativo.
+
+### ¿Por qué se utiliza?
+
+Se utiliza porque Prometheus almacena métricas, pero Grafana permite interpretarlas visualmente. Para la calificación y operación del sistema, Grafana facilita demostrar que el sistema tiene telemetría viva y que se pueden observar pods, APIs, RabbitMQ, Ingress y validaciones de boletos.
+
+### ¿Para qué se utiliza en FilmStars?
+
+- Dashboard de salud general.
+- Dashboard de CPU/RAM por pod.
+- Panel de estado de Ingress.
+- Panel de RabbitMQ y colas.
+- Panel de boletos validados por minuto.
+- Panel de errores y latencia de APIs.
+
+### Ejemplo de panel esperado
+
+```json
+{
+  "title": "FilmStars - Operación General",
+  "panels": [
+    {
+      "title": "Pods disponibles",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "kube_pod_status_ready"
+        }
+      ]
+    },
+    {
+      "title": "Boletos validados por minuto",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(filmstars_ticket_validations_total[1m])"
+        }
+      ]
+    },
+    {
+      "title": "Mensajes pendientes RabbitMQ",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages_ready"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Explicación:** este dashboard permite observar el estado operativo de FilmStars desde una vista centralizada.
+
+---
+
+## Métricas de aplicación
+
+Para que Prometheus pueda monitorear el sistema, los servicios deben exponer métricas. Estas métricas pueden incluir:
+
+| Métrica | Descripción |
+|---|---|
+| `filmstars_http_requests_total` | Total de solicitudes HTTP por servicio. |
+| `filmstars_http_request_duration_seconds` | Latencia de endpoints. |
+| `filmstars_ticket_validations_total` | Total de boletos validados. |
+| `filmstars_ticket_validation_rejected_total` | Total de boletos rechazados. |
+| `filmstars_errors_total` | Total de errores por servicio. |
+| `rabbitmq_queue_messages_ready` | Mensajes pendientes en RabbitMQ. |
+| `container_cpu_usage_seconds_total` | Uso de CPU por contenedor/pod. |
+| `container_memory_usage_bytes` | Uso de memoria por contenedor/pod. |
+
+### Evidencia de instrumentación esperada
+
+```ts
+// api-gateway/src/metrics/metrics.middleware.ts
+export function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+
+    httpRequestsTotal.inc({
+      method: req.method,
+      route: req.route?.path ?? req.path,
+      status: res.statusCode,
+    });
+
+    httpRequestDuration.observe(
+      {
+        method: req.method,
+        route: req.route?.path ?? req.path,
+        status: res.statusCode,
+      },
+      duration,
+    );
+  });
+
+  next();
+}
+```
+
+**Explicación:** esta instrumentación permite medir cantidad de solicitudes y latencia por endpoint, información que Prometheus puede recolectar.
+
+---
+
+## Seguridad de información
+
+En Práctica 6 se refuerza que la información sensible no debe subirse al repositorio.
+
+| Elemento sensible | Dónde debe estar |
+|---|---|
+| Credenciales AWS | GitHub Secrets o variables seguras locales. |
+| Llaves SSH | GitHub Secrets / agente seguro. |
+| JWT Secret | Kubernetes Secret o GitHub Secret. |
+| Contraseñas de base de datos | Kubernetes Secrets. |
+| Usuarios de registry | GitHub Secrets. |
+| IPs y endpoints privados | Variables de entorno o outputs controlados. |
+| Archivos `.env` reales | No versionados. |
+
+### Evidencia de Kubernetes Secrets
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: filmstars-secrets
+  namespace: filmstars
+type: Opaque
+stringData:
+  DB_PASS: "${DB_PASS}"
+  JWT_SECRET: "${JWT_SECRET}"
+  RABBITMQ_PASS: "${RABBITMQ_PASS}"
+```
+
+**Explicación:** las credenciales se inyectan en el clúster sin quemarlas en el código fuente.
+
+---
+
+## Conclusión actualizada
+
+La solución de FilmStars evoluciona de una aplicación SOA funcional a una plataforma más completa, automatizada y observable. TypeScript, NestJS, React, PostgreSQL y RabbitMQ siguen siendo la base funcional. Docker, GitHub Actions y K3s permiten empaquetar y desplegar. En Práctica 6, Terraform, Ansible, Prometheus y Grafana fortalecen la operación del sistema, permitiendo infraestructura reproducible, configuración automatizada, monitoreo continuo, dashboards activos y manejo seguro de credenciales.
+
+---
