@@ -1,0 +1,1 @@
+# Infraestructura — Práctica 6 (FilmStars en AWS)

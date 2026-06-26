@@ -1,0 +1,49 @@
+- name: VM develop (Docker Compose)
+  hosts: develop
+  become: true
+  tasks:
+    - name: Instalar dependencias
+      apt:
+        name: [ca-certificates, curl, gnupg]
+        update_cache: true
+        state: present
+
+    - name: Crear carpeta de keyrings
+      file: { path: /etc/apt/keyrings, state: directory, mode: "0755" }
+
+    - name: Llave GPG oficial de Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/keyrings/docker.gpg
+        state: present
+
+    - name: Repo de Docker
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Instalar Docker Engine + Compose plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        update_cache: true
+        state: present
+
+    - name: Habilitar Docker
+      systemd: { name: docker, enabled: true, state: started }
+
+    - name: Permitir a ubuntu usar docker sin sudo
+      user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: Carpeta de la app (el CI copia aqui los compose)
+      file:
+        path: /home/ubuntu/filmstars
+        state: directory
+        owner: ubuntu
+        group: ubuntu

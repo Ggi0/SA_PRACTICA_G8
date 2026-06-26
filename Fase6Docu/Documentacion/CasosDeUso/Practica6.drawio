@@ -1,0 +1,141 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT" pages="2">
+  <diagram name="PrimeradescompP6" id="675d456077c34fb0ad364110424b5642">
+    <mxGraphModel dx="819" dy="1140" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sys" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;fontFamily=Helvetica;fontSize=12;verticalAlign=top;spacingTop=8;" value="" vertex="1">
+          <mxGeometry height="1020" width="760" x="200" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a_user" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="Usuario" vertex="1">
+          <mxGeometry height="80" width="40" x="60" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="a_pay" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="Sistema de pago" vertex="1">
+          <mxGeometry height="80" width="40" x="60" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="a_admin" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="Administrador" vertex="1">
+          <mxGeometry height="80" width="40" x="970" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="uc1" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 001 Autenticación y&lt;br&gt;gestión de usuarios" vertex="1">
+          <mxGeometry height="80" width="220" x="430" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="uc2" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 002 Gestión de&lt;br&gt;cartelera" vertex="1">
+          <mxGeometry height="80" width="220" x="410" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="uc3" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 003 Búsqueda y&lt;br&gt;visualización de cartelera" vertex="1">
+          <mxGeometry height="80" width="220" x="340" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="uc4" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 004 Reserva y&lt;br&gt;compra de boletos" vertex="1">
+          <mxGeometry height="80" width="220" x="230" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="uc5" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 005 Módulo&lt;br&gt;administrativo" vertex="1">
+          <mxGeometry height="80" width="220" x="560" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="uc6" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 006 Descarga e&lt;br&gt;historial de boletos" vertex="1">
+          <mxGeometry height="80" width="220" x="250" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="uc7" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 007 Escaneo y&lt;br&gt;control de accesos" vertex="1">
+          <mxGeometry height="80" width="220" x="515" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_uc1" edge="1" parent="1" source="a_user" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_uc3" edge="1" parent="1" source="a_user" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_uc4" edge="1" parent="1" source="a_user" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_uc6" edge="1" parent="1" source="a_user" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc1" edge="1" parent="1" source="a_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc2" edge="1" parent="1" source="a_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc5" edge="1" parent="1" source="a_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc7" edge="1" parent="1" source="a_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pay_uc4" edge="1" parent="1" source="a_pay" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uc9" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU 008 Monitoreo Operativo" vertex="1">
+          <mxGeometry height="86.4" width="240" x="550" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_uc9" edge="1" parent="1" source="a_admin" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="uc9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="CDU008" id="p6-cdu009">
+    <mxGraphModel dx="576" dy="802" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1350" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="box9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;fontFamily=Helvetica;fontSize=12;verticalAlign=top;spacingTop=8;" value="CDU008: Monitoreo Operativo" vertex="1">
+          <mxGeometry height="680" width="980" x="240" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="tech9" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="Administrador" vertex="1">
+          <mxGeometry height="80" width="40" x="70" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="c91" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.1&lt;br&gt;Exponer métricas de&lt;br&gt;servicios y APIs" vertex="1">
+          <mxGeometry height="80" width="205" x="627.5" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="c92" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.2&lt;br&gt;Recolectar métricas&lt;br&gt;con Prometheus" vertex="1">
+          <mxGeometry height="80" width="205" x="1000" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="c93" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.3&lt;br&gt;Monitorear RabbitMQ&lt;br&gt;y colas" vertex="1">
+          <mxGeometry height="80" width="205" x="990" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="c94" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.4&lt;br&gt;Consultar dashboards&lt;br&gt;en Grafana" vertex="1">
+          <mxGeometry height="80" width="205" x="320" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="c95" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.5&lt;br&gt;Visualizar salud de&lt;br&gt;pods y clúster K3s" vertex="1">
+          <mxGeometry height="80" width="205" x="290" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="c96" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.6&lt;br&gt;Visualizar boletos&lt;br&gt;validados por minuto" vertex="1">
+          <mxGeometry height="80" width="205" x="600" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="c97" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.7&lt;br&gt;Revisar estado del&lt;br&gt;Ingress" vertex="1">
+          <mxGeometry height="80" width="205" x="740" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="c98" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#000000;fontFamily=Helvetica;fontSize=13;" value="CDU009.8&lt;br&gt;Configurar retención&lt;br&gt;de métricas" vertex="1">
+          <mxGeometry height="80" width="205" x="650" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="etech9_c94" edge="1" parent="1" source="tech9" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;" target="c94" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="etech9_c98" edge="1" parent="1" source="tech9" style="endArrow=none;html=1;rounded=0;strokeColor=#000000;strokeWidth=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="c98" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e92_91" edge="1" parent="1" source="c92" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c91" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e92_93" edge="1" parent="1" source="c92" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c93" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e94_92" edge="1" parent="1" source="c94" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c92" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e94_95" edge="1" parent="1" source="c94" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c95" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e94_96" edge="1" parent="1" source="c94" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c96" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e94_97" edge="1" parent="1" source="c94" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c97" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e92_98" edge="1" parent="1" source="c92" style="endArrow=open;endFill=0;html=1;rounded=0;dashed=1;strokeColor=#000000;fontFamily=Helvetica;fontSize=10;" target="c98" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -16,3 +16,20 @@ CORRECCIONES_CICD_K3S_ZOT.md
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# ---- IaC: Terraform ----
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+infra/terraform/terraform.tfvars
+
+# ---- Ansible ----
+infra/ansible/inventory.ini
+infra/ansible/group_vars/all.yml
+infra/ansible/artifacts/
+*.retry
+
+# ---- Observabilidad ----
+infra/observability/values-monitoring.yaml

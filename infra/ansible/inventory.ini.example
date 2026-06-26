@@ -1,0 +1,14 @@
+# Copia a inventory.ini y pega la salida de:
+#   terraform -chdir=../terraform output -raw ansible_inventory
+[registry]
+REGISTRY_PUBLIC_IP private_ip=REGISTRY_PRIVATE_IP
+
+[develop]
+DEVELOP_PUBLIC_IP private_ip=DEVELOP_PRIVATE_IP
+
+[k3s]
+K3S_PUBLIC_IP private_ip=K3S_PRIVATE_IP
+
+[all:vars]
+ansible_user=ubuntu
+ansible_python_interpreter=/usr/bin/python3

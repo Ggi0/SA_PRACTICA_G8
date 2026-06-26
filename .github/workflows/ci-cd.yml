@@ -57,19 +57,143 @@ jobs:
           path: Fase3/FilmStars/${{ matrix.service }}/coverage/
           if-no-files-found: ignore
 
+  provision-infra:
+    name: "Infra - Terraform + Ansible"
+    runs-on: ubuntu-latest
+    needs: [ci-tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/release')
+    defaults:
+      run:
+        working-directory: infra
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-2
+    outputs:
+      develop_host: ${{ steps.tfoutputs.outputs.develop_host }}
+      zot_host: ${{ steps.tfoutputs.outputs.zot_host }}
+      k3s_ip: ${{ steps.tfoutputs.outputs.k3s_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Restore SSH keys for Terraform and Ansible
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}"  > ~/.ssh/filmstars_deploy.pub
+          echo "${{ secrets.DEVELOP_SSH_KEY }}" > ~/.ssh/filmstars_deploy
+          chmod 600 ~/.ssh/filmstars_deploy
+
+      - name: Terraform init
+        run: terraform -chdir=terraform init -input=false
+
+      - name: Terraform plan
+        id: tfplan
+        run: |
+          set +e
+          terraform -chdir=terraform plan -input=false -detailed-exitcode -out=tfplan -var="admin_cidr=0.0.0.0/0"
+          status=$?
+          set -e
+          echo "Terraform plan exit code: $status"
+
+          if [ "$status" -eq 0 ]; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+            echo "Terraform no detecto cambios de infraestructura."
+          elif [ "$status" -eq 2 ]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            echo "Terraform detecto cambios de infraestructura."
+          else
+            exit "$status"
+          fi
+
+      - name: Terraform apply when infrastructure changed
+        if: steps.tfplan.outputs.changes == 'true'
+        run: terraform -chdir=terraform apply -input=false tfplan
+
+      - name: Skip Terraform apply without changes
+        if: steps.tfplan.outputs.changes == 'false'
+        run: echo "Sin diferencias en infraestructura; Terraform apply no se ejecuta."
+
+      - name: Generate Ansible inventory from Terraform
+        run: terraform -chdir=terraform output -raw ansible_inventory > ansible/inventory.ini
+
+      - name: Wait for EC2 instance status checks
+        run: |
+          instance_ids=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=filmstars-k3s,filmstars-registry,filmstars-develop" "Name=instance-state-name,Values=pending,running" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+          test -n "$instance_ids" || { echo "::error::No FilmStars EC2 instances found"; exit 1; }
+          aws ec2 wait instance-status-ok --instance-ids $instance_ids
+
+      - name: Check SSH port reachability
+        run: |
+          echo "Ansible inventory:"
+          cat ansible/inventory.ini
+          echo "EC2 network details:"
+          aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=filmstars-k3s,filmstars-registry,filmstars-develop" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].{Name:Tags[?Key==`Name`]|[0].Value,InstanceId:InstanceId,PublicIp:PublicIpAddress,PrivateIp:PrivateIpAddress,SecurityGroups:SecurityGroups[].GroupName}' \
+            --output table
+          echo "SSH security group rules:"
+          aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=filmstars-k3s-sg,filmstars-registry-sg,filmstars-develop-sg" \
+            --query 'SecurityGroups[].{GroupName:GroupName,Ingress:IpPermissions[?FromPort==`22` && ToPort==`22`].IpRanges[].CidrIp}' \
+            --output table
+          awk '/^[0-9]/{print $1}' ansible/inventory.ini | while read -r host; do
+            echo "Checking SSH on $host:22"
+            timeout 10 bash -c "</dev/tcp/$host/22" || { echo "::error::SSH port 22 is not reachable on $host"; exit 1; }
+          done
+
+      - name: Ansible idempotent server configuration
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible
+          ansible-galaxy collection install community.docker community.general
+          cd ansible
+          mkdir -p artifacts group_vars
+          cat > group_vars/all.yml <<EOF
+          zot_user: "${{ secrets.ZOT_USER }}"
+          zot_password: "${{ secrets.ZOT_PASSWORD }}"
+          node_exporter_version: "1.8.2"
+          zot_host_public: "{{ hostvars[groups['registry'][0]]['inventory_hostname'] }}:5000"
+          zot_host_private: "{{ hostvars[groups['registry'][0]]['private_ip'] }}:5000"
+          EOF
+          ANSIBLE_HOST_KEY_CHECKING=False ansible all -i inventory.ini -m wait_for_connection -a "timeout=600" \
+            --private-key ~/.ssh/filmstars_deploy
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini \
+            --private-key ~/.ssh/filmstars_deploy site.yml
+
+      - name: Export Terraform and Ansible outputs
+        id: tfoutputs
+        run: |
+          echo "develop_host=$(terraform -chdir=terraform output -raw DEVELOP_HOST)" >> "$GITHUB_OUTPUT"
+          echo "zot_host=$(terraform -chdir=terraform output -raw ZOT_HOST)" >> "$GITHUB_OUTPUT"
+          echo "k3s_ip=$(terraform -chdir=terraform output -raw K3S_IP)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload kubeconfig generated by Ansible
+        uses: actions/upload-artifact@v4
+        with:
+          name: k3s-kubeconfig
+          path: infra/ansible/artifacts/k3s-kubeconfig.yaml
+          if-no-files-found: error
+          retention-days: 1
+
   build-push-dockerhub-develop:
     name: "Develop - Build & Push DockerHub"
     runs-on: ubuntu-latest
-    needs: [ci-tests]
+    needs: [provision-infra]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    env:
+      DEVELOP_HOST: ${{ needs.provision-infra.outputs.develop_host }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate develop configuration
-        env:
-          DEVELOP_HOST: ${{ secrets.DEVELOP_HOST }}
         run: |
-          test -n "$DEVELOP_HOST" || { echo "::error::Missing GitHub secret DEVELOP_HOST"; exit 1; }
+          test -n "$DEVELOP_HOST" || { echo "::error::Missing develop host from Terraform outputs"; exit 1; }
 
       - uses: docker/setup-buildx-action@v3
 
@@ -136,28 +260,29 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:${{ steps.meta.outputs.tag }}
           build-args: |
-            VITE_API_URL=http://${{ secrets.DEVELOP_HOST }}:8080
+            VITE_API_URL=http://${{ env.DEVELOP_HOST }}:8080
 
   deploy-develop:
     name: "Develop - Deploy Docker Compose on VM"
     runs-on: ubuntu-latest
-    needs: [build-push-dockerhub-develop]
+    needs: [provision-infra, build-push-dockerhub-develop]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    env:
+      DEVELOP_HOST: ${{ needs.provision-infra.outputs.develop_host }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate develop deploy secrets
         env:
-          DEVELOP_HOST: ${{ secrets.DEVELOP_HOST }}
           DEVELOP_SSH_KEY: ${{ secrets.DEVELOP_SSH_KEY }}
         run: |
-          test -n "$DEVELOP_HOST" || { echo "::error::Missing GitHub secret DEVELOP_HOST"; exit 1; }
+          test -n "$DEVELOP_HOST" || { echo "::error::Missing develop host from Terraform outputs"; exit 1; }
           test -n "$DEVELOP_SSH_KEY" || { echo "::error::Missing GitHub secret DEVELOP_SSH_KEY"; exit 1; }
 
       - name: Copy compose files to develop VM
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.DEVELOP_HOST }}
+          host: ${{ env.DEVELOP_HOST }}
           username: ubuntu
           key: ${{ secrets.DEVELOP_SSH_KEY }}
           source: "Fase3/FilmStars/docker-compose.prod.yml,Fase3/FilmStars/database,Fase3/FilmStars/rabbitmq"
@@ -173,7 +298,7 @@ jobs:
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
-          host: ${{ secrets.DEVELOP_HOST }}
+          host: ${{ env.DEVELOP_HOST }}
           username: ubuntu
           key: ${{ secrets.DEVELOP_SSH_KEY }}
           envs: DOCKERHUB_USERNAME,DB_PASS,JWT_SECRET,RABBITMQ_PASS,ADMIN_PASSWORD
@@ -204,21 +329,21 @@ jobs:
   build-push-zot-release:
     name: "Release - Build & Push Zot"
     runs-on: ubuntu-latest
-    needs: [ci-tests]
+    needs: [provision-infra]
     if: github.ref == 'refs/heads/release' && github.event_name == 'push'
     env:
       TAG: release-${{ github.run_number }}
-      ZOT_HOST: ${{ secrets.ZOT_HOST }}
+      ZOT_HOST: ${{ needs.provision-infra.outputs.zot_host }}
       ZOT_USER: ${{ secrets.ZOT_USER }}
       ZOT_PASSWORD: ${{ secrets.ZOT_PASSWORD }}
-      REG: ${{ secrets.ZOT_HOST }}/filmstars
+      REG: ${{ needs.provision-infra.outputs.zot_host }}/filmstars
       DOCKER_BUILDKIT: 0
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate Zot configuration
         run: |
-          test -n "$ZOT_HOST" || { echo "::error::Missing GitHub secret ZOT_HOST"; exit 1; }
+          test -n "$ZOT_HOST" || { echo "::error::Missing Zot host from Terraform outputs"; exit 1; }
           test -n "$ZOT_USER" || { echo "::error::Missing GitHub secret ZOT_USER"; exit 1; }
           test -n "$ZOT_PASSWORD" || { echo "::error::Missing GitHub secret ZOT_PASSWORD"; exit 1; }
 
@@ -268,13 +393,13 @@ jobs:
   deploy-k3s-release:
     name: "Release - Deploy K3s on AWS"
     runs-on: ubuntu-latest
-    needs: [build-push-zot-release]
+    needs: [provision-infra, build-push-zot-release]
     if: github.ref == 'refs/heads/release' && github.event_name == 'push'
     env:
       NS: filmstars
       TAG: release-${{ github.run_number }}
-      ZOT_HOST: ${{ secrets.ZOT_HOST }}
-      K3S_IP: ${{ secrets.K3S_IP }}
+      ZOT_HOST: ${{ needs.provision-infra.outputs.zot_host }}
+      K3S_IP: ${{ needs.provision-infra.outputs.k3s_ip }}
       DB_PASS: ${{ secrets.DB_PASS }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
@@ -284,14 +409,29 @@ jobs:
 
       - uses: azure/setup-kubectl@v4
 
+      - name: Download kubeconfig generated by Ansible
+        uses: actions/download-artifact@v4
+        with:
+          name: k3s-kubeconfig
+          path: kubeconfig-artifact
+
       - name: Install envsubst
         run: sudo apt-get update && sudo apt-get install -y gettext-base
 
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          cp kubeconfig-artifact/k3s-kubeconfig.yaml ~/.kube/config
           chmod 600 ~/.kube/config
+
+      - name: Validate Kubernetes API access
+        run: |
+          server="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+          echo "Using Kubernetes API: $server"
+          if ! kubectl --request-timeout=15s get --raw=/readyz >/dev/null; then
+            echo "::error::Cannot reach the Kubernetes API with the kubeconfig generated by Ansible."
+            exit 1
+          fi
 
       - name: Apply namespace
         run: kubectl apply -f Fase3/FilmStars/k3s/namespace.yaml
@@ -343,21 +483,11 @@ jobs:
       - name: Apply ConfigMaps, databases and RabbitMQ
         run: |
           kubectl apply -f Fase3/FilmStars/k3s/configmaps.yaml
-
-          # The lab VM is resource-constrained. Free all existing FilmStars pods before
-          # applying updated Deployments, otherwise new pods can remain Pending on CPU.
-          for d in $(kubectl -n $NS get deployment -o name); do
-            kubectl -n $NS scale $d --replicas=0 2>/dev/null || true
-          done
-          kubectl -n $NS delete pod --all --grace-period=0 --force 2>/dev/null || true
-
           kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
           for d in db-users db-movies db-reservations db-payments; do
             kubectl -n $NS rollout status deployment/$d --timeout=300s
           done
 
-          kubectl -n $NS delete deployment rabbitmq --ignore-not-found=true
-          kubectl -n $NS wait --for=delete deployment/rabbitmq --timeout=120s || true
           kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
           if ! kubectl -n $NS rollout status deployment/rabbitmq --timeout=300s; then
             kubectl -n $NS get pods -o wide
@@ -393,7 +523,12 @@ jobs:
       - name: Show cluster status
         if: always()
         run: |
-          kubectl -n $NS get pods,svc,ingress
+          if ! kubectl --request-timeout=5s get --raw=/readyz >/dev/null 2>&1; then
+            echo "Kubernetes API is unreachable; skipping cluster diagnostics."
+            exit 0
+          fi
+
+          kubectl --request-timeout=10s -n $NS get pods,svc,ingress || true
           kubectl -n $NS describe pods | sed -n '/Events:/,$p' | tail -120 || true
           kubectl -n $NS logs deployment/reservations-service --tail=80 || true
           kubectl -n $NS logs deployment/payments-service --tail=80 || true
