@@ -44,7 +44,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (deployment) (\n  label_replace(\n    rate(container_cpu_usage_seconds_total{namespace=\"filmstars\",container!=\"\",pod!=\"\"}[5m]),\n    \"deployment\", \"$1\", \"pod\",\n    \"^(.*)-[a-z0-9]+-[a-z0-9]+$\"\n  )\n) / 1e6",
+          "expr": "sum by (deployment) (\n  label_replace(\n    rate(container_cpu_usage_seconds_total{namespace=\"filmstars\",container!=\"\",pod!=\"\"}[5m]),\n    \"deployment\", \"$1\", \"pod\",\n    \"^(.*)-[a-z0-9]+-[a-z0-9]+$\"\n  )\n) * 1000",
           "legendFormat": "{{deployment}}",
           "refId": "A"
         }
