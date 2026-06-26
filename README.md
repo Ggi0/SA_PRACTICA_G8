@@ -39,7 +39,7 @@ La arquitectura fue diseñada para soportar alta concurrencia durante la selecci
 
 ---
 
-![](./Fase2/Documentacion/Diagramas/img/general_.png)
+![](./Fase6Docu/Documentacion/4+1/Diagramas_despliegue/image.png)
 
 # Desarrollo
 
