@@ -3,40 +3,84 @@
   "__requires": [],
   "annotations": { "list": [] },
   "editable": true,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "schemaVersion": 39,
   "tags": ["filmstars", "practica6"],
   "templating": { "list": [] },
-  "time": { "from": "now-30m", "to": "now" },
+  "time": { "from": "now-2h", "to": "now" },
+  "timepicker": {},
   "timezone": "browser",
   "title": "FilmStars — Observabilidad Práctica 6",
   "uid": "filmstars-p6",
-  "version": 1,
+  "version": 2,
   "panels": [
     {
       "id": 1,
-      "title": "CPU por pod (ns filmstars)",
+      "title": "CPU por servicio — millicores (ns filmstars)",
+      "description": "Consumo de CPU de cada microservicio en millicores (1000 m = 1 core). Valores agrupados por deployment, sumando todas las réplicas activas.",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "last"],
+          "showLegend": true
+        }
+      },
       "targets": [
         {
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"filmstars\",container!=\"\"}[5m]))",
-          "legendFormat": "{{pod}}",
+          "expr": "sum by (deployment) (\n  label_replace(\n    rate(container_cpu_usage_seconds_total{namespace=\"filmstars\",container!=\"\",pod!=\"\"}[5m]),\n    \"deployment\", \"$1\", \"pod\",\n    \"^(.*)-[a-z0-9]+-[a-z0-9]+$\"\n  )\n) * 1000",
+          "legendFormat": "{{deployment}}",
           "refId": "A"
         }
       ]
     },
     {
       "id": 2,
-      "title": "Memoria por pod (ns filmstars)",
+      "title": "Memoria por servicio (ns filmstars)",
+      "description": "Memoria RAM activa (working set) usada por cada microservicio. Grafana convierte automáticamente de bytes a MiB/GiB.",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "last"],
+          "showLegend": true
+        }
+      },
       "targets": [
         {
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"filmstars\",container!=\"\"})",
-          "legendFormat": "{{pod}}",
+          "expr": "sum by (deployment) (\n  label_replace(\n    container_memory_working_set_bytes{namespace=\"filmstars\",container!=\"\",pod!=\"\"},\n    \"deployment\", \"$1\", \"pod\",\n    \"^(.*)-[a-z0-9]+-[a-z0-9]+$\"\n  )\n)",
+          "legendFormat": "{{deployment}}",
           "refId": "A"
         }
       ]
@@ -50,20 +94,52 @@
         "defaults": {
           "mappings": [
             { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
-          ]
+            { "type": "value", "options": { "1": { "text": "UP",   "color": "green" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "green", "value": 1    }
+            ]
+          }
         },
         "overrides": []
       },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "up{job=~\"ec2-node-exporter|filmstars-api\"}", "legendFormat": "{{job}} {{instance}}", "refId": "A" }]
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "textMode": "auto",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "expr": "up{job=~\"ec2-node-exporter|filmstars-api\"}",
+          "legendFormat": "{{job}} {{instance}}",
+          "refId": "A"
+        }
+      ]
     },
     {
       "id": 4,
       "title": "Boletos validados por minuto",
       "type": "timeseries",
       "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 12
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      },
       "targets": [
         {
           "expr": "sum(rate(filmstars_tickets_validated_total[1m])) * 60",
@@ -77,7 +153,20 @@
       "title": "Requests del API Gateway (rate 1m)",
       "type": "timeseries",
       "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
-      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      },
       "targets": [
         {
           "expr": "sum by (status) (rate(filmstars_http_requests_total[1m]))",
@@ -89,9 +178,25 @@
     {
       "id": 6,
       "title": "CPU de las EC2 (node_exporter)",
+      "description": "Porcentaje de uso de CPU de cada instancia EC2 en AWS. Se calcula como 100% menos el tiempo en estado idle.",
       "type": "timeseries",
       "gridPos": { "h": 7, "w": 24, "x": 0, "y": 14 },
-      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "last"], "showLegend": true }
+      },
       "targets": [
         {
           "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\",group=\"aws-ec2\"}[5m])) * 100)",
