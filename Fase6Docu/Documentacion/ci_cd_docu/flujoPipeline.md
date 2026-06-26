@@ -4,17 +4,18 @@
 
 El pipeline de CI/CD de **FilmStars** fue diseñado bajo una filosofía de **cortocircuito crítico**: ninguna etapa de despliegue puede avanzar si la fase de pruebas anterior presenta fallos. Esta decisión de diseño responde directamente al requisito de garantizar que únicamente código compilado y probado llegue a los entornos de despliegue. A diferencia de soluciones que fragmentan la lógica en múltiples archivos, FilmStars concentra todo en **un único workflow de GitHub Actions**: `.github/workflows/ci-cd.yml`, titulado *"CI/CD Pipeline - FilmStars"*.
 
-Ese archivo define **cinco jobs** con responsabilidades claramente delimitadas:
+Ese archivo define **seis jobs** con responsabilidades claramente delimitadas:
 
 | Job | Responsabilidad | Rama | Depende de |
 |-----|-----------------|------|------------|
 | `ci-tests` | Build + pruebas de los 5 microservicios (matriz) | develop y release | — |
-| `build-push-dockerhub-develop` | Construye y publica 6 imágenes en Docker Hub | develop (push) | `ci-tests` |
+| `provision-infra` | Ejecuta Terraform y Ansible de forma automática e idempotente | develop y release (push) | `ci-tests` |
+| `build-push-dockerhub-develop` | Construye y publica 6 imágenes en Docker Hub | develop (push) | `provision-infra` |
 | `deploy-develop` | Despliega el stack con Docker Compose en una VM EC2 | develop (push) | `build-push-dockerhub-develop` |
-| `build-push-zot-release` | Construye y publica 6 imágenes en el registro privado Zot (Skopeo) | release (push) | `ci-tests` |
+| `build-push-zot-release` | Construye y publica 6 imágenes en el registro privado Zot (Skopeo) | release (push) | `provision-infra` |
 | `deploy-k3s-release` | Despliega en el clúster K3s sobre AWS con `kubectl` | release (push) | `build-push-zot-release` |
 
-La arquitectura sigue el principio de separación de responsabilidades mediante el mecanismo `needs`: el job `ci-tests` actúa como **puerta de calidad reutilizada** por ambas ramas. Tanto los jobs de `develop` como los de `release` declaran `needs: [ci-tests]`, lo que elimina la duplicación de lógica de pruebas y garantiza que el mismo conjunto de verificaciones se aplique de manera uniforme con independencia de la rama que dispare el pipeline.
+La arquitectura sigue el principio de separación de responsabilidades mediante el mecanismo `needs`: el job `ci-tests` actúa como **puerta de calidad reutilizada** por ambas ramas. Después, `provision-infra` ejecuta Terraform y Ansible solo en eventos `push`, de modo que los despliegues consumen infraestructura creada o actualizada automáticamente antes de publicar y desplegar imágenes.
 
 ![Pipeline CI/CD FilmStars](./image/pipeline_cicd_filmstars.png)
 
@@ -76,7 +77,7 @@ El entorno `develop` se despliega sobre una **instancia EC2 de AWS** (`vm-filmst
 
 ### 4.2 Build & Push a Docker Hub
 
-El job `build-push-dockerhub-develop` valida primero el secret `DEVELOP_HOST`, activa **Buildx** (`docker/setup-buildx-action@v3`), inicia sesión en Docker Hub (`docker/login-action@v3`) y construye-y-publica **seis imágenes** con `docker/build-push-action@v5` (reservas, payments, users, movies, api-gateway y frontend). El **frontend** es un caso especial: recibe el argumento de construcción `VITE_API_URL=http://${{ secrets.DEVELOP_HOST }}:8080`, porque Vite **incrusta** la URL del backend en el momento de compilar; los demás servicios leen su configuración en tiempo de ejecución.
+El job `build-push-dockerhub-develop` toma `DEVELOP_HOST` desde los outputs del job `provision-infra`, activa **Buildx** (`docker/setup-buildx-action@v3`), inicia sesión en Docker Hub (`docker/login-action@v3`) y construye-y-publica **seis imágenes** con `docker/build-push-action@v5` (reservas, payments, users, movies, api-gateway y frontend). El **frontend** es un caso especial: recibe el argumento de construcción `VITE_API_URL=http://${{ needs.provision-infra.outputs.develop_host }}:8080`, porque Vite **incrusta** la URL del backend en el momento de compilar; los demás servicios leen su configuración en tiempo de ejecución.
 
 ### 4.3 Despliegue por SSH con appleboy
 
@@ -111,7 +112,7 @@ La cadena `ci-tests → build-push-dockerhub-develop → deploy-develop` garanti
 
 El job `build-push-zot-release` publica las imágenes en un **registro OCI privado Zot** alojado en el laboratorio. Dado que ese registro opera sin TLS válido, el job:
 
-1. Valida `ZOT_HOST`, `ZOT_USER` y `ZOT_PASSWORD`.
+1. Valida `ZOT_HOST` obtenido desde Terraform, `ZOT_USER` y `ZOT_PASSWORD`.
 2. Instala **Skopeo** y marca el registro como inseguro permitido escribiendo `/etc/docker/daemon.json` (`insecure-registries`) y reiniciando Docker.
 3. Define `DOCKER_BUILDKIT: 0` para que la imagen quede en el daemon clásico y Skopeo pueda copiarla.
 4. Construye cada imagen con `docker build` (dos tags: `release-N` y `latest`) y la copia al registro con `skopeo copy --format oci --dest-tls-verify=false`.
@@ -120,7 +121,7 @@ El uso de Skopeo con formato OCI estándar desacopla la construcción de la publ
 
 ### 5.2 Autenticación al Clúster mediante kubeconfig
 
-El job `deploy-k3s-release` instala `kubectl` (`azure/setup-kubectl@v4`) y `envsubst` (`gettext-base`), y configura el acceso al clúster decodificando el secret `KUBECONFIG_B64` (un kubeconfig en base64) hacia `~/.kube/config` con permisos `600`. Este es el único mecanismo de acceso al clúster: no hay credenciales estáticas embebidas en los manifiestos.
+El job `deploy-k3s-release` instala `kubectl` (`azure/setup-kubectl@v4`) y `envsubst` (`gettext-base`), descarga el kubeconfig generado por Ansible como artifact interno del workflow y lo copia hacia `~/.kube/config` con permisos `600`. Este es el único mecanismo de acceso al clúster: no hay credenciales estáticas embebidas en los manifiestos ni IPs copiadas manualmente como secrets.
 
 ### 5.3 Gestión Declarativa de Manifiestos
 
@@ -134,18 +135,17 @@ El Secret de Kubernetes `filmstars-secrets` se crea con el patrón **`--dry-run=
 
 El pipeline carga los scripts `init.sql`/`seed.sql` de cada base como **ConfigMaps** (`users-initsql`, `movies-initsql`, `reservations-initsql`, `payments-initsql`) para que las bases se inicialicen con su esquema y datos semilla al arrancar. RabbitMQ recibe sus definiciones y configuración (`rabbitmq-definitions`, `rabbitmq-config`). Tras desplegar RabbitMQ, un paso de **reconciliación de credenciales** ejecuta `rabbitmqctl` dentro del pod para alinear el usuario/clave `admin` con el valor del secret y asignarle permisos de administrador.
 
-### 5.6 Liberación de Recursos antes de Actualizar
+### 5.6 Reconciliación Declarativa sin Recreación Forzada
 
-El nodo del laboratorio es limitado en CPU. Para evitar que los pods nuevos queden en estado `Pending` por falta de recursos, antes de aplicar los Deployments actualizados el pipeline **escala a 0** todos los Deployments existentes y fuerza el borrado de sus pods:
+El pipeline evita destruir recursos existentes durante una corrida normal. En lugar de escalar todos los Deployments a 0 o borrar pods manualmente, aplica los manifiestos versionados con `kubectl apply` y espera el `rollout status` de bases de datos, RabbitMQ y servicios de aplicación:
 
 ```bash
-for d in $(kubectl -n $NS get deployment -o name); do
-  kubectl -n $NS scale $d --replicas=0 2>/dev/null || true
-done
-kubectl -n $NS delete pod --all --grace-period=0 --force 2>/dev/null || true
+kubectl apply -f Fase3/FilmStars/k3s/databases.yaml
+kubectl apply -f Fase3/FilmStars/k3s/rabbitmq.yaml
+envsubst '${ZOT_HOST} ${TAG}' < Fase3/FilmStars/k3s/apps.yaml | kubectl apply -f -
 ```
 
-Después aplica las bases de datos y espera su `rollout status`, recrea RabbitMQ, y finalmente aplica los servicios de aplicación y el Ingress.
+Con esto Kubernetes solo actualiza los objetos cuyo manifiesto cambió y conserva los recursos existentes cuando ya están en el estado deseado.
 
 ### 5.7 RollingUpdate como Estrategia de Actualización
 
