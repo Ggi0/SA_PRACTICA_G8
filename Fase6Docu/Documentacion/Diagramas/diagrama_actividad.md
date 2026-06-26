@@ -1,7 +1,7 @@
 # Diagrama de Actividades – Administrador
-![](./img/actividadesadmin.png)
-# Diagrama de Actividades – Flujo de Compra de Boletos
-![](./img/diagrama-actividades-jwt.png)
+![](./img/admin_Filmstars.png)
+# Diagrama de Actividades – Cliente
+![](./img/FilmStars_Cliente_final.png)
 
 # Justificación del enfoque utilizado
 
@@ -159,4 +159,4 @@ Esta solución sigue el principio de arquitectura orientada a eventos y favorece
 
 
 # archivo crudo:
-[Pizarrón en LucidChart](https://lucid.app/lucidchart/0341407f-3b08-4f73-8287-b3ce5f045f7b/edit?viewport_loc=8234%2C-212%2C3634%2C1790%2C0_0&invitationId=inv_e0d154ab-d1a0-4b92-9dc3-a4259897cd75)
+[Pizarrón en LucidChart](https://drive.google.com/drive/folders/1LzA9iperL9zDUguMDfxJmNqY_H7hJ6FB?usp=sharing)
