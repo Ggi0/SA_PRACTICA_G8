@@ -19,6 +19,7 @@ vite.config.d.ts
 
 # ---- IaC: Terraform ----
 **/.terraform/
+**/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfplan
